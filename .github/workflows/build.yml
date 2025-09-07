@@ -631,7 +631,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}
+          name: ${{ inputs.kernelsu_variant }}-kernel-v${{ env.KSUVER }}-${{ env.CONFIG }}
           path: |
             *.zip
             *.img
