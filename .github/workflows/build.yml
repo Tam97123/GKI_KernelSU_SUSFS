@@ -351,14 +351,14 @@ jobs:
           cd "$CONFIG"
           if [ -f "build/build.sh" ]; then
               perl -pi -e 's/-dirty//' ./common/scripts/setlocalversion
-              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "\${{ inputs.kernel_name }}"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "\${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
               perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Tue Apr 22 05:30:00 UTC 2025"}' ./common/scripts/mkcompile_h
           else
               #Remove -maybe-dirty
               perl -pi -e 's/-maybe-dirty//g' ./build/kernel/kleaf/impl/stamp.bzl
               
               #Set Kernel Name
-              echo "CONFIG_LOCALVERSION=\"${{ inputs.kernel_name }}\"" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_LOCALVERSION=\"${{ inputs.kernel_uname }}\"" >> ./common/arch/arm64/configs/gki_defconfig
 
               #Set Kernel Timestamp
               perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Tue Apr 22 05:30:00 UTC 2025"/' ./common/init/Makefile
@@ -367,6 +367,7 @@ jobs:
               rm -rf ./common/android/abi_gki_protected_exports_*
               perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
           fi
+
       - name: Build
         if: ${{ inputs.use_make == false }}
         run : |
@@ -385,23 +386,18 @@ jobs:
         run: |
           cd "$CONFIG"
           perl -pi -e 's/-dirty//' ./common/scripts/setlocalversion
-          
-          #Set Kernel Timestamp
-          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Tue Apr 22 05:30:00 UTC 2025"}' ./common/scripts/mkcompile_h
-          
-          #Set Kernel Name
-          if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-            perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")(?!.*\1)/echo "\$\{{ inputs.kernel_name }}"/s' ./common/scripts/setlocalversion
+          if [ -f "build/build.sh" ]; then
+              #Set Kernel Name
+              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "\${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
+              #Set Kernel Timestamp
+              perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Tue Apr 22 05:30:00 UTC 2025"}' ./common/scripts/mkcompile_h
           else
-            perl -0777 -pi -e 's/(echo "\$res")(?!.*\1)/echo "\${{ inputs.kernel_name }}"/s' ./common/scripts/setlocalversion
+              #Set Kernel Name
+              perl -pi -e 's{echo "\${KERNELVERSION}\${file_localversion}\${config_localversion}\${LOCALVERSION}\${scm_version}"}{echo "\${{ inputs.kernel_uname }}"}' /scripts/setlocalversion
+              
+              #Set Kernel Timestamp
+              perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Tue Apr 22 05:30:00 UTC 2025"/' ./common/init/Makefile
           fi
-              
-          #Set Kernel Timestamp
-          perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Sun Apr 20 04:20:00 UTC 2025"/' ./common/init/Makefile
-              
-          #Remove Abi Exports and Error
-          rm -rf ./common/android/abi_gki_protected_exports_*
-          perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
 
       - name: Add Build based configs
         if: ${{ inputs.use_make == true }}
@@ -509,7 +505,7 @@ jobs:
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig || exit 1
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
       - name: Create Bootimgs Folder and Copy Images for Android 12/13
-        if: ${{ (inputs.android_version == 'android12' || inputs.android_version == 'android13') && inputs.use_make == 'false' }}
+        if: ${{ (inputs.android_version == 'android12-' || inputs.android_version == 'android13-' || inputs.android_version == 'android13-') && inputs.use_make == 'false' }}
         run: |
           mkdir bootimgs
           echo "Creating bootimgs folder and copying images..."
@@ -531,6 +527,17 @@ jobs:
           # Create gzip of the Image file
           gzip -n -k -f -9 ./Image > ./Image.gz
 
+      - name: Create ZIP Files for Different Formats
+        if: ${{ inputs.use_make == 'false' }}
+        run: |
+          echo "Creating zip files for all formats..."
+          cd ./AnyKernel3
+          # Create and upload zip for each format
+          ZIP_NAME="${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3.zip"
+          echo "Creating zip file: $ZIP_NAME..."
+          mv ../Image ./Image
+          zip -r "../$ZIP_NAME" ./*
+          rm ./Image
       - name: Android 12 boot image build script
         if: ${{ inputs.android_version == 'android12' && inputs.use_make == 'false' }}
         run: |
@@ -600,6 +607,7 @@ jobs:
       - name: Create Kernel ZIP
         run: |
           echo "Creating kernel ZIP..."
+          
           if [ ${{ inputs.use_make }} == true ]; then
             # Copy Image for make=true builds
             cp $CONFIG/common/out/arch/arm64/boot/Image AnyKernel3/Image
@@ -616,15 +624,15 @@ jobs:
           
           # Create ZIP file
           cd AnyKernel3
-          ZIP_NAME="${{ inputs.kernelsu_variant }}-v${{ env.KSUVER }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3.zip"
+          ZIP_NAME="${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3.zip"
           echo "Creating zip file: $ZIP_NAME..."
           zip -r "../$ZIP_NAME" ./*
-
-      - name: Upload Kernel ZIP 
+  
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.kernelsu_variant }}-kernel-v${{ env.KSUVER }}-${{ env.CONFIG }}-zip
+          name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}
           path: |
             *.zip
-            *.img.gz
+            *.img
             *Image*
