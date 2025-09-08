@@ -17,12 +17,6 @@ on:
         required: false
         type: string
         default: ""
-      kernel_uname:
-        required: false
-        type: string
-      use_make:
-        required: true
-        type: boolean
 jobs:
   build-kernels-a14-6-1:
     strategy:
@@ -75,5 +69,3 @@ jobs:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other || '' }}
-      kernel_uname: ${{ inputs.kernel_uname }}
-      use_make: ${{ inputs.use_make }}
