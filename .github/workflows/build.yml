@@ -41,18 +41,18 @@ jobs:
       CCACHE_HARDLINK: "true"
 
     steps:
-      # - name: Maximize Build Space
-      #  uses: AdityaGarg8/remove-unwanted-software@v5
-      #  with:
-      #    remove-dotnet: 'true'          # Frees ~2 GB
-      #    remove-android: 'true'         # Frees ~9 GB
-      #    remove-haskell: 'true'         # Frees ~5.2 GB
-      #    remove-codeql: 'true'          # Frees ~5.4 GB
-      #    remove-docker-images: 'true'   # Frees ~3.2 GB
-      #    remove-large-packages: 'true'  # Frees ~3.1 GB
-      #    remove-swapfile: 'true'        # Frees ~4 GB
-      #    remove-cached-tools: 'false'   # Avoid unless confirmed safe
-      #    verbose: 'true'                # Enable detailed logging
+       - name: Maximize Build Space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-dotnet: 'true'          # Frees ~2 GB
+          remove-android: 'true'         # Frees ~9 GB
+          remove-haskell: 'true'         # Frees ~5.2 GB
+          remove-codeql: 'true'          # Frees ~5.4 GB
+          remove-docker-images: 'true'   # Frees ~3.2 GB
+          remove-large-packages: 'true'  # Frees ~3.1 GB
+          remove-swapfile: 'true'        # Frees ~4 GB
+          remove-cached-tools: 'false'   # Avoid unless confirmed safe
+          verbose: 'true'                # Enable detailed logging
           
       - name: Set CONFIG Environment Variable
         run: |
@@ -451,7 +451,7 @@ jobs:
           cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./
           cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image.lz4 ./
 
-      - name: Create ZIP Files for Different Formats
+      - name: Create ZIP Files for AnyKernel3
         if: ${{ inputs.use_make == 'false' }}
         run: |
           echo "Creating zip files for all formats..."
