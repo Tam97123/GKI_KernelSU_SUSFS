@@ -7,11 +7,6 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      use_make:
-        description: 'Build with MAKE (get ak3 file only)?'
-        required: true
-        type: boolean
-        default: true
       release_type:
         description: "Choose Release Type"
         required: true
@@ -30,11 +25,6 @@ on:
           - KSU
           - NEXT
         default: NEXT
-      kernel_uname:
-        description: 'Set kernel uname (Exmaple: Kernel uname after 6.1.90(XXX) or leave blank)'
-        required: false
-        type: string
-        default: ""
       kernelsu_branch:
         description: "Choose ksu branch"
         required: true
@@ -58,8 +48,6 @@ jobs:
       kernelsu_variant: ${{ inputs.kernel_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      kernel_uname: ${{ inputs.kernel_uname }}
-      use_make: ${{ inputs.use_make }}
   build-kernels-a13-5-10:
     name: ${{ inputs.kernel_variant }}-Android_13-5.10
     uses: ./.github/workflows/kernel-a13-5-10.yml
@@ -68,8 +56,6 @@ jobs:
       kernelsu_variant: ${{ inputs.kernel_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      kernel_uname: ${{ inputs.kernel_uname }}
-      use_make: ${{ inputs.use_make }}
   build-kernels-a13-5-15:
     name: ${{ inputs.kernel_variant }}-Android_13-5.15
     uses: ./.github/workflows/kernel-a13-5-15.yml
@@ -78,8 +64,6 @@ jobs:
       kernelsu_variant: ${{ inputs.kernel_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      kernel_uname: ${{ inputs.kernel_uname }}
-      use_make: ${{ inputs.use_make }}
   build-kernels-a14-5-15:
     name: ${{ inputs.kernel_variant }}-Android_14-5.15
     uses: ./.github/workflows/kernel-a14-5-15.yml
@@ -88,8 +72,6 @@ jobs:
       kernelsu_variant: ${{ inputs.kernel_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      kernel_uname: ${{ inputs.kernel_uname }}
-      use_make: ${{ inputs.use_make }}
   build-kernels-a14-6-1:
     name: ${{ inputs.kernel_variant }}-Android_14-6.1
     uses: ./.github/workflows/kernel-a14-6-1.yml
@@ -98,8 +80,6 @@ jobs:
       kernelsu_variant: ${{ inputs.kernel_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      kernel_uname: ${{ inputs.kernel_uname }}
-      use_make: ${{ inputs.use_make }}
   build-kernels-a15-6-6:
     name: ${{ inputs.kernel_variant }}-Android_15-6.6
     uses: ./.github/workflows/kernel-a15-6-6.yml
@@ -108,7 +88,6 @@ jobs:
       kernelsu_variant: ${{ inputs.kernel_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      use_make: ${{ inputs.use_make }}
   release:
     if: ${{ inputs.release_type == 'Release' || inputs.release_type == 'Pre-Release' }}
     runs-on: ubuntu-latest
