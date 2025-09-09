@@ -153,22 +153,22 @@ jobs:
           case "${{ inputs.kernelsu_variant }}" in
             "WILD")
               echo "Adding Wild KSU..."
-              git clone
+              git clone --depth=1 --branch wild
               curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash ${{ env.BRANCH }}
               ;;
             "KSU")
               echo "Adding KernelSU Official..."
-              git clone
+              git clone --depth=1 --branch main
               curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash ${{ env.BRANCH }}
               ;;
             "NEXT")
               echo "Adding KernelSU Next..."
-              git clone
+              git clone --depth=1 --branch next
               curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash ${{ env.BRANCH }}
               ;;
             "MKSU")
               echo "Adding KernelSU MKSU..."
-              git clone
+              git clone --depth=1 --branch main
               curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash ${{ env.BRANCH }}
               ;;
           esac
@@ -263,7 +263,12 @@ jobs:
               BASE_VERSION=10200
               ;;
           esac
-          
+           # Verify we're in a git repo and print debug info if not
+          if [ ! -d .git ]; then
+            echo "ERROR: .git not found in $(pwd) - listing files for debug:"
+            ls -la
+            exit 1
+          fi
           COMMIT_COUNT=$(git rev-list --count HEAD)
           KSU_VERSION=$(expr $COMMIT_COUNT + $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
