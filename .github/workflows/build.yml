@@ -153,18 +153,22 @@ jobs:
           case "${{ inputs.kernelsu_variant }}" in
             "WILD")
               echo "Adding Wild KSU..."
+              git clone
               curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash ${{ env.BRANCH }}
               ;;
             "KSU")
               echo "Adding KernelSU Official..."
+              git clone
               curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash ${{ env.BRANCH }}
               ;;
             "NEXT")
               echo "Adding KernelSU Next..."
+              git clone
               curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash ${{ env.BRANCH }}
               ;;
             "MKSU")
               echo "Adding KernelSU MKSU..."
+              git clone
               curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash ${{ env.BRANCH }}
               ;;
           esac
@@ -243,19 +247,19 @@ jobs:
           
           case "${{ inputs.kernelsu_variant }}" in
             "WILD")
-              cd ./Wild_KSU
+              cd Wild_KSU
               BASE_VERSION=10200
               ;;
             "KSU")
-              cd ./KernelSU
+              cd KernelSU
               BASE_VERSION=10200
               ;;
             "NEXT")
-              cd ./KernelSU-Next
+              cd KernelSU-Next
               BASE_VERSION=10200
               ;;
             "MKSU")
-              cd ./KernelSU
+              cd KernelSU
               BASE_VERSION=10200
               ;;
           esac
