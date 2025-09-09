@@ -243,25 +243,25 @@ jobs:
           
           case "${{ inputs.kernelsu_variant }}" in
             "WILD")
-              echo "Applying SUSFS patches for Official KernelSU..."
-              cd "$CONFIG/Wild_KSU/kernel"
+              cd ./Wild_KSU
               BASE_VERSION=10200
               ;;
             "KSU")
-              echo "Applying SUSFS patches for Official KernelSU..."
-              cd "$CONFIG/KernelSU/kernel"
+              cd ./KernelSU
               BASE_VERSION=10200
               ;;
             "NEXT")
-              cd "$CONFIG/KernelSU-Next/kernel"
+              cd ./KernelSU-Next
               BASE_VERSION=10200
               ;;
             "MKSU")
+              cd ./KernelSU
+              BASE_VERSION=10200
               ;;
           esac
           
-          COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" $BASE_VERSION)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          KSU_VERSION=$(expr $COMMIT_COUNT + $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           
       - name: Apply Hooks Patches
