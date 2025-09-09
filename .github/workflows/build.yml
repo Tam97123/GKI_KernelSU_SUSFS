@@ -184,9 +184,9 @@ jobs:
           cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
           
-          case "${{ inputs.kernel_variant }}" in
+          case "${{ inputs.kernelsu_variant }}" in
             "WILD")
-              echo "Applying SUSFS patches for Wild KSU..."
+              echo "Applying SUSFS patches for WILD..."
               cd ./Wild_KSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
@@ -230,10 +230,7 @@ jobs:
               cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
-            "MKSU")
-              echo "Applying SUSFS patches for MKSU..."
-              cd ./KernelS
-              ;;
+
           esac
 
       - name: Getting KernelSU Version
