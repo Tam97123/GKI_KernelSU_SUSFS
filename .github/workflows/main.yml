@@ -61,7 +61,7 @@ jobs:
     uses: ./.github/workflows/kernel-a15-6-6.yml
     secrets: inherit
     with:
-      kernelqqqq_variant: ${{ inputs.kernel_variant }}
+      kernel_variant: ${{ inputs.kernel_variant }}
   release:
     if: ${{ inputs.release_type == 'Release' || inputs.release_type == 'Pre-Release' }}
     runs-on: ubuntu-latest
