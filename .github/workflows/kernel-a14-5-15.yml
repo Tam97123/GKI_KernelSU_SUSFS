@@ -7,7 +7,7 @@ permissions:
 on:
   workflow_call:
     inputs:
-      kernelsu_variant:
+      kernel_variant:
         required: true
         type: string
 jobs:
