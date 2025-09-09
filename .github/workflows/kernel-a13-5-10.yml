@@ -10,13 +10,6 @@ on:
       kernelsu_variant:
         required: true
         type: string
-      kernelsu_branch:
-        required: true
-        type: string
-      kernelsu_branch_other:
-        required: false
-        type: string
-        default: ""
 jobs:
   build-kernels-a13-5-10:
     strategy:
