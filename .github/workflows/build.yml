@@ -255,8 +255,6 @@ jobs:
               BASE_VERSION=10200
               ;;
             "MKSU")
-              cd ./KernelSU
-              BASE_VERSION=10200
               ;;
           esac
           COMMIT_COUNT=$(git rev-list --count HEAD)
