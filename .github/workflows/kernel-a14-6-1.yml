@@ -59,4 +59,4 @@ jobs:
       kernel_version: "6.1"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
-      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      kernel_variant: ${{ inputs.kernel_variant }}
