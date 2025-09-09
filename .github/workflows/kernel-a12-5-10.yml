@@ -57,4 +57,4 @@ jobs:
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
       revision: ${{ matrix.revision }}
-      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      kernel_variant: ${{ inputs.kernel_variant }}
