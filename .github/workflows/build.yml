@@ -12,7 +12,7 @@ on:
       kernel_version:
         required: true
         type: string
-      kernel_variant
+      kernel_variant:
         required: true
         type: string
       sub_level:
