@@ -181,9 +181,6 @@ jobs:
           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
           
           # Apply KSU integration patches
-          cd ./Wild_KSU
-          cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
-          patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
           case "${{ inputs.kernel_variant }}" in
             "WILD")
               echo "Applying SUSFS patches for Official KernelSU..."
