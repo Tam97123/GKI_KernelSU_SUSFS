@@ -385,7 +385,7 @@ jobs:
           
           #Set Kernel Name
           if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-            perl -0777 -pi -e 's/(echo "-\$\{KSU_VERSION\}-TAM")/echo "-\$\{KSU_VERSION\}-TAM"/s' ./common/scripts/setlocalversion
+            perl -0777 -pi -e 's/(echo "-\$\{KSU_VERSION\}")/echo "-\$\{KSU_VERSION\}-TAM"/s' ./common/scripts/setlocalversion
           else
             perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-\$KSUVER-TAM"/s' ./common/scripts/setlocalversion
           fi
