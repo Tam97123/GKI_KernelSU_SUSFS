@@ -294,7 +294,7 @@ jobs:
         run: |
           cd "$CONFIG"
           
-          defconfig="$KERNEL_PATH/common/arch/arm64/configs/gki_defconfig"
+          defconfig="./common/arch/arm64/configs/gki_defconfig"
           defconfig="$defconfig"
           
           echo "Applying kernel configurations one by one..."
