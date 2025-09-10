@@ -294,13 +294,13 @@ jobs:
         run: |
           cd "$CONFIG"
           
-          defconfig=""$defconfig""
+          defconfig="$KERNEL_PATH/common/arch/arm64/configs/gki_defconfig"
+          defconfig="$defconfig"
           
           echo "Applying kernel configurations one by one..."
           
           # KernelSU Core Configuration
           echo "CONFIG_KSU=y" >> "$defconfig"
-          echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
           if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
           fi
