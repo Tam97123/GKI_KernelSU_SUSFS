@@ -297,7 +297,7 @@ jobs:
           echo "Applying kernel configurations one by one..."
           
           # KernelSU Core Configuration
-          echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU=y">>./common/arch/arm64/configs/gki_defconfig
           if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
           fi
@@ -354,7 +354,7 @@ jobs:
           
           # SUSFS Debugging and Security
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> 
+          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
           if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
@@ -590,7 +590,7 @@ jobs:
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-lz4.img ../${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-boot-lz4.img
           
-      - name: Upload Build Artifacts
+      - name: Prepare to upload build artifacts
         run: |
           # Prepare sublevel for naming
           SUBLEVEL_FOR_NAME="${{ inputs.sub_level }}"
