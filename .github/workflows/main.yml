@@ -136,9 +136,14 @@ jobs:
             echo "${name}_REF=$ref" >> $GITHUB_ENV
             echo "${name}_URL=$url" >> $GITHUB_ENV
           }
-      
-          [[ "$BRANCH" == "Stable" ]] && MODE="tag" || MODE="commit"
-
+          [[ "$BRANCH" == "Dev" ]] && MODE="tag" || MODE="commit"
+          if [[ "${{ inputs.kernelsu_variant }}" =~ ^(KSU|MKSU)$ ]]; then
+                echo "BRANCH=-s main" >> $GITHUB_ENV
+              elif [[ "${{ inputs.kernelsu_variant }}" == "NEXT" ]]; then
+                echo "BRANCH=-s next" >> $GITHUB_ENV
+              elif [[ "${{ inputs.kernelsu_variant }}" == "WILD" ]]; then
+                echo "BRANCH=-s wild" >> $GITHUB_ENV
+              fi
           get_ref "WILD" "https://github.com/WildKernels/Wild_KSU.git" "WildKernels/Wild_KSU" "$MODE"
           get_ref "KSU" "https://github.com/tiann/KernelSU.git" "tiann/KernelSU" "$MODE"
           get_ref "NEXT" "https://github.com/KernelSU-Next/KernelSU-Next.git" "KernelSU-Next/KernelSU-Next" "$MODE"
