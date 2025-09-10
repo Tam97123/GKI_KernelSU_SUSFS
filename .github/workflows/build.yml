@@ -232,7 +232,7 @@ jobs:
 
       - name: Getting KernelSU Version
         run: |
-        cd "$CONFIG"
+         cd "$CONFIG"
           case "${{ inputs.kernelsu_variant }}" in
             "WILD")
               echo "Applying SUSFS patches for Official KernelSU..."
