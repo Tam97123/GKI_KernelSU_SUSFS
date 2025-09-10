@@ -147,7 +147,7 @@ jobs:
       - name: Add KernelSU
         run: |
           cd "$CONFIG"
-          case "${{ inputs.kernelsu_variant }}" in
+          case "${{ inputs.kernel_variant }}" in
             "WILD")
               echo "Adding Wild KSU..."
               curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s wild
@@ -181,7 +181,7 @@ jobs:
           cd ./Wild_KSU
           cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
           patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
-          case "${{ inputs.kernelsu_variant }}" in
+          case "${{ inputs.kernel_variant }}" in
             "WILD")
               echo "Applying SUSFS patches for Official KernelSU..."
               cd ./Wild_KSU
@@ -232,8 +232,8 @@ jobs:
 
       - name: Getting KernelSU Version
         run: |
-         cd "$CONFIG"
-          case "${{ inputs.kernelsu_variant }}" in
+          cd "$CONFIG"
+          case "${{ inputs.kernel_variant }}" in
             "WILD")
               echo "Applying SUSFS patches for Official KernelSU..."
               cd ./Wild_KSU
@@ -258,10 +258,10 @@ jobs:
       - name: Apply Hooks Patches
         run: |
           cd "$CONFIG/common"
-          if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ]; then
+          if [ "${{ inputs.kernel_variant }}" == "NEXT" ]; then
             cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
             patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
-          elif [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
+          elif [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
             cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
             patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
           fi
@@ -301,7 +301,7 @@ jobs:
           # KernelSU Core Configuration
           echo "CONFIG_KSU=y" >> "$defconfig"
           echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
-          if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
+          if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
           fi
           
@@ -359,7 +359,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> 
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
-          if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
+          if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
             echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
           else
             echo "CONFIG_KSU_SUSFS_SUS_SU=y" >> "$defconfig"
