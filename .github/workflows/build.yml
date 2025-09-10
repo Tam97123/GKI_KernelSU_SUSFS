@@ -12,9 +12,6 @@ on:
       kernel_version:
         required: true
         type: string
-      kernel_variant:
-        required: true
-        type: string
       sub_level:
         required: true
         type: string
@@ -51,6 +48,8 @@ jobs:
 
           # Set CONFIG as an environment variable for future steps
           echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+
+
 
       - name: Setup Build Environment
         run: |
@@ -147,36 +146,30 @@ jobs:
 
       - name: Add KernelSU
         run: |
-          echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG"
-      
-          case "${{ inputs.kernel_variant }}" in
+          case "${{ inputs.kernelsu_variant }}" in
             "WILD")
               echo "Adding Wild KSU..."
-              curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash dev
+              curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s wild
               ;;
             "KSU")
               echo "Adding KernelSU Official..."
-              curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash dev
+              curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
               ;;
             "NEXT")
               echo "Adding KernelSU Next..."
-              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash dev
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
               ;;
             "MKSU")
               echo "Adding KernelSU MKSU..."
-              curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash dev
+              curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -s main
               ;;
           esac
-          
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
-          echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG"
           
-          echo "Applying SUSFS patches..."
-          
-          # Copy SUSFS patches
+          # Apply core SUSFS patches
           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
           cd common
           patch -p1 --forward < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch
@@ -184,16 +177,17 @@ jobs:
           cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
           
+          # Apply KSU integration patches
+          cd ./Wild_KSU
+          cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
+          patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
           case "${{ inputs.kernelsu_variant }}" in
             "WILD")
-              echo "Applying SUSFS patches for WILD..."
+              echo "Applying SUSFS patches for Official KernelSU..."
               cd ./Wild_KSU
-              cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
-              patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
-              
               cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
-              
+          
               cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_rules.c.patch ./
               patch -p1 --forward < fix_rules.c.patch
 
@@ -230,20 +224,23 @@ jobs:
               cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
-
+            "MKSU")
+              echo "Applying SUSFS patches for MKSU..."
+              cd ./KernelS
+              ;;
           esac
 
       - name: Getting KernelSU Version
         run: |
-          echo "Changing to configuration directory: $CONFIG..."
-          cd "$CONFIG"
-          
-          case "${{ inputs.kernel_variant }}" in
+        cd "$CONFIG"
+          case "${{ inputs.kernelsu_variant }}" in
             "WILD")
+              echo "Applying SUSFS patches for Official KernelSU..."
               cd ./Wild_KSU
               BASE_VERSION=10200
               ;;
             "KSU")
+              echo "Applying SUSFS patches for Official KernelSU..."
               cd ./KernelSU
               BASE_VERSION=10200
               ;;
@@ -254,23 +251,21 @@ jobs:
             "MKSU")
               ;;
           esac
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          KSU_VERSION=$(expr $COMMIT_COUNT + $BASE_VERSION)
+          COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
+          KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           
       - name: Apply Hooks Patches
         run: |
           cd "$CONFIG/common"
           if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ]; then
-            echo "Applying hooks for KernelSU-Next..."
             cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
             patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
           elif [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
-            echo "Applying hooks for Wild KSU..."
             cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
             patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
           fi
-
+          
       - name: Apply Hide Stuff Patches
         run: |
           cd "$CONFIG/common"
@@ -299,14 +294,15 @@ jobs:
         run: |
           cd "$CONFIG"
           
-          defconfig="./common/arch/arm64/configs/gki_defconfig"
+          defconfig=""$defconfig""
           
           echo "Applying kernel configurations one by one..."
           
           # KernelSU Core Configuration
           echo "CONFIG_KSU=y" >> "$defconfig"
-          if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
-            echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
+          if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
+            echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
           fi
           
           # Mountify Support
@@ -361,11 +357,12 @@ jobs:
           
           # SUSFS Debugging and Security
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> "$defconfig"
-          if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
-            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> 
+          echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
+          if [ "${{ inputs.kernelsu_variant }}" == "NEXT" ] || [ "${{ inputs.kernelsu_variant }}" == "WILD" ]; then
+            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
           else
-            echo "CONFIG_KSU_SUSFS_SUS_SU=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_KSU_SUSFS_SUS_SU=y" >> "$defconfig"
           fi
           
           # Build Optimization Configuration
@@ -388,9 +385,9 @@ jobs:
           
           #Set Kernel Name
           if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-            perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-v$KSUVER-Tam"/s' ./common/scripts/setlocalversion
+            perl -0777 -pi -e 's/(echo "-\$\{KSU_VERSION\}-TAM")/echo "-\$\{KSU_VERSION\}-TAM"/s' ./common/scripts/setlocalversion
           else
-            perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-v$KSUVER-Tam/s' ./common/scripts/setlocalversion
+            perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-\$KSUVER-TAM"/s' ./common/scripts/setlocalversion
           fi
 
           #Set Kernel Timestamp
@@ -607,7 +604,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.kernel_variant }}-${{ env.KSUVER }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}
+          name: ${{ inputs.kernel_variant }}-${{ env.KSUVER }}-kernel-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}
           path: |
             *.zip
             *.img
