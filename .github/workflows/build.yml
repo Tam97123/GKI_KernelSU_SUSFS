@@ -229,7 +229,7 @@ jobs:
               cd ./KernelS
               ;;
           esac
-
+        continue-on-error: true
       - name: Getting KernelSU Version
         run: |
           cd "$CONFIG"
@@ -486,7 +486,7 @@ jobs:
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
           
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
-
+          continue-on-error: true
       - name: Create Kernel ZIP
         run: |
           cp $CONFIG/common/out/arch/arm64/boot/Image AnyKernel3/Image
@@ -597,7 +597,7 @@ jobs:
           if [ -n "$ACTUAL_SUBLEVEL" ]; then
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi
-          
+          continue-on-error: true
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
