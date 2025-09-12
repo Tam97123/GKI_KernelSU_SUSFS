@@ -13,7 +13,7 @@ on:
 jobs:
   build-kernels-a13-5-10:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - sub_level: "189"
