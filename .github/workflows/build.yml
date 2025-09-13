@@ -82,7 +82,7 @@ jobs:
           
           git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
-          git clone https://github.com/Tam97123/kernel_patches.git
+          git clone https://github.com/WildPlusKernel/kernel_patches.git
 
       - name: Initialize and Sync Kernel Source
         run: |
@@ -229,7 +229,7 @@ jobs:
               cd ./KernelS
               ;;
           esac
-        continue-on-error: true
+          
       - name: Getting KernelSU Version
         run: |
           cd "$CONFIG"
