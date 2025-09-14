@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: "Choose Release Type"
+        description: 'Choose Release Type'
         required: true
         type: choice
         options:
@@ -16,6 +16,10 @@ on:
           - Pre-Release
           - Release
         default: Actions
+      version:
+        description: 'Custom kernel version name (Ex: Characters after 5.10.198 or leave blank to use default kernel version name)'
+        required: false
+        type: string
       kernel_variant:
         description: 'Choose Kernel Variant'
         required: true
@@ -73,7 +77,7 @@ jobs:
       - build-kernels-a14-6-1
       - build-kernels-a15-6-6
     env:
-      GITHUB_TOKEN: ${{ secrets.GKI_KERNELS_BUILD_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_NAME: "GKI Kernels With KernelSU Next & SUSFS v1.5.9"
     steps:
       - name: Maximize Build Space
