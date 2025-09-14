@@ -16,7 +16,7 @@ on:
 jobs:
   build-kernels-a14-6-1:
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - sub_level: "57"
