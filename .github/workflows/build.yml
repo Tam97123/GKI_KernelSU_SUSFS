@@ -616,7 +616,6 @@ jobs:
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi
       - name: Upload Build Artifacts
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.kernel_variant }}-${{ env.KSUVER }}-kernel-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}
