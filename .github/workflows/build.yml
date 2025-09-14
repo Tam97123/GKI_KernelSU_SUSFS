@@ -166,10 +166,6 @@ jobs:
               echo "Adding KernelSU Next..."
               curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
               ;;
-            "MKSU")
-              echo "Adding KernelSU MKSU..."
-              curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -s main
-              ;;
           esac
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
@@ -231,11 +227,6 @@ jobs:
 
               cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
-              ;;
-            "MKSU")
-              echo "Applying SUSFS patches for MKSU..."
-              cd ./KernelS
-              cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               ;;
           esac
           
@@ -394,15 +385,15 @@ jobs:
           #Set Kernel Name
           if [ ! -z ${{ inputs.version }} ]; then
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              perl -0777 -pi -e 's/(echo "-v\$\{KSU_VERSION\}-Tam")/echo "-v\$\{KSU_VERSION\}-Tam"/s' ./common/scripts/setlocalversion
-            else
-              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-v\$KSUVER-Tam"/s' ./common/scripts/setlocalversion
-            fi
-          else
-            if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
               perl -0777 -pi -e 's/(echo "${{ inputs.version }}")/echo "${{ inputs.version }}"/s' ./common/scripts/setlocalversion
             else
               perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "${{ inputs.version }}"/s' ./common/scripts/setlocalversion
+            fi
+          else
+            if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
+              perl -0777 -pi -e 's/(echo "-v\$\{KSU_VERSION\}-Tam")/echo "-v\$\{KSU_VERSION\}-Tam"/s' ./common/scripts/setlocalversion
+            else
+              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-v\$KSUVER-Tam"/s' ./common/scripts/setlocalversion
             fi
           fi
 
