@@ -176,7 +176,7 @@ jobs:
           cat << 'EOF' > release_body.md
       
           Features:
-          -> NEXT Kernels & Others
+          -> ${{ inputs.kernel_variant }} Kernels & Others
           -> Multi Manager Support for WILD Manager & KernelSU Next Manager (Only Install One)
           -> SUSFS ඞ v1.5.9
           -> Scope-Minimized Manual hooks v1.4
