@@ -362,12 +362,6 @@ jobs:
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
-          if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
-            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
-          else
-            echo "CONFIG_KSU_SUSFS_SUS_SU=y" >> "$defconfig"
-          fi
-          
           # Build Optimization Configuration
           echo "CONFIG_LTO_CLANG_THIN=y" >> "$defconfig"
           echo "CONFIG_LTO_CLANG=y" >> "$defconfig"
