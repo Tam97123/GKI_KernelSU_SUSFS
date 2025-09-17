@@ -85,7 +85,9 @@ jobs:
           
           git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
+          git clone https://github.com/ShirkNeko/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone https://github.com/WildKernels/kernel_patches.git
+          git clone https://github.com/ShirkNeko/SukiSU_patch.git
 
       - name: Initialize and Sync Kernel Source
         run: |
@@ -165,6 +167,9 @@ jobs:
             "NEXT")
               echo "Adding KernelSU Next..."
               curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+            "SUKI")
+              echo "Adding KernelSU SukiSU..."
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
               ;;
           esac
       - name: Apply SUSFS Patches for KernelSU Variants
@@ -188,12 +193,7 @@ jobs:
               
               cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
-
-              #if [ "${{ inputs.android_version }}" != "android14" ] && [ "${{ inputs.kernel_version }}" != "6.1" ]; then
-              #cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_rules.c.patch ./
-              #patch -p1 --forward < fix_rules.c.patch
-              #fi
-
+              
               cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
@@ -205,9 +205,6 @@ jobs:
               cd ./KernelSU
                cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch
-
-              #cp ../../kernel_patches/mksu/fix_core_hook.c.patch ./
-              #patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
@@ -220,17 +217,18 @@ jobs:
               
               cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
-
-              #if [ "${{ inputs.android_version }}" != "android14" ] && [ "${{ inputs.kernel_version }}" != "6.1" ]; then
-              #cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_rules.c.patch ./
-              #patch -p1 --forward < fix_rules.c.patch
-              #fi
-
+              
               cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
               cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
+              ;;
+              "SUKI")
+              echo "Applying SUSFS patches for Official KernelSU..."
+              cd ./KernelSU
+               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
+              patch -p1 --forward < 10_enable_susfs_for_ksu.patch
               ;;
           esac
           
@@ -239,7 +237,7 @@ jobs:
           cd "$CONFIG"
           case "${{ inputs.kernel_variant }}" in
             "WILD")
-              echo "Applying SUSFS patches for Official KernelSU..."
+              echo "Applying SUSFS patches for WildSU..."
               cd ./Wild_KSU
               BASE_VERSION=10200
               ;;
@@ -249,9 +247,11 @@ jobs:
               BASE_VERSION=10200
               ;;
             "NEXT")
+              echo "Applying SUSFS patches for KernelSU Next..."
               cd ./KernelSU-Next
               BASE_VERSION=10200
               ;;
+            
           esac
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
@@ -266,6 +266,10 @@ jobs:
           elif [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
             cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
             patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
+          elif [ "${{ inputs.kernelsu_variant }}" == "SUKI" ]; then
+            echo "Applying hooks for SUKI..."
+            cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
+            patch -p1 -F 3 < syscall_hooks.patch
           fi
           
       - name: Apply Hide Stuff Patches
