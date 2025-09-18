@@ -368,24 +368,25 @@ jobs:
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
           
           # Suki Zram and Kpm
-          echo "CONFIG_DEFAULT_BBR=y" >> "$defconfig"
-          echo "CONFIG_KPM=y" >> "$defconfig"
-          echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
-          echo "CONFIG_ZRAM=y" >> "$defconfig"
-          echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
-          echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
-          echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
-          if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
-            sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$CONFIG/common/modules.bzl"
-            echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"'
+          if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
+            echo "CONFIG_DEFAULT_BBR=y" >> "$defconfig"
+            echo "CONFIG_KPM=y" >> "$defconfig"
+            echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
+            echo "CONFIG_ZRAM=y" >> "$defconfig"
+            echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
+            echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
+            echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
+            if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
+              sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$CONFIG/common/modules.bzl"
+              echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"'
+            fi
+            echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
+            echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
+            echo "CONFIG_CRYPTO_LZ4KD=y" >> "$defconfig"
+            echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
+            echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
+            echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
           fi
-          echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
-          echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
-          echo "CONFIG_CRYPTO_LZ4KD=y" >> "$defconfig"
-          echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
-          echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
-          echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
-
           # Remove check_defconfig
           #sed -i 's/check_defconfig//' ./common/build.config.gki
 
