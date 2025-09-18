@@ -378,7 +378,7 @@ jobs:
             echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
             if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
               sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$CONFIG/common/modules.bzl"
-              echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"'
+              echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
             fi
             echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
