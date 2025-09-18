@@ -28,6 +28,7 @@ on:
           - WILD
           - KSU
           - NEXT
+          - SUKI
         default: NEXT
 jobs:
   build-kernels-a12-5-10:
