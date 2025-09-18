@@ -34,19 +34,6 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      # # - name: Maximize Build Space
-        # uses: AdityaGarg8/remove-unwanted-software@v5
-        # with:
-          # remove-dotnet: 'true'          # Frees ~2 GB
-          # remove-android: 'true'         # Frees ~9 GB
-          # remove-haskell: 'true'         # Frees ~5.2 GB
-          # remove-codeql: 'true'          # Frees ~5.4 GB
-          # remove-docker-images: 'true'   # Frees ~3.2 GB
-          # remove-large-packages: 'true'  # Frees ~3.1 GB
-          # remove-swapfile: 'true'        # Frees ~4 GB
-          # remove-cached-tools: 'false'   # Avoid unless confirmed safe
-          # verbose: 'true'                # Enable detailed logging
-          
       - name: Set CONFIG Environment Variable
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -251,6 +238,11 @@ jobs:
               cd ./KernelSU-Next
               BASE_VERSION=10200
               ;;
+            "SUKI")
+              echo "Applying SUSFS patches for SukiSU-Ultra..."
+              cd ./KernelSU
+              BASE_VERSION=10200 
+              ;;
             
           esac
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
@@ -269,7 +261,7 @@ jobs:
           elif [ "${{ inputs.kernelsu_variant }}" == "SUKI" ]; then
             echo "Applying hooks for SUKI..."
             cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
-            patch -p1 -F 3 < syscall_hooks.patch
+            patch -p1 --forward -F 3 < syscall_hooks.patch
           fi
           
       - name: Apply Hide Stuff Patches
@@ -304,7 +296,7 @@ jobs:
           
           # KernelSU Core Configuration
           echo "CONFIG_KSU=y" >> "$defconfig"
-          if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
+          if [ "${{ inputs.kernel_variant }}" == "KSU" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
           else
             echo "CONFIG_KSU_KPROBES_HOOK=y" >> "$defconfig"
@@ -363,17 +355,37 @@ jobs:
           # SUSFS Debugging and Security
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> "$defconfig"
-          if [ "${{ inputs.kernel_variant }}" == "NEXT" ] || [ "${{ inputs.kernel_variant }}" == "WILD" ]; then
-            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
-          else
+          if [ "${{ inputs.kernel_variant }}" == "KSU" ]; then
             echo "CONFIG_KSU_SUSFS_SUS_SU=y" >> "$defconfig"
+          else
+            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
           fi
+          
           # Build Optimization Configuration
           echo "CONFIG_LTO_CLANG_THIN=y" >> "$defconfig"
           echo "CONFIG_LTO_CLANG=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
           
+          # Suki Zram and Kpm
+          echo "CONFIG_DEFAULT_BBR=y" >> "$defconfig"
+          echo "CONFIG_KPM=y" >> "$defconfig"
+          echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
+          echo "CONFIG_ZRAM=y" >> "$defconfig"
+          echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
+          echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
+          echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
+          if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
+            sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$CONFIG/common/modules.bzl"
+            echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"'
+          fi
+          echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
+          echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
+          echo "CONFIG_CRYPTO_LZ4KD=y" >> "$defconfig"
+          echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
+          echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
+          echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
+
           # Remove check_defconfig
           #sed -i 's/check_defconfig//' ./common/build.config.gki
 
@@ -389,13 +401,13 @@ jobs:
           #Set Kernel Name
           if [ ! -z ${{ inputs.version }} ]; then
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              perl -0777 -pi -e 's/(echo "${{ inputs.version }}")/echo "${{ inputs.version }}"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "${{ inputs.version }}"/s' ./common/scripts/setlocalversion
             else
               perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "${{ inputs.version }}"/s' ./common/scripts/setlocalversion
             fi
           else
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              perl -0777 -pi -e 's/(echo "-v\$\{KSU_VERSION\}-Tam")/echo "-v\$\{KSU_VERSION\}-Tam"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-v\$\{KERNELVERSION\}-Tam"/s' ./common/scripts/setlocalversion
             else
               perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-v\$KSUVER-Tam"/s' ./common/scripts/setlocalversion
             fi
@@ -449,7 +461,7 @@ jobs:
 
 
       - name: Build Kernel
-        run: |
+        run: make -j1 V=1
           KERNEL_PATH="$GITHUB_WORKSPACE/$CONFIG"
           CLANG_BIN_PATH="${{ env.CLANG_BIN_PATH }}"
           CLANG_VERSION="${{ env.CLANG_VERSION }}"
