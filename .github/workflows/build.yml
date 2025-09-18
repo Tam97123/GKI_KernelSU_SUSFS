@@ -462,7 +462,7 @@ jobs:
 
 
       - name: Build Kernel
-        run: make -j1 V=1
+        run: |
           KERNEL_PATH="$GITHUB_WORKSPACE/$CONFIG"
           CLANG_BIN_PATH="${{ env.CLANG_BIN_PATH }}"
           CLANG_VERSION="${{ env.CLANG_VERSION }}"
