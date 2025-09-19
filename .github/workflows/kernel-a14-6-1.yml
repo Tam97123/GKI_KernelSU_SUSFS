@@ -5,7 +5,14 @@ permissions:
   actions: write   # Allows triggering actions
 
 on:
-  workflow_call
+  workflow_call:
+    inputs:
+      kernel_variant:
+        required: true
+        type: string
+      version:
+        required: false
+        type: string
 
 jobs:
   build-kernels-a14-6-1:
@@ -56,3 +63,5 @@ jobs:
       kernel_version: "6.1"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
+      kernel_variant: ${{ inputs.kernel_variant }}
+      version: ${{ inputs.version }}
