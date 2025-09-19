@@ -5,14 +5,8 @@ permissions:
   actions: write   # Allows triggering actions
 
 on:
-  workflow_call:
-    inputs:
-      kernel_variant:
-        required: true
-        type: string
-      version:
-        required: false
-        type: string
+  workflow_call
+
 jobs:
   build-kernels-a13-5-15:
     strategy:
@@ -56,5 +50,3 @@ jobs:
       kernel_version: "5.15"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
-      kernel_variant: ${{ inputs.kernel_variant }}
-      version: ${{ inputs.version }}
