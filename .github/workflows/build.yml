@@ -214,8 +214,8 @@ jobs:
               "SUKI")
               echo "Applying SUSFS patches for Official KernelSU..."
               cd ./KernelSU
-               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
-              patch -p1 --forward < 10_enable_susfs_for_ksu.patch
+              #cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
+              #patch -p1 --forward < 10_enable_susfs_for_ksu.patch
               ;;
           esac
           
