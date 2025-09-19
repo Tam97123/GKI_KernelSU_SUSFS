@@ -6,13 +6,7 @@ permissions:
 
 on:
   workflow_call:
-    inputs:
-      kernel_variant:
-        required: true
-        type: string
-      version:
-        required: false
-        type: string
+
 jobs:
   build-kernels-a12:
     strategy:
@@ -60,5 +54,4 @@ jobs:
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
       revision: ${{ matrix.revision }}
-      kernel_variant: ${{ inputs.kernel_variant }}
-      version: ${{ inputs.version }}
+
