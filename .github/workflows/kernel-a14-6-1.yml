@@ -5,7 +5,14 @@ permissions:
   actions: write   # Allows triggering actions
 
 on:
-  workflow_call
+  workflow_call:
+    inputs:
+      kernel_variant:
+        required: true
+        type: string
+      version:
+        required: false
+        type: string
 
 jobs:
   build-kernels-a14-6-1:
@@ -13,6 +20,10 @@ jobs:
       fail-fast: true
       matrix:
         include:
+          - sub_level: "25"
+            os_patch_level: "2023-10"
+          - sub_level: "43"
+            os_patch_level: "2023-11"
           - sub_level: "57"
             os_patch_level: "2024-01"
           - sub_level: "68"
@@ -47,6 +58,8 @@ jobs:
             os_patch_level: "2025-06"
           - sub_level: "141"
             os_patch_level: "2025-07"
+          - sub_level: "145"
+            os_patch_level: "2025-08"
           - sub_level: "X"
             os_patch_level: "lts"
     uses: ./.github/workflows/build.yml
@@ -56,3 +69,5 @@ jobs:
       kernel_version: "6.1"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
+      kernel_variant: ${{ inputs.kernel_variant }}
+      version: ${{ inputs.version }}
