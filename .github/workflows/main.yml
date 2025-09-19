@@ -17,7 +17,7 @@ on:
         default: Release
       kernel_variant:
         description: 'Choose Kernel Variant'
-        required: true
+        required: false
         type: choice
         options:
           - WILD
