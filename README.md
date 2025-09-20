@@ -33,7 +33,7 @@ Follow the steps for GKI:
 - **KernelSU**: Developed by [tiann](https://github.com/tiann/KernelSU).
 - **KernelSU-Next**: Developed by [rifsxd](https://github.com/KernelSU-Next/KernelSU-Next).
 - **Wild KSU**: Developed by [TheWildJames](https://github.com/WildKernels/GKI_KernelSU_SUSFS).
-- **SukiSU-Ultra**: Developed by [ShirkNeko](https://github.com/ShirkNeko/GKI_KernelSU_SUSFS)
+- **SukiSU-Ultra**: Developed by [ShirkNeko](https://github.com/ShirkNeko/GKI_KernelSU_SUSFS).
 - **SUSFS**: Developed by [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git).
 - **SUSFS Module**: Developed by [sidex15](https://github.com/sidex15).
 - **Sultan Kernels**: Developed by [kerneltoast](https://github.com/kerneltoast).
