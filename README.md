@@ -14,22 +14,6 @@ By flashing this kernel, **YOU** are choosing to make these modifications. If so
 
 ---
 
-# Kernels:
- 
-[GKI](https://github.com/WildKernels/GKI_KernelSU_SUSFS)  
-[Sultan](https://github.com/WildKernels/Sultan_KernelSU_SUSFS)  
-[OnePlus](https://github.com/WildKernels/OnePlus_KernelSU_SUSFS)  
-
----
-
-# Other Links:
-
-[Kernel Patches](https://github.com/WildKernels/kernel_patches)  
-[Old Build Scripts](https://github.com/TheWildJames/kernel_build_scripts)  
-[Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher)  
-
----
-
 # Installation instructions: 
 
 Follow the steps for GKI:  
@@ -48,7 +32,8 @@ Follow the steps for GKI:
 
 - **KernelSU**: Developed by [tiann](https://github.com/tiann/KernelSU).
 - **KernelSU-Next**: Developed by [rifsxd](https://github.com/KernelSU-Next/KernelSU-Next).
-- **Magic-KSU**: Developed by [5ec1cff](https://github.com/5ec1cff/KernelSU).
+- **Wild KSU**: Developed by [TheWildJames](https://github.com/WildKernels/GKI_KernelSU_SUSFS).
+- **SukiSU-Ultra**: Developed by [ShirkNeko](https://github.com/ShirkNeko/GKI_KernelSU_SUSFS)
 - **SUSFS**: Developed by [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git).
 - **SUSFS Module**: Developed by [sidex15](https://github.com/sidex15).
 - **Sultan Kernels**: Developed by [kerneltoast](https://github.com/kerneltoast).
