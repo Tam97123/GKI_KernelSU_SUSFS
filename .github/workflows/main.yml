@@ -195,7 +195,7 @@ jobs:
           -> https://github.com/sidex15/ksu_module_susfs
       
           Managers:
-          -> WildSU: [Github](https://github.com/WildKernels/Wild_KSU) [Telegram](https://t.me/WildKernels)
+          -> Wild-KSU: [Github](https://github.com/WildKernels/Wild_KSU) [Telegram](https://t.me/WildKernels)
           -> KernelSU: [Github](https://github.com/tiann/KernelSU) [Telegram](https://t.me/KernelSU_group)
           -> KernelSU-Next: [Github](https://github.com/KernelSU-Next/KernelSU-Next) [Telegram](https://t.me/ksunext_ci)
           -> SukiSU-Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
@@ -204,7 +204,7 @@ jobs:
           -> WildSU: [${{ env.WILD_REF }}](${{ env.WILD_URL }})
           -> KernelSU: [${{ env.KSU_REF }}](${{ env.KSU_URL }})
           -> KernelSU Next: [${{ env.NEXT_REF }}](${{ env.NEXT_URL }})
-          -> SukiSU-Ultra: 
+          -> SukiSU-Ultra: [${{ env.SUKI_REF }}](${{ env.SUKI_URL }})
           -> SUSFS4KSU: 
             -> gki-android12-5.10: [${{ env.COMMIT_HASH_gki_android12_5_10 }}](${{ env.COMMIT_URL_gki_android12_5_10 }})
             -> gki-android13-5.10: [${{ env.COMMIT_HASH_gki_android13_5_10 }}](${{ env.COMMIT_URL_gki_android13_5_10 }})
