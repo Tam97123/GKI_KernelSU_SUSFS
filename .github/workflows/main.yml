@@ -3,6 +3,7 @@ name: Build GKI Kernels
 permissions:
   contents: write
   actions: write
+  workflows: write
 
 on:
   workflow_dispatch:
