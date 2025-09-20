@@ -3,7 +3,6 @@ name: Build GKI Kernels
 permissions:
   contents: write
   actions: write
-  workflows: write
 
 on:
   workflow_dispatch:
@@ -79,7 +78,7 @@ jobs:
       - build-kernels-a14-6-1
       - build-kernels-a15-6-6
     env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      TOKEN: ${{ secrets.GH_TOKEN }}
       RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.9"
     steps:
       - name: Maximize Build Space
