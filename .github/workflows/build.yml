@@ -183,6 +183,13 @@ jobs:
               echo "Applying SUSFS patches for Wild KSU..."
               cd ./Wild_KSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
+              patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
+
+              # Skip fix_rules.c.patch for Android 14 with kernel 6.1
+              #if [ "${{ inputs.android_version }}" != "android14" ] && [ "${{ inputs.kernel_version }}" != "6.1" ]; then
+              #  cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_rules.c.patch ./
+              #  patch -p1 --forward < fix_rules.c.patch
+              #fi
               
               cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
