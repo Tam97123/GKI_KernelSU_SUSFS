@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔥 Wild Kernels for Android
+# 🌟 GKI Kernels for Android
 
 [![KernelSU](https://img.shields.io/badge/KernelSU-Supported-green)](https://kernelsu.org/)
 [![SUSFS](https://img.shields.io/badge/SUSFS-Integrated-orange)](https://gitlab.com/simonpunk/susfs4ksu)
