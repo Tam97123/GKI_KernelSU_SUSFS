@@ -13,6 +13,7 @@ on:
           or "all" to build every kernel.
         required: true
         type: string
+        default: a
       kernel_uname:
         description: 'Custom kernel version name (Ex: Characters after 5.10.198 or leave blank to use default kernel version uname)'
         required: false
