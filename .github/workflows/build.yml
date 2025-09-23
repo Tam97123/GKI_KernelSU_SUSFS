@@ -236,12 +236,12 @@ jobs:
             "KSU")
               echo "Applying SUSFS patches for Official KernelSU..."
               cd ./KernelSU/kernel
-              BASE_VERSION=10200
+              BASE_VERSION=10199
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
               cd ./KernelSU-Next/kernel
-              BASE_VERSION=10200
+              BASE_VERSION=1O192
               ;;
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
