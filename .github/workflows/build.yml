@@ -255,7 +255,7 @@ jobs:
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          echo $KSUVER
+          echo "KSUVER=$KSU_VERSION"
           
       - name: Apply Hooks Patches
         run: |
@@ -417,16 +417,16 @@ jobs:
           if [ ! -z ${{ inputs.kernel_uname }} ]; then
             echo "${{ inputs.kernel_uname }}"
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-${{ inputs.android_version }}-${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
             else
-              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-${{ inputs.android_version }}-${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
             fi
           else
             echo "Didn't set kernel uname! Set to default"
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-v\$\{KERNELVERSION\}-Tam"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-${{ inputs.android_version }}-v\$\{KERNELVERSION\}-Tam"/s' ./common/scripts/setlocalversion
             else
-              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-v\$KSUVER-Tam"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-${{ inputs.android_version }}-v\$KSUVER-Tam"/s' ./common/scripts/setlocalversion
             fi
           fi
 
