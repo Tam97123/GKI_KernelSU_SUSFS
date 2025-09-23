@@ -250,6 +250,9 @@ jobs:
               ;;
             
           esac
+          echo "CONFIG=$CONFIG"
+          echo "BASE_VERSION=$BASE_VERSION"
+          echo "COMMIT_COUNT=$COMMIT_COUNT"
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
