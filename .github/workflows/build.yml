@@ -304,7 +304,7 @@ jobs:
       - name: Apply Hide Stuff Patches
         run: |
           cd "$CONFIG/common"
-          if [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
+          if [ "${{ inputs.kernelsu_variant }}" == "SUKI" ]; then
             cp ../../SukiSU_patch/69_hide_stuff.patch ./
             patch -p1 -F 3 < 69_hide_stuff.patch
           else
