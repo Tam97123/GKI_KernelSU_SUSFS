@@ -246,7 +246,7 @@ jobs:
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
               cd ./KernelSU/kernel
-              BASE_VERSION=13087 
+              BASE_VERSION=13092 
               ;;
           esac
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
