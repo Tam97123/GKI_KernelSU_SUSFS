@@ -36,6 +36,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      kernel_uname: ${{ inputs.kernel_uname }}
 
   build-kernels-a13-5-10:
     name: ${{ inputs.kernel_variant }}-Android_13-5.10
@@ -44,6 +45,8 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      kernel_uname: ${{ inputs.kernel_uname }}
+      
   build-kernels-a13-5-15:
     name: ${{ inputs.kernel_variant }}-Android_13-5.15
     if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a13-5.15')
@@ -51,6 +54,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      kernel_uname: ${{ inputs.kernel_uname }}
 
   build-kernels-a14-5-15:
     name: ${{ inputs.kernel_variant }}-Android_14-5.15
@@ -59,6 +63,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      kernel_uname: ${{ inputs.kernel_uname }}
 
   build-kernels-a14-6-1:
     name: ${{ inputs.kernel_variant }}-Android_14-6.1
@@ -75,4 +80,4 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
-      
+      kernel_uname: ${{ inputs.kernel_uname }}
