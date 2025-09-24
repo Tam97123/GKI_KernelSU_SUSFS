@@ -471,7 +471,7 @@ jobs:
           else
             echo "Didn't set kernel uname! Set to default"
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-${{ inputs.android_version }}-v\$\{KERNELVERSION\}-Tam"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-${{ inputs.android_version }}-\$\{KERNELVERSION\}-Tam"/s' ./common/scripts/setlocalversion
             else
               perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-${{ inputs.android_version }}-v\$KSUVER-Tam"/s' ./common/scripts/setlocalversion
             fi
