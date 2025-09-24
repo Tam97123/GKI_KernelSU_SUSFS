@@ -99,7 +99,7 @@ jobs:
           $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
 
       - name: Extract Actual Sublevel for LTS Builds
-        if: inputs.sub_level == 'X'
+        if: ${{ inputs.sub_level == 'X' }}
         run: |
           cd "$CONFIG/common"
           
@@ -121,7 +121,7 @@ jobs:
           fi
 
       - name: Apply glibc 2.38 Compatibility Fix
-        if: inputs.android_version == 'android14' && inputs.kernel_version == '6.1'
+        if: ${{ inputs.android_version == 'android14' && inputs.kernel_version == '6.1' }}
         run: |
           if [ ! -e build/build.sh ]; then 
             GLIBC_VERSION=$(ldd --version 2>/dev/null | head -n 1 | awk '{print $NF}') 
@@ -131,7 +131,7 @@ jobs:
           fi
 
       - name: Fix Less Then 6.6.50 Builds
-        if: inputs.android_version == 'android15' && inputs.kernel_version == '6.6'
+        if: ${{ inputs.android_version == 'android15' && inputs.kernel_version == '6.6' }}
         run: |
           cd "$CONFIG/common"
           if ! grep -qxF '#include <trace/hooks/fs.h>' ./fs/namespace.c; then
@@ -249,12 +249,12 @@ jobs:
               BASE_VERSION=13087 
               ;;
           esac
-          echo "BASE_VERSION=$BASE_VERSION"
-          echo "COMMIT_COUNT=$COMMIT_COUNT"
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
+          echo "COMMIT_COUNT=$COMMIT_COUNT"
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
-          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           echo "KSUVER=$KSU_VERSION"
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          
           
       - name: Apply Hooks Patches
         run: |
@@ -279,7 +279,7 @@ jobs:
           esac
           
       - name: Apply LZ4KD & ZSTDN for SukiSU-Ultra
-        if: inputs.kernel_variant == 'SUKI'
+        if: ${{ inputs.kernel_variant == 'SUKI' }}
         run: |
           cd "$CONFIG/common"
           cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
@@ -317,7 +317,7 @@ jobs:
           fi
 
       - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
-        if: inputs.kernel_version == '6.6'
+        if: ${{ inputs.kernel_version == '6.6' }}
         run: |
           SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_galaxy
           echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
@@ -453,7 +453,6 @@ jobs:
       - name: Change Kernel Uname
         run: |
           cd "$CONFIG"
-          
           perl -pi -e 's/-dirty//' ./common/scripts/setlocalversion
           #perl -pi -e 's/-maybe-dirty//g' ./build/kernel/kleaf/impl/stamp.bzl
           
