@@ -306,10 +306,11 @@ jobs:
           cd "$CONFIG/common"
           if [ "${{ inputs.kernelsu_variant }}" == "SUKI" ]; then
             cp ../../SukiSU_patch/69_hide_stuff.patch ./
-            patch -p1 -F 3 < 69_hide_stuff.patch
+            patch -p1 --forward -F 3 < 69_hide_stuff.patch
           else
             cp ../../kernel_patches/69_hide_stuff.patch ./
             patch -p1 --forward -F 3 < 69_hide_stuff.patch
+          fi
 
       - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
         if: ${{ ( inputs.kernel_version == '6.6' ) }}
