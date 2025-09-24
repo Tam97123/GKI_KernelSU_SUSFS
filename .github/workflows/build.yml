@@ -231,7 +231,7 @@ jobs:
             "WILD")
               echo "Applying SUSFS patches for WildSU..."
               cd ./Wild_KSU/kernel
-              BASE_VERSION=10200
+              BASE_VERSION=10202
               ;;
             "KSU")
               echo "Applying SUSFS patches for Official KernelSU..."
@@ -310,7 +310,7 @@ jobs:
           cd "$CONFIG/common"
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
             cp ../../SukiSU_patch/69_hide_stuff.patch ./
-            patch -p1 --forward -F 3 < 69_hide_stuff.patch
+            patch -p1 -F 3 < 69_hide_stuff.patch
           else
             cp ../../kernel_patches/69_hide_stuff.patch ./
             patch -p1 --forward -F 3 < 69_hide_stuff.patch
@@ -351,24 +351,15 @@ jobs:
             fi
             
             if [ "${{ inputs.kernel_version }}" != "6.6" ] && [ "${{ inputs.kernel_version }}" != "5.10" ]; then
-              #sed -i 's/CONFIG_MODULE_SIG=y/CONFIG_MODULE_SIG=n/g' "$defconfig"
-              if grep -q "CONFIG_ZSMALLOC" -- "$defconfig"; then
-                sed -i 's/CONFIG_ZSMALLOC=m/CONFIG_ZSMALLOC=y/g' "$defconfig"
-              else
-                echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
-              fi
-              sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$defconfig"
+              echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
             fi
             
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
               echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
-              sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$defconfig"
             fi
             
             if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
-              sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$CONFIG/common/modules.bzl"
               echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
-              echo 'Android14_Bazel:已修复zram&zsmalloc'
             fi
             
             if grep -q "CONFIG_ZSMALLOC=y" "$defconfig" && grep -q "CONFIG_ZRAM=y" "$defconfig"; then
@@ -461,7 +452,7 @@ jobs:
           
           #Set Kernel Name
           if [ ! -z ${{ inputs.kernel_uname }} ]; then
-            echo "${{ inputs.kernel_uname }}"
+            echo "Kernel Uname: ${{ inputs.kernel_uname }}"
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
               perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-${{ inputs.android_version }}-${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
             else
