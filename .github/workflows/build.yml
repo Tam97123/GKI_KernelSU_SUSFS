@@ -248,7 +248,6 @@ jobs:
               cd ./KernelSU/kernel
               BASE_VERSION=13087 
               ;;
-            
           esac
           echo "BASE_VERSION=$BASE_VERSION"
           echo "COMMIT_COUNT=$COMMIT_COUNT"
@@ -277,6 +276,7 @@ jobs:
               cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
               patch -p1 --forward -F 3 < syscall_hooks.patch
             ;;
+          esac
           
       - name: Apply LZ4KD & ZSTDN for SukiSU-Ultra
         if: inputs.kernel_variant == 'SUKI'
