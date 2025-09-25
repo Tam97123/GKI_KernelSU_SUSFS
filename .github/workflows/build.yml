@@ -158,7 +158,7 @@ jobs:
               ;;
             "NEXT")
               echo "Adding KernelSU Next..."
-              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s dev       
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s v1.1.0       
               ;;
             "SUKI")
               echo "Adding SukiSU-Ultra..."
@@ -246,7 +246,7 @@ jobs:
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
               cd ./KernelSU/kernel
-              BASE_VERSION=13092 
+              BASE_VERSION=10700 
               ;;
           esac
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
