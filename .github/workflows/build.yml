@@ -346,7 +346,7 @@ jobs:
             echo "CONFIG_ZRAM=y" >> "$defconfig"
             echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
-            echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig
+            echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
             if grep -q "CONFIG_ZSMALLOC=y" "$defconfig" && grep -q "CONFIG_ZRAM=y" "$defconfig"; then
               echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
               echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
