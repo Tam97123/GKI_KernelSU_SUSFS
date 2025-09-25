@@ -150,7 +150,7 @@ jobs:
           case "${{ inputs.kernel_variant }}" in
             "WILD")
               echo "Adding Wild KSU..."
-              curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s wild
+              curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s v1.1.0
               ;;
             "KSU")
               echo "Adding KernelSU Official..."
@@ -158,8 +158,7 @@ jobs:
               ;;
             "NEXT")
               echo "Adding KernelSU Next..."
-              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
-            
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s dev       
               ;;
             "SUKI")
               echo "Adding SukiSU-Ultra..."
