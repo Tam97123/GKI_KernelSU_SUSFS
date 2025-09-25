@@ -1,7 +1,8 @@
 name: Kernel Build Process
 permissions:
   contents: write
-  actions: write 
+  actions: write
+  workflows: write
 
 on:
   workflow_call:
@@ -288,10 +289,10 @@ jobs:
           cp -r ../../SukiSU_patch/other/zram/lz4k_oplus ./lib/
 
           cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
-          patch -p1 -F 3 < lz4kd.patch || true
+          patch -p1 --forward -F 3 < lz4kd.patch || true
 
           cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
-          patch -p1 -F 3 < lz4k_oplus.patch || true
+          patch -p1 --forward -F 3 < lz4k_oplus.patch || true
           
       - name: Apply Module Symbol Version Fix Patch
         run: |
@@ -310,7 +311,7 @@ jobs:
           cd "$CONFIG/common"
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
             cp ../../SukiSU_patch/69_hide_stuff.patch ./
-            patch -p1 -F 3 < 69_hide_stuff.patch
+            patch -p1 --forward -F 3 < 69_hide_stuff.patch
           else
             cp ../../kernel_patches/69_hide_stuff.patch ./
             patch -p1 --forward -F 3 < 69_hide_stuff.patch
@@ -342,25 +343,11 @@ jobs:
 
           # Suki ZRAM and KPM
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
-            if [ "${{ inputs.kernel_version }}" = "5.10" ]; then
             echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
             echo "CONFIG_ZRAM=y" >> "$defconfig"
             echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
             echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
-            fi
-            
-            if [ "${{ inputs.kernel_version }}" != "6.6" ] && [ "${{ inputs.kernel_version }}" != "5.10" ]; then
-              echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
-            fi
-            
-            if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
-            fi
-            
-            if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
-              echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
-            fi
             
             if grep -q "CONFIG_ZSMALLOC=y" "$defconfig" && grep -q "CONFIG_ZRAM=y" "$defconfig"; then
               echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
@@ -370,7 +357,6 @@ jobs:
               echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
               echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
             fi
-            
           fi  
           
           # KernelSU Core Configuration
@@ -438,7 +424,7 @@ jobs:
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
           
-          # Remove check_defconfig
+          #Remove check_defconfig
           #sed -i 's/check_defconfig//' ./common/build.config.gki
 
       - name: Change Kernel Uname
