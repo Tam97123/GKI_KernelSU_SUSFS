@@ -78,7 +78,7 @@ jobs:
       - build-kernels-a14-6-1
       - build-kernels-a15-6-6
     env:
-      GH_TOKEN: ${{ github.token }}
+      PAT: ${{ secrets.PAT_TOKEN }}
       RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.9"
     steps:
       - name: Maximize Build Space
@@ -93,9 +93,12 @@ jobs:
           remove-swapfile: 'true'        # Frees ~4 GB
           # remove-cached-tools: 'false'   # Avoid unless confirmed safe
           verbose: 'true'                # Enable detailed logging
-          
+
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Get commit hashes and generate commit URLs
         run: |
@@ -148,6 +151,8 @@ jobs:
           get_ref "SUKI" "https://github.com/SukiSU-Ultra/SukiSU-Ultra" "SukiSU-Ultra/SukiSU-Ultra" "$MODE"
 
       - name: Generate and Create New Tag
+        env:
+          PAT: ${{ secrets.PAT_TOKEN }}
         run: |
             LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name')
             if [ -z "$LATEST_TAG" ]; then
@@ -161,6 +166,8 @@ jobs:
 
             git tag $NEW_TAG
             git push origin $NEW_TAG
+            git remote set-url origin https://x-access-token:${PAT}@github.com/${{ github.repository }}.git
+            git push origin "refs/tags/$NEW_TAG"
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
@@ -224,6 +231,8 @@ jobs:
           body_path: release_body.md
 
       - name: Upload Release Assets
+        env:
+          PAT: ${{ secrets.PAT_TOKEN }}
         run: |
           for file in ./downloaded-artifacts/*-kernel-*/*; do
             if [ -d "$file" ]; then

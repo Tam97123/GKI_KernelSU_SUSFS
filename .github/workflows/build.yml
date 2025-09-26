@@ -1,7 +1,7 @@
 name: Kernel Build Process
 permissions:
   contents: write
-  actions: write 
+  actions: write
 
 on:
   workflow_call:
@@ -149,8 +149,7 @@ jobs:
           cd "$CONFIG"
           case "${{ inputs.kernel_variant }}" in
             "WILD")
-              echo "Adding Wild KSU..."
-              curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s v1.1.0
+              echo "Adding Wild KSU..."              curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s v1.1.0
               ;;
             "KSU")
               echo "Adding KernelSU Official..."
@@ -288,10 +287,10 @@ jobs:
           cp -r ../../SukiSU_patch/other/zram/lz4k_oplus ./lib/
 
           cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
-          patch -p1 -F 3 < lz4kd.patch || true
+          patch -p1 --forward -F 3 < lz4kd.patch || true
 
           cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
-          patch -p1 -F 3 < lz4k_oplus.patch || true
+          patch -p1 --forward -F 3 < lz4k_oplus.patch || true
           
       - name: Apply Module Symbol Version Fix Patch
         run: |
@@ -355,7 +354,6 @@ jobs:
               echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
               echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
             fi
-            
           fi  
           
           # KernelSU Core Configuration
@@ -423,7 +421,7 @@ jobs:
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
           
-          # Remove check_defconfig
+          #Remove check_defconfig
           #sed -i 's/check_defconfig//' ./common/build.config.gki
 
       - name: Change Kernel Uname
