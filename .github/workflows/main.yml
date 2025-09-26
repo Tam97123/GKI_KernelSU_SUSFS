@@ -78,8 +78,8 @@ jobs:
       - build-kernels-a14-6-1
       - build-kernels-a15-6-6
     env:
-      PAT: ${{ secrets.PAT_TOKEN }}
-      RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.9"
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.10"
     steps:
       - name: Maximize Build Space
         uses: AdityaGarg8/remove-unwanted-software@v5
@@ -98,7 +98,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Get commit hashes and generate commit URLs
         run: |
@@ -152,11 +152,11 @@ jobs:
 
       - name: Generate and Create New Tag
         env:
-          PAT: ${{ secrets.PAT_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
             LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name')
             if [ -z "$LATEST_TAG" ]; then
-              LATEST_TAG="v1.5.9-r0"
+              LATEST_TAG="v1.5.10-r0"
             fi
             
             NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')
@@ -186,7 +186,7 @@ jobs:
           Features:
           -> ${{ inputs.kernel_variant }} Kernels & Others
           -> Multi Manager Support for WILD Manager & KernelSU Next Manager (Only Install One)
-          -> SUSFS ඞ v1.5.9
+          -> SUSFS ඞ v1.5.10
           -> Scope-Minimized Manual hooks v1.4
           -> Magic Mount Support
           -> Simple Maphide for LineageOS Detections
