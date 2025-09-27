@@ -220,7 +220,7 @@ jobs:
               ;;
               "SUKI")
               echo "Applying SUSFS patches for Official KernelSU..."
-              cd ./SukiSU-Ultra
+              cd ./KernelSU
               ;;
           esac
 
