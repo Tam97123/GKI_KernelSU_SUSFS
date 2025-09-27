@@ -278,20 +278,20 @@ jobs:
             ;;
           esac
           
-      - name: Apply LZ4KD & ZSTDN for SukiSU-Ultra
-        if: ${{ inputs.kernel_variant == 'SUKI' }}
-        run: |
-          cd "$CONFIG/common"
-          cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
-          cp -r ../../SukiSU_patch/other/zram/lz4k/lib/* ./lib/
-          cp -r ../../SukiSU_patch/other/zram/lz4k/crypto/* ./crypto/
-          cp -r ../../SukiSU_patch/other/zram/lz4k_oplus ./lib/
+      #- name: Apply LZ4KD & ZSTDN for SukiSU-Ultra
+        #if: ${{ inputs.kernel_variant == 'SUKI' }}
+        #run: |
+          #cd "$CONFIG/common"
+          #cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
+          #cp -r ../../SukiSU_patch/other/zram/lz4k/lib/* ./lib/
+          #cp -r ../../SukiSU_patch/other/zram/lz4k/crypto/* ./crypto/
+          #cp -r ../../SukiSU_patch/other/zram/lz4k_oplus ./lib/
 
-          cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
-          patch -p1 --forward -F 3 < lz4kd.patch || true
+          #cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
+          #patch -p1 --forward -F 3 < lz4kd.patch || true
 
-          cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
-          patch -p1 --forward -F 3 < lz4k_oplus.patch || true
+          #cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
+          #patch -p1 --forward -F 3 < lz4k_oplus.patch || true
           
       - name: Apply Module Symbol Version Fix Patch
         run: |
