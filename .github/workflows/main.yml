@@ -26,12 +26,6 @@ on:
           - SUKI
         default: NEXT
 jobs:
-  get_manager:
-    uses: ./.github/workflows/get-manager.yml
-    secrets: inherit
-    with:
-      kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      
   build-kernels-a12-5-10:
     name: ${{ inputs.kernel_variant }}-Android_12-5.10
     uses: ./.github/workflows/kernel-a12-5-10.yml
@@ -84,7 +78,7 @@ jobs:
       - build-kernels-a14-6-1
       - build-kernels-a15-6-6
     env:
-      PAT: ${{ secrets.GH_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
       RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.10"
     steps:
       - name: Maximize Build Space
