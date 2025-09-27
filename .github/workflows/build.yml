@@ -230,27 +230,28 @@ jobs:
           case "${{ inputs.kernel_variant }}" in
             "WILD")
               echo "Applying SUSFS patches for WildSU..."
-              cd ./Wild_KSU/kernel
+              cd ./Wild_KSU
               BASE_VERSION=10200
               ;;
             "KSU")
               echo "Applying SUSFS patches for Official KernelSU..."
-              cd ./KernelSU/kernel
+              cd ./KernelSU
               BASE_VERSION=10200
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
-              cd ./KernelSU-Next/kernel
+              cd ./KernelSU-Next
               BASE_VERSION=10200
               ;;
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
-              cd ./KernelSU/kernel
+              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
+              cd SukiSU-Ultra
               BASE_VERSION=10700 
               ;;
           esac
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
-          echo "COMMIT_COUNT=$COMMIT_COUNT"
+          echo "Commits: $COMMIT_COUNT"
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION"
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
@@ -290,8 +291,8 @@ jobs:
           cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
           patch -p1 --forward -F 3 < lz4kd.patch || true
 
-          cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
-          patch -p1 --forward -F 3 < lz4k_oplus.patch || true
+          #cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
+          #patch -p1 --forward -F 3 < lz4k_oplus.patch || true
           
       - name: Apply Module Symbol Version Fix Patch
         run: |
@@ -347,14 +348,12 @@ jobs:
             echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
             echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
-            if grep -q "CONFIG_ZSMALLOC=y" "$defconfig" && grep -q "CONFIG_ZRAM=y" "$defconfig"; then
-              echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
-              echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
-              echo "CONFIG_CRYPTO_LZ4KD=y" >> "$defconfig"
-              echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
-              echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
-              echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
-            fi
+            echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
+            echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
+            echo "CONFIG_CRYPTO_LZ4KD=y" >> "$defconfig"
+            echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
+            echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
+            echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
           fi  
           
           # KernelSU Core Configuration
