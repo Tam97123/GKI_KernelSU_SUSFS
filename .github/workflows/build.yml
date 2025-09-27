@@ -278,22 +278,7 @@ jobs:
               patch -p1 --forward -F 3 < syscall_hooks.patch
             ;;
           esac
-          
-      - name: Apply LZ4KD & ZSTDN for SukiSU-Ultra
-        if: ${{ inputs.kernel_variant == 'SUKI' }}
-        run: |
-          cd "$CONFIG/common"
-          cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
-          cp -r ../../SukiSU_patch/other/zram/lz4k/lib/* ./lib/
-          cp -r ../../SukiSU_patch/other/zram/lz4k/crypto/* ./crypto/
-          cp -r ../../SukiSU_patch/other/zram/lz4k_oplus ./lib/
 
-          cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
-          patch -p1 --forward -F 3 < lz4kd.patch || true
-
-          #cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
-          #patch -p1 --forward -F 3 < lz4k_oplus.patch || true
-          
       - name: Apply Module Symbol Version Fix Patch
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" ]]; then
@@ -345,6 +330,7 @@ jobs:
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
             echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
             echo "CONFIG_ZRAM=y" >> "$defconfig"
+            echo "CONFIG_KPM=y" >> "$defconfig"
             echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
             echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
