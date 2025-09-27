@@ -80,6 +80,8 @@ jobs:
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone https://github.com/WildKernels/kernel_patches.git
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
+          git clone
+https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
 
       - name: Initialize and Sync Kernel Source
         run: |
@@ -220,7 +222,7 @@ jobs:
               ;;
               "SUKI")
               echo "Applying SUSFS patches for Official KernelSU..."
-              cd ./KernelSU
+              cd ./SukiSU-Ultra
               ;;
           esac
 
