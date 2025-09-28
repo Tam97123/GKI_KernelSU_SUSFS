@@ -532,23 +532,23 @@ jobs:
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
           
-      - name: Patch KPM for Android 12 and 13 (SukiSU-Ultra only)
-        if: ${{ inputs.kernel_variant == 'SUKI' && (inputs.android_version == 'android12' || inputs.android_version == 'android13') }}
-        run: |
-            echo "Patching Image file..."
-            cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image"
-            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
-            chmod 777 patch
-            ./patch
-            rm -rf Image
-            mv oImage Image
-            cd ../../../..
+      #- name: Patch KPM for Android 12 and 13 (SukiSU-Ultra only)
+        #if: ${{ inputs.kernel_variant == 'SUKI' && (inputs.android_version == 'android12' || inputs.android_version == 'android13') }}
+        #run: |
+            #echo "Patching Image file..."
+            #cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image"
+            #curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
+            #chmod 777 patch
+            #./patch
+            #rm -rf Image
+            #mv oImage Image
+            #cd ../../../..
 
       - name: Patch KPM for Android 14 and 15 (SukiSU-Ultra only) 
-        if: ${{ inputs.kernel_variant == 'SUKI' && (inputs.android_version == 'android14' || inputs.android_version == 'android15') }}
+        if: ${{ inputs.kernel_variant == 'SUKI' }}
         run: |
             echo "Patching Image file..."
-            cd "$CONFIG/common/out/arch/arm64/boot/Image"
+            cd "$CONFIG/common/out/arch/arm64/boot"
             curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
             chmod 777 patch
             ./patch
