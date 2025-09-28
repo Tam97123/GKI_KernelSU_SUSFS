@@ -70,8 +70,3 @@ jobs:
     name: Build Check
     uses: ./.github/workflows/build.yml
     secrets: inherit
-    with:
-      android_version: ${{ inputs.android_version }}
-      kernel_version: ${{ inputs.kernel_version }}
-      sub_level: ${{ inputs.sub_level }}
-      os_patch_level: ${{ inputs.os_patch_level }}
