@@ -16,7 +16,7 @@ on:
           - KSU
           - NEXT
           - SUKI
-        default: NEXT
+        default: SUKI
         
 jobs:
   build-check:
