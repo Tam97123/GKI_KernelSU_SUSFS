@@ -74,4 +74,5 @@ jobs:
       android_version: ${{ inputs.android_version }}
       kernel_version: ${{ inputs.kernel_version }}
       kernel_variant: ${{ inputs.kernel_variant }}
-      
+      os_patch_level: ${{ inputs.os_patch_level }}
+      sub_level: ${{ inputs.sub_level }}
