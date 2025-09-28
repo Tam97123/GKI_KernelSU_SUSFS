@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kernel_config:
+        include:
           # Android 12 - Kernel 5.10 LTS
           - android_version: "android12"
             kernel_version: "5.10"
@@ -55,7 +55,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
-      android_version: ${{ matrix.kernel_config.android_version }}
-      kernel_version: ${{ matrix.kernel_config.kernel_version }}
-      sub_level: ${{ matrix.kernel_config.sub_level }}
-      os_patch_level: ${{ matrix.kernel_config.os_patch_level }}
+      android_version: ${{ inputs.android_version }}
+      kernel_version: ${{ inputs.kernel_version }}
+      sub_level: ${{ inputs.sub_level }}
+      os_patch_level: ${{ inputs.os_patch_level }}
