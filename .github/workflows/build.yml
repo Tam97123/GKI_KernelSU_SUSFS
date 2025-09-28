@@ -536,14 +536,16 @@ jobs:
       - name: Patch KPM for Android 14 and 15 (SukiSU-Ultra only) 
         if: ${{ inputs.kernel_variant == 'SUKI' }}
         run: |
-            echo "Patching Image file..."
-            cd "$CONFIG/common/out/arch/arm64/boot"
-            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
-            chmod 777 patch
-            ./patch
-            rm -rf Image
-            mv oImage Image
-            cd ../../..
+            if ${{ inputs.kernel_version != 6.6 }}
+              echo "Patching Image file..."
+              cd "$CONFIG/common/out/arch/arm64/boot"
+              curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
+              chmod 777 patch
+              ./patch
+              rm -rf Image
+              mv oImage Image
+              cd ../../..
+            fi
 
       - name: Create Kernel ZIP
         run: |
