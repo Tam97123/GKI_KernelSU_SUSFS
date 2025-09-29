@@ -238,7 +238,6 @@ jobs:
               ;;
             "KSU")
               echo "Applying SUSFS patches for Official KernelSU..."
-              git clone https://github.com/tiann/KernelSU.git
               cd KernelSU
               BASE_VERSION=10200
               ;;
