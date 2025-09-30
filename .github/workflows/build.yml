@@ -1,3 +1,4 @@
+
 name: Kernel Build Process
 permissions:
   contents: write
@@ -407,7 +408,7 @@ jobs:
           perl -pi -e 's/-maybe-dirty//g' ./build/kernel/kleaf/impl/stamp.bzl
           
           #Set Kernel Timestamp
-          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Fri Apr 11 03:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
+          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
           
           #Set Kernel Name
           if [ ! -z ${{ inputs.kernel_uname }} ]; then
@@ -427,7 +428,7 @@ jobs:
           fi
 
           #Set Kernel Timestamp
-          perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Fri Apr 11 03:23:31 UTC 2025"/' ./common/init/Makefile
+          perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Mon July 07 10:23:31 UTC 2025"/' ./common/init/Makefile
               
           #Remove Abi Exports and Error
           rm -rf ./common/android/abi_gki_protected_exports_*
