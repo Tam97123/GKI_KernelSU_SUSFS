@@ -23,8 +23,7 @@ By flashing this kernel, **YOU ARE CHOOSING TO MAKE THESE MODIFICATONS**. If som
 
 ## 🔗 Additional Resources
 
-- 🩹 [Kernel Patches](https://github.com/WildKernels/kernel_patches)
-- 📜 [Old Build Scripts](https://github.com/TheWildJames/kernel_build_scripts)
+- 🩹 [Kernel Patches](https://github.com/Tam97123/kernel_patches)
 - ⚡ [Kernel Flasher 1](https://github.com/fatalcoder524/KernelFlasher)
 - 💤 [Kernel Flasher 2](https://github.com/libxzr/HorizonKernelFlasher)
 
