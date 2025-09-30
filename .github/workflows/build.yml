@@ -79,9 +79,11 @@ jobs:
           git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone https://github.com/WildKernels/kernel_patches.git
-          cd kernel_patches
-          git checkout 1bf22602685859863da8b06a0fdf4ce2fd51fc1a
-          cd ..
+          if ${{ inputs.kernel_variant == "NEXT" }}
+            cd kernel_patches
+            git checkout 1bf22602685859863da8b06a0fdf4ce2fd51fc1a
+            cd ..
+          fi
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
 
       - name: Initialize and Sync Kernel Source
