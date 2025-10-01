@@ -79,7 +79,7 @@ jobs:
           
           git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
-          git clone https://github.com/WildKernels/kernel_patches.git
+          git clone https://github.com/Tam97123/kernel_patches.git
           if [ "${{ inputs.kernel_variant }}" = "NEXT" ]; then
             cd kernel_patches
             git checkout 1bf22602685859863da8b06a0fdf4ce2fd51fc1a
