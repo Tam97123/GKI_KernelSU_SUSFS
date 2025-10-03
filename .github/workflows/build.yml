@@ -79,8 +79,11 @@ jobs:
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone --depth=1 https://github.com/WildKernels/kernel_patches.git
           git clone --depth=1 https://github.com/ShirkNeko/SukiSU_patch.git
+
+          ak_version="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          
           cd susfs4ksu
-          case "${{ inputs.kernel_version }}" in
+          case "$ak_version" in
             "android12-5.10")
               git checkout 0ed20c1656af7806a1760837ad320e62a8fb40fd
               ;;
@@ -98,6 +101,10 @@ jobs:
               ;;
             "android15-6.6")
               git checkout ef036830ec9d56035d63d328185281c09726b20f
+              ;;
+            *)
+              echo "Unknown type of this kernel: $ak_version"
+              exit 1
               ;;
           esac
           
@@ -265,7 +272,7 @@ jobs:
               ;;
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
-              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
+              git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
               cd SukiSU-Ultra
               BASE_VERSION=10700 
               ;;
@@ -540,7 +547,7 @@ jobs:
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
 
-      - name: Patch KPM for SukiSU-Ultra
+      - name: Patch KPM for SukiSU-Ultra only
         if: ${{ inputs.kernel_variant == 'SUKI' }}
         run: |
           if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
