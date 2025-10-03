@@ -87,11 +87,13 @@ jobs:
             "android13-5.10")
               git checkout 19e5b616464577c986e079cea0700428422bccb5
               ;;
-              git checkout b443e5be35cd8275b97a776f8cc84fbbf8169749
             "android13-5.15")
-              git checkout 40823c6a92d072721c2c05f37776f69e3689ce8f
+              git checkout b443e5be35cd8275b97a776f8cc84fbbf8169749
               ;;
             "android14-5.15")
+              git checkout 40823c6a92d072721c2c05f37776f69e3689ce8f
+              ;;
+            "android14-6.1")
               git checkout 0e19a05277d28182c7b653580117145c53e69e92
               ;;
             "android15-6.6")
