@@ -75,11 +75,38 @@ jobs:
         run: |
           ANYKERNEL_BRANCH="gki-2.0"
           SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone --depth=1 https://github.com/WildKernels/kernel_patches.git
           git clone --depth=1 https://github.com/ShirkNeko/SukiSU_patch.git
+
+          ak_version="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          
+          cd susfs4ksu
+          case "$ak_version" in
+            "android12-5.10")
+              git checkout 0ed20c1656af7806a1760837ad320e62a8fb40fd
+              ;;
+            "android13-5.10")
+              git checkout 19e5b616464577c986e079cea0700428422bccb5
+              ;;
+            "android13-5.15")
+              git checkout b443e5be35cd8275b97a776f8cc84fbbf8169749
+              ;;
+            "android14-5.15")
+              git checkout 40823c6a92d072721c2c05f37776f69e3689ce8f
+              ;;
+            "android14-6.1")
+              git checkout 0e19a05277d28182c7b653580117145c53e69e92
+              ;;
+            "android15-6.6")
+              git checkout ef036830ec9d56035d63d328185281c09726b20f
+              ;;
+            *)
+              echo "Unknown type of this kernel: $ak_version"
+              exit 1
+              ;;
+          esac
           
       - name: Initialize and Sync Kernel Source
         run: |
@@ -185,13 +212,13 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_core_hook.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.10/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_sucompat.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.10/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_kernel_compat.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.10/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
             "KSU")
@@ -245,7 +272,7 @@ jobs:
               ;;
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
-              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
+              git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
               cd SukiSU-Ultra
               BASE_VERSION=10700 
               ;;
@@ -520,7 +547,7 @@ jobs:
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
 
-      - name: Patch KPM for SukiSU-Ultra
+      - name: Patch KPM for SukiSU-Ultra only
         if: ${{ inputs.kernel_variant == 'SUKI' }}
         run: |
           if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
