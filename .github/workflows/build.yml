@@ -77,13 +77,13 @@ jobs:
           SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-          git clone --depth=1 https://github.com/Tam97123/kernel_patches.git
+          git clone https://github.com/Tam97123/kernel_patches.git
           git clone --depth=1 https://github.com/ShirkNeko/SukiSU_patch.git
 
-          ak_version="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          kernel="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
           
           cd susfs4ksu
-          case "$ak_version" in
+          case "$kernel" in
             "android12-5.10")
               git checkout 0ed20c1656af7806a1760837ad320e62a8fb40fd
               ;;
@@ -103,7 +103,7 @@ jobs:
               git checkout ef036830ec9d56035d63d328185281c09726b20f
               ;;
             *)
-              echo "Unknown type of this kernel: $ak_version"
+              echo "Unknown type of this kernel: kernel"
               exit 1
               ;;
           esac
@@ -213,7 +213,7 @@ jobs:
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
               
               cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.10/fix_core_hook.c.patch ./
-              patch -p1 --forward < fix_core_hook.c.patch
+              patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
               
               cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.10/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
@@ -237,7 +237,7 @@ jobs:
               patch -p1 --forward < fix_apk_sign.c.patch
               
               cp ../../kernel_patches/next/susfs_fix_patches/v1.5.10/fix_core_hook.c.patch ./
-              patch -p1 --forward < fix_core_hook.c.patch
+              patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
 
               cp ../../kernel_patches/next/susfs_fix_patches/v1.5.10/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
