@@ -107,6 +107,8 @@ jobs:
               exit 1
               ;;
           esac
+          cd ..
+          echo "Kernel version: $kernel"
           
       - name: Initialize and Sync Kernel Source
         run: |
