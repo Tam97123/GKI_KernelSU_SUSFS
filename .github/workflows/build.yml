@@ -78,8 +78,8 @@ jobs:
 
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-          git clone --depth=1 https://github.com/WildKernels/kernel_patches.git
-          git clone --depth=1 https://github.com/ShirkNeko/SukiSU_patch.git
+          git clone https://github.com/WildKernels/kernel_patches.git
+          git clone https://github.com/ShirkNeko/SukiSU_patch.git
           
       - name: Initialize and Sync Kernel Source
         run: |
@@ -278,6 +278,14 @@ jobs:
               patch -p1 --forward -F 3 < syscall_hooks.patch
             ;;
           esac
+          
+      - name: Add BBG
+        run: |
+          cd "$CONFIG"
+          echo "Adding BBG..."
+          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' common/security/Kconfig
 
       - name: Apply Module Symbol Version Fix Patch
         run: |
@@ -395,6 +403,9 @@ jobs:
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
           
+          # Remove check_defconfig
+          sed -i 's/check_defconfig//' ./common/build.config.gki
+          
       - name: Change Kernel Uname
         run: |
           cd "$CONFIG"
@@ -428,98 +439,18 @@ jobs:
           rm -rf ./common/android/abi_gki_protected_exports_*
           perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
 
-      - name: Detect Clang Version from Configs
-        run: |
-          KERNEL_PATH="$GITHUB_WORKSPACE/$CONFIG"
-          DEFCONFIG="$KERNEL_PATH/common/arch/arm64/configs/gki_defconfig"
-          BUILDCONFIG="$KERNEL_PATH/common/build.config.gki"
-          CONSTANTSCONFIG="$KERNEL_PATH/common/build.config.constants"
-          CLANG_VERSION=""
-          CLANG_BIN_PATH=""
-          if grep -q '^CONFIG_CLANG_VERSION=' "$DEFCONFIG" 2>/dev/null; then
-            CLANG_VERSION=$(grep '^CONFIG_CLANG_VERSION=' "$DEFCONFIG" 2>/dev/null | head -n1 | cut -d'=' -f2 | tr -d '"' | xargs)
-          elif grep -q '^CLANG_VERSION=' "$BUILDCONFIG" 2>/dev/null; then
-            CLANG_VERSION=$(grep '^CLANG_VERSION=' "$BUILDCONFIG" 2>/dev/null | head -n1 | cut -d'=' -f2 | xargs)
-          elif grep -q '^CLANG_VERSION=' "$CONSTANTSCONFIG" 2>/dev/null; then
-            CLANG_VERSION=$(grep '^CLANG_VERSION=' "$CONSTANTSCONFIG" 2>/dev/null | head -n1 | cut -d'=' -f2 | xargs)
-            CLANG_VERSION="clang-$CLANG_VERSION"
-          else
-            echo "No clang version found in config, will auto-detect in prebuilts."
-          fi
-          if [ -z "$CLANG_VERSION" ]; then
-            if [ -d "$KERNEL_PATH/prebuilts/clang/host/linux-x86" ]; then
-              CLANG_VERSION=$(ls -d "$KERNEL_PATH"/prebuilts/clang/host/linux-x86/clang-r*/ | tail -n 1 | xargs basename)
-              CLANG_BIN_PATH="$KERNEL_PATH/prebuilts/clang/host/linux-x86/$CLANG_VERSION/bin"
-            elif [ -d "$KERNEL_PATH/prebuilts-master/clang/host/linux-x86" ]; then
-              CLANG_VERSION=$(ls -d "$KERNEL_PATH"/prebuilts-master/clang/host/linux-x86/clang-r*/ | tail -n 1 | xargs basename)
-              CLANG_BIN_PATH="$KERNEL_PATH/prebuilts-master/clang/host/linux-x86/$CLANG_VERSION/bin"
-            else
-              CLANG_VERSION="clang"
-              CLANG_BIN_PATH="$KERNEL_PATH/prebuilts/clang/host/linux-x86/$CLANG_VERSION/bin" # dummy
-            fi
-          else
-            if [ -d "$KERNEL_PATH/prebuilts/clang/host/linux-x86" ]; then
-              CLANG_BIN_PATH="$KERNEL_PATH/prebuilts/clang/host/linux-x86/$CLANG_VERSION/bin"
-            else
-              CLANG_BIN_PATH="$KERNEL_PATH/prebuilts-master/clang/host/linux-x86/$CLANG_VERSION/bin"
-            fi
-          fi
-          echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
-          echo "CLANG_BIN_PATH=$CLANG_BIN_PATH" >> $GITHUB_ENV
-
-
       - name: Build Kernel
-        run: |
-          KERNEL_PATH="$GITHUB_WORKSPACE/$CONFIG"
-          CLANG_BIN_PATH="${{ env.CLANG_BIN_PATH }}"
-          CLANG_VERSION="${{ env.CLANG_VERSION }}"
-          
-          if [ -d "$CLANG_BIN_PATH" ] && [ -x "$CLANG_BIN_PATH/clang" ]; then
-            export PATH="$CLANG_BIN_PATH:$PATH"
-            SELECTED_CLANG="$CLANG_BIN_PATH/clang"
-          elif command -v clang >/dev/null 2>&1; then
-            SELECTED_CLANG="$(command -v clang)"
-            exit 1
+        run : |
+          set -e
+          set -x
+          cd "$CONFIG"
+          echo "Building the kernel..."
+          if [ -f "build/build.sh" ]; then
+            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           else
-            exit 1
+            tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
           fi
           
-          LLVM_TOOLS="clang ld.lld llvm-ar llvm-objcopy llvm-objdump llvm-nm"
-          MISSING_TOOLS=""
-          for tool in $LLVM_TOOLS; do
-            if ! command -v $tool >/dev/null 2>&1; then
-              MISSING_TOOLS="$MISSING_TOOLS $tool"
-            fi
-          done
-          
-          if [ -n "$MISSING_TOOLS" ]; then
-            sudo apt-get update
-            sudo apt-get install -yq --no-install-recommends llvm
-            for tool in $MISSING_TOOLS; do
-              if ! command -v $tool >/dev/null 2>&1; then
-                exit 1
-              fi
-            done
-          fi
-          
-          KERNEL_VERSION="${{ inputs.kernel_version }}"
-          if [[ "$KERNEL_VERSION" == "5.10" ]]; then
-            USE_LLVM_IAS=true
-          fi
-          
-          cd "$KERNEL_PATH/common" || exit 1
-          
-          MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-android- \
-            RUSTC=$KERNEL_PATH/prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
-            PAHOLE=$KERNEL_PATH/prebuilts/kernel-build-tools/linux-x86/bin/pahole \
-            LD=ld.lld HOSTLD=ld.lld"
-          if [[ -v USE_LLVM_IAS ]]; then
-            MAKE_ARGS="LLVM_IAS=1 $MAKE_ARGS"
-          fi
-          
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
-
       - name: Patch KPM for SukiSU-Ultra
         if: ${{ inputs.kernel_variant == 'SUKI' }}
         run: |
