@@ -79,7 +79,7 @@ jobs:
       - build-kernels-a15-6-6
     env:
       GITHUB_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.11"
+      RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.10"
     steps:
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
@@ -93,6 +93,7 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Get commit hashes and generate commit URLs
         run: |
           GITLAB_OWNER="simonpunk"
@@ -149,7 +150,7 @@ jobs:
         run: |
             LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name')
             if [ -z "$LATEST_TAG" ]; then
-              LATEST_TAG="v1.5.11-r0"
+              LATEST_TAG="v1.5.10-r0"
             fi
             
             NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')
@@ -169,18 +170,18 @@ jobs:
         run: |
           cat << 'EOF' > release_body.md
           
-          **IMPORTANT DISCLAIMER**
-          This software is under development and may be unstable. It is provided for testing and educational purposes only. Use at your own risk!
+          **IMPORTANT DISCLAIMER*
+          This software is provided for testing and educational purposes only. Use at your own risk.
           The developers are not responsible for any damage, data loss, or issues that may occur.
           Please ensure you have proper backups before installation.
-      
+
           NEW:
           -> **Symbol Fix Variant**: Normal build with additional hack for compatibility!
       
           Features:
           -> ${{ inputs.kernel_variant }}
           -> SUSFS ඞ version: v1.5.10
-          -> Multi Manager Support for Wild KSU, KernelSU-Next, KernelSU, Magic KSU! Needs Testing: RKSU, xxKSU, KowSU and SukiSU-Ultra          -> SUSFS ඞ v1.5.11
+          -> Multi Manager Support for Wild KSU, KernelSU-Next, KernelSU, Magic KSU! Needs Testing: RKSU, xxKSU, KowSU and SukiSU-Ultra          -> SUSFS ඞ v1.5.10
           -> Scope-Minimized Manual hooks v1.4
           -> Magic Mount Support
           -> Ptrace Patch Support for Older Kernels (<5.16)
