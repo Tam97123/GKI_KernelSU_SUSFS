@@ -229,8 +229,6 @@ jobs:
           body_path: release_body.md
 
       - name: Upload Release Assets
-        env:
-          PAT: ${{ secrets.PAT_TOKEN }}
         run: |
           for file in ./downloaded-artifacts/*-kernel-*/*; do
             if [ -d "$file" ]; then
