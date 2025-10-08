@@ -475,7 +475,7 @@ jobs:
             echo "Build with build.sh!"
           elif [ -f "./$CONFIG/bazel-bin/common/kernel_aarch64/Image" ]; then
             cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
-            echo "Build with bazel/kleaf!
+            echo "Build with bazel/kleaf!"
           else
             echo "Error: Image file not found in any expected location"
             exit 1
@@ -489,7 +489,7 @@ jobs:
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi
           
-          ZIP_NAME='${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level '
+          ZIP_NAME="${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level"
           zip -r "../$ZIP_NAME" ./*
 
       - name: Create Bootimgs Folder and Copy Images
