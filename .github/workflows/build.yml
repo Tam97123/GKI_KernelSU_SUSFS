@@ -494,8 +494,7 @@ jobs:
         run: |
           mkdir bootimgs
           echo "Creating bootimgs folder and copying images..."
-          
-          if: [ "${{ inputs.android_version }}" == "android12" || "${{ inputs.android_version }}" == "android13" ]; then
+          if [ "${{ inputs.android_version }}" == "android12" || "${{ inputs.android_version }}" == "android13" ]; then
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./bootimgs
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./
           else
