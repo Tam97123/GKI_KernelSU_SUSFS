@@ -512,7 +512,7 @@ jobs:
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi
           echo "Creating bootimgs folder and copying images..."
-          if: [ "${{ inputs.android_version }}" == "android12" ]; then
+          if [ "${{ inputs.android_version }}" == "android12" ]; then
             GKI_URL=https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-"${{ inputs.os_patch_level }}"_"${{ inputs.revision }}".zip
             FALLBACK_URL=https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-2023-01_r1.zip
           
