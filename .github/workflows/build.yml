@@ -455,7 +455,7 @@ jobs:
         if: ${{ inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6' }}
         run: |
           echo "Patching Image file..."
-          if: [ "${{ inputs.android_version }}" == "android12" || "${{ inputs.android_version }}" == "android13" ]; then
+          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
             cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image"
           else
             cd "$CONFIG/bazel-bin/common/kernel_aarch64/boot"
@@ -496,7 +496,7 @@ jobs:
         run: |
           mkdir bootimgs
           echo "Creating bootimgs folder and copying images..."
-          if [ "${{ inputs.android_version }}" == "android12" || "${{ inputs.android_version }}" == "android13" ]; then
+          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./bootimgs
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./
           else
