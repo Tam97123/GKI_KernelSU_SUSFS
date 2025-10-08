@@ -170,7 +170,7 @@ jobs:
         run: |
           cat << 'EOF' > release_body.md
           
-          **IMPORTANT DISCLAIMER**
+          **IMPORTANT DISCLAIMER*
           This software is provided for testing and educational purposes only. Use at your own risk.
           The developers are not responsible for any damage, data loss, or issues that may occur.
           Please ensure you have proper backups before installation.
@@ -181,7 +181,7 @@ jobs:
           Features:
           -> ${{ inputs.kernel_variant }}
           -> SUSFS ඞ version: v1.5.10
-          -> Multi Manager Support for Wild KSU, KernelSU-Next, KernelSU, Magic KSU! Needs Testing: RKSU, xxKSU, KowSU and SukiSU-Ultra          -> SUSFS ඞ v1.5.11
+          -> Multi Manager Support for Wild KSU, KernelSU-Next, KernelSU, Magic KSU! Needs Testing: RKSU, xxKSU, KowSU and SukiSU-Ultra          -> SUSFS ඞ v1.5.10
           -> Scope-Minimized Manual hooks v1.4
           -> Magic Mount Support
           -> Ptrace Patch Support for Older Kernels (<5.16)
@@ -195,7 +195,7 @@ jobs:
           -> Official Kernel Flasher is broken with latest susfs, try (Kernel Flasher 1)[https://github.com/fatalcoder524/KernelFlasher/] or (Kernel Flasher 2)[https://github.com/libxzr/HorizonKernelFlasher/]!
           -> **boot.img files**: Available as CI artifacts only (not included in releases) - download from the Actions tab 
           -> **Warning**: boot.img files may not boot on some Android 16 devices
-      
+          
           Module: 
           -> https://github.com/sidex15/ksu_module_susfs
       
