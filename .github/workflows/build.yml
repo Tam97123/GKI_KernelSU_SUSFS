@@ -416,7 +416,7 @@ jobs:
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
           
           #Set Kernel Name
-          if [ ! -z ${{ inputs.kernel_uname }} ]; then
+          if [ ! -z "${{ inputs.kernel_uname }}" ]; then
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
             if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
               perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-${{ inputs.android_version }}-${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
