@@ -447,8 +447,10 @@ jobs:
           echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
-          else
+          elif [ "${{ inputs.android_version }}" == "android15" ]
             tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
+          else
+            tools/bazel build --config=fast --lto=thin --verbose_failures //common:kernel_aarch64_dist || exit 1
           fi
           
       - name: Patch KPM for SukiSU-Ultra
@@ -489,7 +491,7 @@ jobs:
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi
           
-          ZIP_NAME="${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}"
+          ZIP_NAME="${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}.zip"
           zip -r "../$ZIP_NAME" ./*
 
       - name: Create Bootimgs Folder and Copy Images
