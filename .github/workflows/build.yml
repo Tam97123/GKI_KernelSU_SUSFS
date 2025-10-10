@@ -45,6 +45,11 @@ jobs:
       - name: Setup Build Environment
         run: |
           sudo apt update && sudo apt install -y libelf-dev libssl-dev build-essential
+          sudo apt-get update
+          # Install kmod package (provides depmod) and other required tools
+          sudo apt-get install -y kmod
+          # Optionally ensure /sbin and /usr/sbin are in PATH (depmod is often in /sbin)
+          echo "PATH=\$PATH:/sbin:/usr/sbin" >> $GITHUB_ENV
           
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
