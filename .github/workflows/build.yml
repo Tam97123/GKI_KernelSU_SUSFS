@@ -171,6 +171,15 @@ jobs:
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
               ;;
           esac
+          
+      - name: Add BBG
+        run: |
+          cd "$CONFIG/common"
+          echo "Adding BBG..."
+          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
+
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
           cd "$CONFIG"
@@ -285,14 +294,6 @@ jobs:
             ;;
           esac
           
-      - name: Add BBG
-        run: |
-          cd "$CONFIG"
-          echo "Adding BBG..."
-          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-          echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
-          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' common/security/Kconfig
-
       - name: Apply Module Symbol Version Fix Patch
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" ]]; then
