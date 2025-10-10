@@ -46,10 +46,11 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y libelf-dev libssl-dev build-essential
           sudo apt-get update
-          # Install kmod package (provides depmod) and other required tools
           sudo apt-get install -y kmod
-          # Optionally ensure /sbin and /usr/sbin are in PATH (depmod is often in /sbin)
-          echo "PATH=\$PATH:/sbin:/usr/sbin" >> $GITHUB_ENV
+          which depmod
+          depmod --version || true
+          sudo ln -sf /sbin/depmod /usr/local/bin/depmod   # careful: only if /sbin/depmod is kmod
+          echo "depmod -> $(readlink -f $(which depmod))"  
           
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
@@ -414,36 +415,25 @@ jobs:
       - name: Change Kernel Uname
         run: |
           cd "$CONFIG"
-          perl -pi -e 's/-dirty//' ./common/scripts/setlocalversion
-          perl -pi -e 's/-maybe-dirty//g' ./build/kernel/kleaf/impl/stamp.bzl
-          
-          #Set Kernel Timestamp
-          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
-          
-          #Set Kernel Name
+          #Set kernel uname
           if [ ! -z "${{ inputs.kernel_uname }}" ]; then
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-            if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-${{ inputs.android_version }}-${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
+            sed -i '$s|echo "\$res"|echo "\${{ inputs.android_kernel }}-\${{ inputs.kernel_uname }}"|' ./common/scripts/setlocalversion
             else
-              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-${{ inputs.android_version }}-${{ inputs.kernel_uname }}"/s' ./common/scripts/setlocalversion
-            fi
-          else
-            echo "Didn't set kernel uname! Set to default"
-            if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "-${{ inputs.android_version }}-\$\{KERNELVERSION\}-Tam"/s' ./common/scripts/setlocalversion
-            else
-              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "-${{ inputs.android_version }}-\$KSUVER-Tam"/s' ./common/scripts/setlocalversion
-            fi
+            sed -i '$s|echo "\$res"|echo "\${{ inputs.android_kernel }}-\$KSUVER-Tam"|' ./common/scripts/setlocalversion
           fi
-
           #Set Kernel Timestamp
-          perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Mon July 07 10:23:31 UTC 2025"/' ./common/init/Makefile
-              
-          #Remove Abi Exports and Error
-          rm -rf ./common/android/abi_gki_protected_exports_*
-          perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
-
+          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
+          if [ -f "build/build.sh" ]; then
+            #Remove Dirty Flag
+            sed -i 's/-dirty//' ./common/scripts/setlocalversion
+          else
+            sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
+            #Remove Abi Exports and Error
+            rm -rf ./common/android/abi_gki_protected_exports_*
+            perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
+          fi
+          
       - name: Build Kernel
         run : |
           set -e
