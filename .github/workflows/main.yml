@@ -178,9 +178,9 @@ jobs:
           -> **Symbol Fix Variant**: Normal build with additional hack for compatibility!
       
           Features:
-          -> ${{ inputs.kernel_variant }}
-          -> SUSFS ඞ version: v1.5.10
-          -> Multi Manager Support for Wild KSU, KernelSU-Next, KernelSU, Magic KSU! Needs Testing: RKSU, xxKSU, KowSU and SukiSU-Ultra          -> SUSFS ඞ v1.5.11
+          -> ${{ inputs.kernel_variant }} manager
+          -> SUSFS ඞ version: v1.5.11
+          -> Multi Manager Support for Wild KSU, KernelSU-Next, KernelSU, Magic KSU! Needs Testing: RKSU, xxKSU, KowSU and SukiSU-Ultra
           -> Scope-Minimized Manual hooks v1.4
           -> Magic Mount Support
           -> Ptrace Patch Support for Older Kernels (<5.16)
@@ -191,7 +191,7 @@ jobs:
 
           Notes:
           -> Wild KSU & KernelSU Next, SUS SU Mode 2 will show as disabled or not compatble due to non-kprobe hooks and is not needed anymore!
-          -> Official Kernel Flasher is broken with latest susfs, try (Kernel Flasher 1)[https://github.com/fatalcoder524/KernelFlasher/] or (Kernel Flasher 2)[https://github.com/libxzr/HorizonKernelFlasher/]!
+          -> Official Kernel Flasher is broken with latest susfs, try [Kernel Flasher by fatalcoder524](https://github.com/fatalcoder524/KernelFlasher/) or [Kernel Flasher by libxzr](https://github.com/libxzr/HorizonKernelFlasher/)!
           -> **boot.img files**: Available as CI artifacts only (not included in releases) - download from the Actions tab 
           -> **Warning**: boot.img files may not boot on some Android 16 devices
           
