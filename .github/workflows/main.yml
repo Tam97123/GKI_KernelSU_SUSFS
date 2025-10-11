@@ -191,7 +191,7 @@ jobs:
 
           Notes:
           -> KernelSU Next & Wild KSU, SUS SU Mode 2 will show as disabled or not compatble due to non-kprobe hooks and is not needed anymore!
-          -> Official Kernel Flasher is broken with latest susfs, try [Kernel Flasher by fatalcoder524](https://github.com/fatalcoder524/KernelFlasher/) or [Kernel Flasher by Libxzr](https://github.com/libxzr/HorizonKernelFlasher/)!
+          -> Official Kernel Flasher is broken with latest susfs, try [Kernel Flasher by fatalcoder524](https://github.com/fatalcoder524/KernelFlasher/) better than [Kernel Flasher by libxzr](https://github.com/libxzr/HorizonKernelFlasher/)!
           -> **boot.img files**: Available as CI artifacts only (not included in releases) - download from the Actions tab
           -> **Warning**: boot.img files may not boot on some Android 16 devices
           
