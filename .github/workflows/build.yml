@@ -444,6 +444,7 @@ jobs:
           echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
+          else
             tools/bazel build --config=fast --lto=thin --sandbox_debug --verbose_failures //common:kernel_aarch64_dist || exit 1
           fi
           
