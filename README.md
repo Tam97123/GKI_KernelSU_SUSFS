@@ -106,11 +106,13 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 ## ♥️ Donations
 
 Due to my current financial situation, any form of support is deeply appreciated. If you would like to contribute, here are some available methods:
-- **BTC**: 1CJTvZgYs7suHXSU3NvD3oZX1MCH8KWMz4
-- **BCH**: 18b4icNbdmvtWVrEFMwHz4M6ZgCc5dESvc
-- **ETH**: 0xB6E169db4B813E514B1D5119f8b3A1bF5d8DEC67
-- **USDT-BSC(bep-20)**: 0xBeCC425c749221608cC07D15F241b1A743b6c6c4
-- **USDT(polygon)**: 0xBeCC425c749221608cC07D15F241b1A743b6c6c4
+- **Bitcoin(bech32)**: bc1qghwe7ry5jvw9ehg652y8gj2zhrgv2l64zrc4ra
+- **Bitcoin(Taproot)**: bc1phxf3u78zc02pgdfczcgfncdy3j2c8x0pa2w0qvtfr3ajymdhca5ss93gf3
+- **Solana**: 2m1ispb6hrRZySDKEyLBTchZByyMMK9qUWwC7NCJw65k
+- **Ethereum**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
+- **Base**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
+- **Sui**: 0xaf60dff268c2068c6ff2efbb0fd11fc30d9f730db1bea075d109f5a9382620c2
+- **Polygon**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
 
 **Thank you so much for your kindness and generosity. Your support means a lot during this time.**
 
