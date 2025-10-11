@@ -51,9 +51,10 @@ For GKI installation, please follow the official guide:
 - ✨ **Magic-KSU**: Developed by [5ec1cff](https://github.com/5ec1cff/KernelSU)
 - 🌴 **Wild-KSU** Developed by [TheWildJames](https://github.com/WildKernels/Wild_KSU)
 - 🎀 **SukiSU-Ultra** Developed by [ShirkNeko](https://github.com/SukiSU-Ultra/SukiSU-Ultra)
-- 🛡️ **SUSFS**: Developed by [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git)
+- 🎁 **SUSFS**: Developed by [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git)
 - 📦 **SUSFS Module**: Developed by [sidex15](https://github.com/sidex15)
 - 👑 **Sultan Kernels**: Developed by [kerneltoast](https://github.com/kerneltoast)
+- 🛡️ **Baseband-guard (BBG)**: Developed by [vc-teahouse](https://github.com/vc-teahouse/Baseband-guard) 
 - 🔧 **Device Boot Fix**: [Boot fix commit](https://github.com/Anything-at-25-00/android_kernel_common_android12-5.10/commit/2476d262b597fe8af82cfb7aaf96676f51c6b4ed) for fixing some devices not booting
 
 🙏 Special thanks to the open-source community for their contributions!
@@ -80,7 +81,7 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 
 <div align="center">
 
-## 📱 Connect With Us
+## 📱 Connect With Me!
 
 [![Telegram Group](https://img.shields.io/badge/Telegram-Tam-blue?logo=telegram)](https://t.me/Id5523842976)
 
@@ -88,13 +89,24 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 
 ---
 
-## 🌟 Special Thanks
+## 🎉 Special Thanks
 
 **These amazing people help make this project possible! ❤️**
 
 | Contributor | Contribution |
 |-------------|-------------|
-| 🛡️ [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git) | Created SUSFS! |
+| 🎁 [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git) | Created SUSFS! |
 | 📦 [sidex15](https://github.com/sidex15) | Created module! |
+| 🛡️ [vc-teahouse](https://github.com/vc-teahouse) | Created Baseband-guard (BBG)! |
 
 *If you have contributed and are not listed here, please remind me!* 🙏
+
+---
+
+## ♥️ Donations
+
+Due to my current financial situation, any form of support is deeply appreciated. If you would like to contribute, here are some available methods:
+**USDT-BSC(bep-20)**: 0xBeCC425c749221608cC07D15F241b1A743b6c6c4
+**USDT(polygon)**: 0xBeCC425c749221608cC07D15F241b1A743b6c6c4
+**Thank you so much for your kindness and generosity. Your support means a lot during this time.**
+
