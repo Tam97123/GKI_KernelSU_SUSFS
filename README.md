@@ -24,8 +24,8 @@ By flashing this kernel, **YOU ARE CHOOSING TO MAKE THESE MODIFICATONS**. If som
 ## 🔗 Additional Resources
 
 - 🩹 [Kernel Patches](https://github.com/Tam97123/kernel_patches)
-- ⚡ [Kernel Flasher 1](https://github.com/fatalcoder524/KernelFlasher)
-- 💤 [Kernel Flasher 2](https://github.com/libxzr/HorizonKernelFlasher)
+- ⚡ [Kernel Flasher by fataicoder524](https://github.com/fatalcoder524/KernelFlasher)
+- 💤 [Kernel Flasher by Libxzr](https://github.com/libxzr/HorizonKernelFlasher)
 
 ---
 
@@ -48,7 +48,6 @@ For GKI installation, please follow the official guide:
 
 - 🔐 **KernelSU**: Developed by [tiann](https://github.com/tiann/KernelSU)
 - 🚀 **KernelSU-Next**: Developed by [rifsxd](https://github.com/KernelSU-Next/KernelSU-Next)
-- ✨ **Magic-KSU**: Developed by [5ec1cff](https://github.com/5ec1cff/KernelSU)
 - 🌴 **Wild-KSU** Developed by [TheWildJames](https://github.com/WildKernels/Wild_KSU)
 - 🎀 **SukiSU-Ultra** Developed by [ShirkNeko](https://github.com/SukiSU-Ultra/SukiSU-Ultra)
 - 🎁 **SUSFS**: Developed by [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git)
