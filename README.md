@@ -3,7 +3,7 @@
 # 🌟 GKI Kernels for Android
 
 [![KernelSU](https://img.shields.io/badge/KernelSU-Supported-green)](https://kernelsu.org/)
-[![SUSFS](https://img.shields.io/badge/SUSFS-Integrated-orange)](https://gitlab.com/simonpunk/susfs4ksu)
+[![SUSFS](https://img.shields.io/badge/SUSFS-Integrated-black)](https://gitlab.com/simonpunk/susfs4ksu)
 
 </div>
 
@@ -25,7 +25,7 @@ By flashing this kernel, **YOU ARE CHOOSING TO MAKE THESE MODIFICATONS**. If som
 
 - 🩹 [Kernel Patches](https://github.com/Tam97123/kernel_patches)
 - ⚡ [Kernel Flasher by fataicoder524](https://github.com/fatalcoder524/KernelFlasher)
-- 💤 [Kernel Flasher by Libxzr](https://github.com/libxzr/HorizonKernelFlasher)
+- 💤 [Kernel Flasher by libxzr](https://github.com/libxzr/HorizonKernelFlasher)
 
 ---
 
@@ -64,14 +64,14 @@ For GKI installation, please follow the official guide:
 
 If you encounter any issues or need help, feel free to:
 - 🐛 Open an issue in this repository
-- 💬 Reach out to me directly
-
+- 💬 Reach out to me directly though Telegram
+  
 ---
 
 ## ⚠️ Disclaimer
 
 Flashing this kernel will void your warranty, and there is always a risk of bricking your device. Please make sure to:
-- 💾 Back up your data
+- 💾 Back up your stock boot image and data
 - 🧠 Understand the risks before proceeding
 
 **🚨 Proceed at your own risk!**
@@ -82,7 +82,7 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 
 ## 📱 Connect With Me!
 
-[![Telegram Group](https://img.shields.io/badge/Telegram-Tam-blue?logo=telegram)](https://t.me/Id5523842976)
+[![Telegram](https://img.shields.io/badge/Telegram-Tam-blue?logo=telegram)](https://t.me/Id5523842976)
 
 </div>
 
@@ -102,9 +102,10 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 
 ---
 
-## ♥️ Donations
+## 💖 Donations
 
 Due to my current financial situation, any form of support is deeply appreciated. If you would like to contribute, here are some available methods:
+
 - **Bitcoin (bech32)**: bc1qghwe7ry5jvw9ehg652y8gj2zhrgv2l64zrc4ra
 - **Bitcoin (Taproot)**: bc1phxf3u78zc02pgdfczcgfncdy3j2c8x0pa2w0qvtfr3ajymdhca5ss93gf3
 - **Solana**: 2m1ispb6hrRZySDKEyLBTchZByyMMK9qUWwC7NCJw65k
@@ -113,5 +114,5 @@ Due to my current financial situation, any form of support is deeply appreciated
 - **Sui**: 0xaf60dff268c2068c6ff2efbb0fd11fc30d9f730db1bea075d109f5a9382620c2
 - **Polygon**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
 
-**Thank you so much for your kindness and generosity. Your support means a lot during this time.**
+**Thank you so much for your kindness and generosity. Your support means a lot during this time.** 🫶
 
