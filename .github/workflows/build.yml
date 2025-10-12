@@ -85,7 +85,6 @@ jobs:
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://github.com/WildKernels/kernel_patches.git
-          git clone https://github.com/ShirkNeko/SukiSU_patch.git
           
       - name: Initialize and Sync Kernel Source
         run: |
@@ -260,7 +259,7 @@ jobs:
               ;;
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
-              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
+              git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
               cd SukiSU-Ultra
               BASE_VERSION=10700 
               ;;
@@ -289,7 +288,7 @@ jobs:
               patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
             ;;
             "SUKI")
-              cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
+              cp ../../kernel_patches/suki/hooks/syscall_hooks.patch ./
               patch -p1 --forward -F 3 < syscall_hooks.patch
             ;;
           esac
