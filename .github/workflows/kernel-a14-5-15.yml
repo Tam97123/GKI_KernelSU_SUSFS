@@ -10,6 +10,9 @@ on:
       kernel_variant:
         required: true
         type: string
+      susfs_version:
+        required: true
+        type: string
       kernel_uname:
         required: false
         type: string
@@ -54,4 +57,5 @@ jobs:
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
       kernel_uname: ${{ inputs.kernel_uname }}
