@@ -18,6 +18,10 @@ on:
         description: 'Custom kernel version name (Ex: Characters after 5.10.198 or leave blank to use default kernel version uname)'
         required: false
         type: string
+      susfs_version:
+        description: 'Choose SUSFS version'
+        required: true
+        type: string
       kernel_variant:
         description: 'Choose KernelSU Variant'
         required: true
@@ -36,6 +40,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
       kernel_uname: ${{ inputs.kernel_uname }}
 
   build-kernels-a13-5-10:
@@ -45,6 +50,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
       kernel_uname: ${{ inputs.kernel_uname }}
       
   build-kernels-a13-5-15:
@@ -54,6 +60,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
       kernel_uname: ${{ inputs.kernel_uname }}
 
   build-kernels-a14-5-15:
@@ -63,6 +70,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
       kernel_uname: ${{ inputs.kernel_uname }}
 
   build-kernels-a14-6-1:
@@ -72,6 +80,8 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
+      kernel_uname: ${{ inputs.kernel_uname }}
 
   build-kernels-a15-6-6:
     name: ${{ inputs.kernel_variant }}-Android_15-6.6
@@ -80,4 +90,5 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
       kernel_uname: ${{ inputs.kernel_uname }}
