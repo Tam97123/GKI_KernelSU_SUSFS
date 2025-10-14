@@ -183,10 +183,14 @@ jobs:
 
       - name: Determine SUSFS version
         run: |
+          cd "$CONFIG"
+          
           SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
-          cd "$CONFIG/$SUSFS_BRANCH"
+          
+          cd "../susfs4ksu"
           SUSFS_VERSION="${{ inputs.susfs_version }}"
+          
           mapfile -t $SUSFS_VERSION < <(git log --grep="Bump version to v" --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
           if [ ! -z "{{ inputs.susfs_version }}" ]; then
             fsusfs_version="${SUSFS_VERSION[0]}"
@@ -195,6 +199,7 @@ jobs:
             echo "Invalid SUSFS version format!"
             exit 1
           fi
+          
           fsusfs_version=""
             for v in "${SUSFS_VERSION[0]}"; do
               if [ "$v" == "$SUSFS_VERSION" ]; then
@@ -207,6 +212,7 @@ jobs:
             echo "SUSFS version: ${{ inputs.susfs_version }} not found!"
             exit 1
           fi
+          
           echo "SUSFS version: $fsusfs_version"
           echo "SUSFS_VERSION=$fsusfs_version" >> $GITHUB_ENV
           
