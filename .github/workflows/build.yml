@@ -204,7 +204,7 @@ jobs:
             done
 
           if [ -z "$fsusfs_version" ]; then
-            echo "SUSFS version: ${{ input.susfs_version }} not found!"
+            echo "SUSFS version: ${{ inputs.susfs_version }} not found!"
             exit 1
           fi
           echo "SUSFS version: $fsusfs_version"
