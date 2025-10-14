@@ -32,6 +32,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{inputs.susfs_version }}
       
   build-kernels-a13-5-10:
     name: ${{ inputs.kernel_variant }}-Android_13-5.10
@@ -39,6 +40,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-kernels-a13-5-15:
     name: ${{ inputs.kernel_variant }}-Android_13-5.15
@@ -46,6 +48,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-kernels-a14-5-15:
     name: ${{ inputs.kernel_variant }}-Android_14-5.15
@@ -53,6 +56,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-kernels-a14-6-1:
     name: ${{ inputs.kernel_variant }}-Android_14-6.1
@@ -60,6 +64,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-kernels-a15-6-6:
     name: ${{ inputs.kernel_variant }}-Android_15-6.6
@@ -67,6 +72,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   release:
     runs-on: ubuntu-latest
