@@ -189,30 +189,22 @@ jobs:
           cd susfs4ksu
           
           SUSFS_VERSION="${{ inputs.susfs_version }}"
+          fsusfs_version=$(git log --grep="Bump version to v" -n 1 --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
           
-          mapfile -t $SUSFS_VERSION < <(git log --grep="Bump version to v" --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
-          if [ ! -z "{{ inputs.susfs_version }}" ]; then
-            fsusfs_version="${SUSFS_VERSION[0]}"
-            echo "Using latest SUSFS version: $fsusfs_version"
-          elif ! echo "$SUSFS_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "Invalid SUSFS version format!"
-            exit 1
-          fi
-          
-          fsusfs_version=""
-            for v in "${SUSFS_VERSION[0]}"; do
-              if [ "$v" == "$SUSFS_VERSION" ]; then
-                fsusfs_version="$v"
-                break
+          if [ -z "$SUSFS_VERSION" ]; then
+            fsusfs_version=$(git log --grep="Bump version to v" -n 1 --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
+            echo "Latest SUSFS version: $fsusfs_version"
+            echo "Latest SUSFS version's commit: $latest_commit"
+            SUSFS_VERSION="$fsusfs_version"
+          else
+            if ! echo "$SUSFS_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "Not found SUSFS version has provided: $SUSFS_VERSION"
+              exit 1
+            else
+              echo "Using provided SUSFS version: $SUSFS_VERSION"
               fi
-            done
-
-          if [ -z "$fsusfs_version" ]; then
-            echo "SUSFS version: ${{ inputs.susfs_version }} not found!"
-            exit 1
           fi
           
-          echo "SUSFS version: $fsusfs_version"
           echo "SUSFS_VERSION=$fsusfs_version" >> $GITHUB_ENV
           
       - name: Apply SUSFS Patches for KernelSU Variants
@@ -452,12 +444,12 @@ jobs:
         run: |
           cd "$CONFIG"
           #Set kernel uname
-          if [ ! -z "${{ inputs.kernel_uname }}" ]; then
-            echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-            sed -i '$s|echo "\$res"|echo "\-${{ inputs.kernel_uname }}"|' ./common/scripts/setlocalversion
-          else
+          if [ -z "${{ inputs.kernel_uname }}" ]; then
             echo "Didn't set kernel uname! Set to default value."
             sed -i '$s|echo "\$res"|echo "\-${{ inputs.android_version }}-$KSUVER-Tam"|' ./common/scripts/setlocalversion
+          else
+            echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
+            sed -i '$s|echo "\$res"|echo "\-${{ inputs.kernel_uname }}"|' ./common/scripts/setlocalversion
           fi
           #Set Kernel Timestamp
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
