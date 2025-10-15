@@ -15,6 +15,9 @@ on:
       kernel_uname:
         required: false
         type: string
+      susfs_version:
+        required: true
+        type: string
       kernel_variant:
         required: true
         type: string
@@ -45,12 +48,6 @@ jobs:
       - name: Setup Build Environment
         run: |
           sudo apt update && sudo apt install -y libelf-dev libssl-dev build-essential
-          sudo apt-get update
-          sudo apt-get install -y kmod
-          which depmod
-          depmod --version || true
-          sudo ln -sf /sbin/depmod /usr/local/bin/depmod   # careful: only if /sbin/depmod is kmod
-          echo "depmod -> $(readlink -f $(which depmod))"  
           
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
@@ -84,8 +81,7 @@ jobs:
 
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-          git clone https://github.com/WildKernels/kernel_patches.git
-          git clone https://github.com/ShirkNeko/SukiSU_patch.git
+          git clone https://github.com/Tam97123/kernel_patches.git
           
       - name: Initialize and Sync Kernel Source
         run: |
@@ -172,13 +168,37 @@ jobs:
               ;;
           esac
           
-      - name: Add BBG
+      #- name: Add BBG
+        #run: |
+          #cd "$CONFIG/common"
+          #echo "Adding BBG..."
+          #wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          #echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
+          #sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
+          
+      - name: Determine SUSFS version
         run: |
-          cd "$CONFIG/common"
-          echo "Adding BBG..."
-          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-          echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
-          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
+          cd "$CONFIG"
+          cd ../susfs4ksu
+          
+          SUSFS_VERSION="${{ inputs.susfs_version }}"
+          fsusfs_version=$(git log --grep="Bump version to v" -n 1 --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
+          
+          if [ -z "$SUSFS_VERSION" ]; then
+            fsusfs_version=$(git log --grep="Bump version to v" -n 1 --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
+            echo "Latest SUSFS version: $fsusfs_version"
+            echo "Latest SUSFS version's commit: $latest_commit"
+            SUSFS_VERSION="$fsusfs_version"
+          else
+            if ! echo "$SUSFS_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "Not found SUSFS version has provided: $SUSFS_VERSION"
+              exit 1
+            else
+              echo "Using provided SUSFS version: $SUSFS_VERSION"
+              fi
+          fi
+          
+          echo "SUSFS_VERSION=$fsusfs_version" >> $GITHUB_ENV  
 
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
@@ -200,13 +220,13 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.11/fix_core_hook.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.11/fix_sucompat.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.11/fix_kernel_compat.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
             "KSU")
@@ -221,16 +241,16 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
 
-              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.11/fix_apk_sign.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_apk_sign.c.patch ./
               patch -p1 --forward < fix_apk_sign.c.patch
               
-              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.11/fix_core_hook.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
 
-              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.11/fix_sucompat.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
-              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.11/fix_kernel_compat.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
               "SUKI")
@@ -289,7 +309,7 @@ jobs:
               patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
             ;;
             "SUKI")
-              cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
+              cp ../../kernel_patches/suki/syscall_hooks.patch ./
               patch -p1 --forward -F 3 < syscall_hooks.patch
             ;;
           esac
