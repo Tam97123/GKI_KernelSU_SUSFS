@@ -82,6 +82,8 @@ jobs:
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://github.com/Tam97123/kernel_patches.git
+
+          echo "SUSFS_BRANCH=$SUSFS_BRANCH" >> $GITHUB_ENV
           
       - name: Initialize and Sync Kernel Source
         run: |
