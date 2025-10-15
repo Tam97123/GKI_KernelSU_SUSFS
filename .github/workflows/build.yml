@@ -81,10 +81,12 @@ jobs:
             echo "$BOOT_SIGN_KEY" > ./kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
           fi
 
-      - name: Clone AnyKernel3 and kernel patches
+      - name: Clone AnyKernel3 and other dependences
         run: |
           ANYKERNEL_BRANCH="gki-2.0"
+          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
           
+          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://github.com/Tam97123/kernel_patches.git
           
@@ -184,10 +186,7 @@ jobs:
       - name: Determine SUSFS version
         run: |
           cd "$CONFIG"
-          cd ..
-          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
-          cd susfs4ksu
+          cd ../susfs4ksu
           
           SUSFS_VERSION="${{ inputs.susfs_version }}"
           fsusfs_version=$(git log --grep="Bump version to v" -n 1 --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
