@@ -18,9 +18,6 @@ on:
       kernel_variant:
         required: true
         type: string
-      susfs_version:
-        required: true
-        type: string
       sub_level:
         required: true
         type: string
@@ -48,13 +45,12 @@ jobs:
       - name: Setup Build Environment
         run: |
           sudo apt update && sudo apt install -y libelf-dev libssl-dev build-essential
-          #if [ "${{ inputs.android_version }}" == "android15" ]; then
-            #sudo apt-get install -y kmod
-            #which depmod
-            #depmod --version || true
-            #sudo ln -sf /sbin/depmod /usr/local/bin/depmod
-            #echo "depmod -> $(readlink -f $(which depmod))"
-          #fi
+          sudo apt-get update
+          sudo apt-get install -y kmod
+          which depmod
+          depmod --version || true
+          sudo ln -sf /sbin/depmod /usr/local/bin/depmod   # careful: only if /sbin/depmod is kmod
+          echo "depmod -> $(readlink -f $(which depmod))"  
           
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
@@ -81,14 +77,15 @@ jobs:
             echo "$BOOT_SIGN_KEY" > ./kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
           fi
 
-      - name: Clone AnyKernel3 and other dependences
+      - name: Clone AnyKernel3 and Other Dependencies
         run: |
           ANYKERNEL_BRANCH="gki-2.0"
           SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-          
+
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-          git clone https://github.com/Tam97123/kernel_patches.git
+          git clone https://github.com/WildKernels/kernel_patches.git
+          git clone https://github.com/ShirkNeko/SukiSU_patch.git
           
       - name: Initialize and Sync Kernel Source
         run: |
@@ -175,46 +172,22 @@ jobs:
               ;;
           esac
           
-      #- name: Add BBG
-        #run: |
-          #cd "$CONFIG/common"
-          #echo "Adding BBG..."
-          #wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-          #echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
-          #sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
-
-      - name: Determine SUSFS version
+      - name: Add BBG
         run: |
-          cd "$CONFIG"
-          cd ../susfs4ksu
-          
-          SUSFS_VERSION="${{ inputs.susfs_version }}"
-          fsusfs_version=$(git log --grep="Bump version to v" -n 1 --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
-          
-          if [ -z "$SUSFS_VERSION" ]; then
-            fsusfs_version=$(git log --grep="Bump version to v" -n 1 --pretty=format:"%s" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
-            echo "Latest SUSFS version: $fsusfs_version"
-            echo "Latest SUSFS version's commit: $latest_commit"
-            SUSFS_VERSION="$fsusfs_version"
-          else
-            if ! echo "$SUSFS_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-              echo "Not found SUSFS version has provided: $SUSFS_VERSION"
-              exit 1
-            else
-              echo "Using provided SUSFS version: $SUSFS_VERSION"
-              fi
-          fi
-          
-          echo "SUSFS_VERSION=$fsusfs_version" >> $GITHUB_ENV
-          
+          cd "$CONFIG/common"
+          echo "Adding BBG..."
+          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
+
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
           cd "$CONFIG"
           
           # Apply core SUSFS patches
-          cp ../susfs4ksu/kernel_patches/50_add_susfs_in_${SUSFS_BRANCH}.patch ./common/
+          cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
           cd common
-          patch -p1 --forward < 50_add_susfs_in_${SUSFS_BRANCH}.patch
+          patch -p1 --forward < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch
           cd ..
           cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
@@ -227,13 +200,13 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/{SUSFS_VERSION}/fix_core_hook.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.11/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/{$SUSFS_VERSION}/fix_sucompat.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.11/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
-              cp ../../kernel_patches/wild/susfs_fix_patches/{$SUSFS_VERSION}/fix_kernel_compat.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.11/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
             "KSU")
@@ -248,16 +221,16 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
 
-              cp ../../kernel_patches/next/susfs_fix_patches/{$SUSFS_VERSION}/fix_apk_sign.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.11/fix_apk_sign.c.patch ./
               patch -p1 --forward < fix_apk_sign.c.patch
               
-              cp ../../kernel_patches/next/susfs_fix_patches/{$SUSFS_VERSION}/fix_core_hook.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.11/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
 
-              cp ../../kernel_patches/next/susfs_fix_patches/{$SUSFS_VERSION}/fix_sucompat.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.11/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
-              cp ../../kernel_patches/next/susfs_fix_patches/{$SUSFS_VERSION}/fix_kernel_compat.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.11/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
               "SUKI")
@@ -287,7 +260,7 @@ jobs:
               ;;
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
-              git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
+              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
               cd SukiSU-Ultra
               BASE_VERSION=10700 
               ;;
@@ -316,7 +289,7 @@ jobs:
               patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
             ;;
             "SUKI")
-              cp ../../kernel_patches/suki/hooks/syscall_hooks.patch ./
+              cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
               patch -p1 --forward -F 3 < syscall_hooks.patch
             ;;
           esac
@@ -444,17 +417,17 @@ jobs:
         run: |
           cd "$CONFIG"
           #Set kernel uname
-          if [ -z "${{ inputs.kernel_uname }}" ]; then
-            echo "Didn't set kernel uname! Set to default value."
-            sed -i '$s|echo "\$res"|echo "\-${{ inputs.android_version }}-$KSUVER-Tam"|' ./common/scripts/setlocalversion
-          else
+          if [ ! -z "${{ inputs.kernel_uname }}" ]; then
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
             sed -i '$s|echo "\$res"|echo "\-${{ inputs.kernel_uname }}"|' ./common/scripts/setlocalversion
+          else
+            echo "Didn't set kernel uname! Set to default value."
+            sed -i '$s|echo "\$res"|echo "\-${{ inputs.android_version }}-$KSUVER-Tam"|' ./common/scripts/setlocalversion
           fi
           #Set Kernel Timestamp
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
-          #Remove Dirty Flag
           if [ -f "build/build.sh" ]; then
+            #Remove Dirty Flag
             sed -i 's/-dirty//' ./common/scripts/setlocalversion
           else
             sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
@@ -496,8 +469,13 @@ jobs:
           # Copy Image from normal build locations
           if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
-          else
+            echo "Build with build.sh!"
+          elif [ -f "./$CONFIG/bazel-bin/common/kernel_aarch64/Image" ]; then
             cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
+            echo "Build with bazel/kleaf!"
+          else
+            echo "Error: Image file not found in any expected location"
+            exit 1
           fi
 
           cd AnyKernel3
@@ -508,7 +486,7 @@ jobs:
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi
           
-          ZIP_NAME="AnyKernel3-${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}.zip"
+          ZIP_NAME="${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}.zip"
           zip -r "../$ZIP_NAME" ./*
 
       - name: Create Bootimgs Folder and Copy Images
