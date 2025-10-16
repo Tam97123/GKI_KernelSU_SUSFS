@@ -45,12 +45,6 @@ jobs:
       - name: Setup Build Environment
         run: |
           sudo apt update && sudo apt install -y libelf-dev libssl-dev build-essential
-          sudo apt-get update
-          sudo apt-get install -y kmod
-          which depmod
-          depmod --version || true
-          sudo ln -sf /sbin/depmod /usr/local/bin/depmod   # careful: only if /sbin/depmod is kmod
-          echo "depmod -> $(readlink -f $(which depmod))"  
           
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
@@ -82,10 +76,35 @@ jobs:
           ANYKERNEL_BRANCH="gki-2.0"
           SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
 
-          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://github.com/WildKernels/kernel_patches.git
-          
+      
+      - name: Determine SUSFS version
+        run: |
+          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
+          cd susfs4ksu
+
+          COMMIT=$(git log --all --grep="$Bump version to v" --format="%H" | head -n 1)
+
+          if [ -z "$COMMIT" ]; then
+            echo "Not found any version!"
+            exit 1
+          fi
+
+          LOG=$(git log -1 --format=%s "$COMMIT")
+
+          SUSFS_VERSION=$(echo "$COMMIT_MSG" | grep -oE 'v[0-9]+(\.[0-9]+)*')
+
+          if [ -z "$SUSFS_VERSION" ]; then
+            echo "Not found any version. Abort..."
+            exit 1
+          else
+            echo "SUSFS version: $SUSFS_VERSION"
+          fi
+
+          echo git log -1 "$COMMIT"
+          echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
+    
       - name: Initialize and Sync Kernel Source
         run: |
           mkdir -p "$CONFIG"
@@ -171,13 +190,13 @@ jobs:
               ;;
           esac
           
-      - name: Add BBG
-        run: |
-          cd "$CONFIG/common"
-          echo "Adding BBG..."
-          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-          echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
-          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
+      #- name: Add BBG
+        #run: |
+          #cd "$CONFIG/common"
+          #echo "Adding BBG..."
+          #wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          #echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
+          #sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
 
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
@@ -199,13 +218,13 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.12/fix_core_hook.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.12/fix_sucompat.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
-              cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.12/fix_kernel_compat.c.patch ./
+              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
             "KSU")
@@ -220,16 +239,16 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
 
-              cp ../../kernel_patches/next/susfs_fix_patches/stable/v1.5.12/fix_apk_sign.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_apk_sign.c.patch ./
               patch -p1 --forward < fix_apk_sign.c.patch
               
-              cp ../../kernel_patches/next/susfs_fix_patches/stable/v1.5.12/fix_core_hook.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_core_hook.c.patch ./
               patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
 
-              cp ../../kernel_patches/next/susfs_fix_patches/stable/v1.5.12/fix_sucompat.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_sucompat.c.patch ./
               patch -p1 --forward < fix_sucompat.c.patch
 
-              cp ../../kernel_patches/next/susfs_fix_patches/stable/v1.5.12/fix_kernel_compat.c.patch ./
+              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_kernel_compat.c.patch ./
               patch -p1 --forward < fix_kernel_compat.c.patch
               ;;
               "SUKI")
