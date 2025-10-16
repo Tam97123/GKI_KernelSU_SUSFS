@@ -351,11 +351,7 @@ jobs:
 
           # Suki ZRAM and KPM
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
-            echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
-            echo "CONFIG_ZRAM=y" >> "$defconfig"
             echo "CONFIG_KPM=y" >> "$defconfig"
-            echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
-            echo "CONFIG_MODULE_SIG_ALL=n" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
             echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
@@ -364,6 +360,9 @@ jobs:
             echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
             echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
+            sed -i 's/^CONFIG_MODULE_SIG=.*/CONFIG_MODULE_SIG=n/' "$defconfig"
+            sed -i 's/^CONFIG_MODULE_SIG_ALL=.*/CONFIG_MODULE_SIG_ALL=n/' "$defconfig"
+fi
           fi  
           
           # KernelSU Core Configuration
