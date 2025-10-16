@@ -360,9 +360,10 @@ jobs:
             echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
             echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
+            
             sed -i 's/^CONFIG_MODULE_SIG=.*/CONFIG_MODULE_SIG=n/' "$defconfig"
             sed -i 's/^CONFIG_MODULE_SIG_ALL=.*/CONFIG_MODULE_SIG_ALL=n/' "$defconfig"
-fi
+            
           fi  
           
           # KernelSU Core Configuration
@@ -482,10 +483,10 @@ fi
           ./patch
           rm -f Image
           mv oImage Image
-          cd ../../..
 
       - name: Create Kernel ZIP
         run: |
+        cd $CONFIG
           # Copy Image from normal build locations
           if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
