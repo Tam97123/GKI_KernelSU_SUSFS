@@ -355,6 +355,7 @@ jobs:
             echo "CONFIG_ZRAM=y" >> "$defconfig"
             echo "CONFIG_KPM=y" >> "$defconfig"
             echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
+            echo "CONFIG_MODULE_SIG_ALL=n" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
             echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
@@ -473,9 +474,9 @@ jobs:
         run: |
           echo "Patching Image file..."
           if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
-            cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image"
+            cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
           else
-            cd "$CONFIG/bazel-bin/common/kernel_aarch64/boot"
+            cd "$CONFIG/bazel-bin/common/kernel_aarch64"
           fi
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
           chmod +x patch
