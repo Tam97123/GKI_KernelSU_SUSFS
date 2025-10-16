@@ -192,13 +192,13 @@ jobs:
               ;;
           esac
           
-      #- name: Add BBG
-        #run: |
-          #cd "$CONFIG/common"
-          #echo "Adding BBG..."
-          #wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-          #echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
-          #sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
+      - name: Add BBG
+        run: |
+          cd "$CONFIG/common"
+          echo "Adding BBG..."
+          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
 
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
@@ -280,7 +280,7 @@ jobs:
               ;;
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
-              git clone --depth=1 https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
+              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
               cd SukiSU-Ultra
               BASE_VERSION=10700 
               ;;
@@ -352,6 +352,8 @@ jobs:
           # Suki ZRAM and KPM
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
             echo "CONFIG_KPM=y" >> "$defconfig"
+            echo CONFIG_MODULE_SIG=n" >> "$defconfig"
+            echo "CONFIG_MODULE_SIG_ALL=n" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
             echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
@@ -360,7 +362,8 @@ jobs:
             echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
             echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
-            
+
+            #This is to make sure it don't follow Google
             sed -i 's/^CONFIG_MODULE_SIG=.*/CONFIG_MODULE_SIG=n/' "$defconfig"
             sed -i 's/^CONFIG_MODULE_SIG_ALL=.*/CONFIG_MODULE_SIG_ALL=n/' "$defconfig"
             
