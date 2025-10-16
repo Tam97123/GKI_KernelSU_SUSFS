@@ -74,13 +74,15 @@ jobs:
       - name: Clone AnyKernel3 and Other Dependencies
         run: |
           ANYKERNEL_BRANCH="gki-2.0"
+          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
 
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://github.com/Tam97123/kernel_patches.git
+
+          echo "SUSFS_BRANCH=$SUSFS_BRANCH" >> $GITHUB_ENV
       
       - name: Determine SUSFS version
         run: |
-          SUSFS_BRANCH="gki-{{ inputs.android_version }}-{{ inputs.kernel_version }}"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           cd susfs4ksu
 
@@ -103,7 +105,7 @@ jobs:
           fi
 
           echo git log -1 "$LOGS"
-          echo "SUSFS_VERSION" >> $GITHUB_ENV
+          echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
 
       - name: Initialize and Sync Kernel Source
         run: |
