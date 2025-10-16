@@ -97,7 +97,7 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 | 🎁 [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git) | Created SUSFS! |
 | 📦 [sidex15](https://github.com/sidex15) | Created module! |
 | 🛡️ [vc-teahouse](https://github.com/vc-teahouse) | Created Baseband-guard (BBG)! |
-| 💖 [TheWildJames](https:github.com/TheWildJames) | Huge thanks for him. Without him, this repository won't be create! |
+| 🤍 [TheWildJames](https://github.com/TheWildJames) | Huge thanks for him. Without him, this repository won't be create! |
 
 *If you have contributed and are not listed here, please remind me!* 🙏
 
