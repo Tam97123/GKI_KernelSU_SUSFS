@@ -104,7 +104,7 @@ jobs:
             echo "SUSFS version: $SUSFS_VERSION"
           fi
 
-          echo git log -1 "$LOGS"
+          echo "$LOGS"
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
 
       - name: Initialize and Sync Kernel Source
