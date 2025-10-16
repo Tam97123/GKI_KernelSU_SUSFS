@@ -309,7 +309,7 @@ jobs:
               patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
             ;;
             "SUKI")
-              cp ../../kernel_patches/suki/hooks/syscall_hooks.patch ./
+              cp ../../kernel_patches/suki/syscall_hooks.patch ./
               patch -p1 --forward -F 3 < syscall_hooks.patch
             ;;
           esac
