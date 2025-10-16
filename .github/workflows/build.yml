@@ -77,7 +77,7 @@ jobs:
           SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
 
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-          git clone https://github.com/WildKernels/kernel_patches.git
+          git clone https://github.com/Tam97123/kernel_patches.git
       
       - name: Determine SUSFS version
         run: |
@@ -87,22 +87,22 @@ jobs:
           COMMIT=$(git log --all --grep="$Bump version to v" --format="%H" | head -n 1)
 
           if [ -z "$COMMIT" ]; then
-            echo "Not found any version!"
+            echo "Not found any version. Abort.."
             exit 1
           fi
 
-          LOG=$(git log -1 --format=%s "$COMMIT")
+          LOGS=$(git log -1 --format=%s "$COMMIT")
 
-          SUSFS_VERSION=$(echo "$COMMIT_MSG" | grep -oE 'v[0-9]+(\.[0-9]+)*')
+          SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v[0-9]+(\.[0-9]+)*')
 
           if [ -z "$SUSFS_VERSION" ]; then
-            echo "Not found any version. Abort..."
+            echo "Not found any version. Abort.."
             exit 1
           else
             echo "SUSFS version: $SUSFS_VERSION"
           fi
 
-          echo git log -1 "$COMMIT"
+          echo git log -1 "$LOGS"
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
     
       - name: Initialize and Sync Kernel Source
@@ -499,7 +499,7 @@ jobs:
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi
           
-          ZIP_NAME="AnyKernel3-${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}.zip"
+          ZIP_NAME="${{ inputs.kernel_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-AnyKernel3.zip"
           zip -r "../$ZIP_NAME" ./*
 
       - name: Create Bootimgs Folder and Copy Images
