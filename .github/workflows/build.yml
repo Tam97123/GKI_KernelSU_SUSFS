@@ -352,7 +352,7 @@ jobs:
           # Suki ZRAM and KPM
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
             echo "CONFIG_KPM=y" >> "$defconfig"
-            echo CONFIG_MODULE_SIG=n" >> "$defconfig"
+            echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
             echo "CONFIG_MODULE_SIG_ALL=n" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
             echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
