@@ -363,7 +363,7 @@ jobs:
             echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
             echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
 
-            #This is to make sure it don't follow Google
+            #This is to make sure it won't follow Google
             sed -i 's/^CONFIG_MODULE_SIG=.*/CONFIG_MODULE_SIG=n/' "$defconfig"
             sed -i 's/^CONFIG_MODULE_SIG_ALL=.*/CONFIG_MODULE_SIG_ALL=n/' "$defconfig"
             
@@ -491,7 +491,7 @@ jobs:
         run: |
           cd $CONFIG
           # Copy Image from normal build locations
-          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
+          if [ -f "build/build.sh"" ]; then
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
           else
             cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
