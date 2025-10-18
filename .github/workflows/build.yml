@@ -402,7 +402,6 @@ jobs:
           # SUSFS Configuration
           echo "CONFIG_KSU_SUSFS=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> "defconfig"
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> "$defconfig"
           
@@ -487,7 +486,7 @@ jobs:
         run: |
           cd $CONFIG
           # Copy Image from normal build locations
-          if [ -f "build/build.sh" ]; then
+          if [ -f "build/build.sh"" ]; then
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
           else
             cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
