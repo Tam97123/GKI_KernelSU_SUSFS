@@ -45,6 +45,7 @@ jobs:
       - name: Setup Build Environment
         run: |
           sudo apt update && sudo apt install -y libelf-dev libssl-dev build-essential
+          sudo apt-get install dwarves
           
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
