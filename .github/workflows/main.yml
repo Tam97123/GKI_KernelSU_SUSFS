@@ -186,8 +186,9 @@ jobs:
           -> Magic Mount Support
           -> Ptrace Patch Support for Older Kernels (<5.16)
           -> IPSet Support for Advanced Network Filtering
+          -> Added sus maps to help hide memory leaked
           -> Wireguard Support
-          -> **Not** added BBG support to prevent unauthorised writes to certain partitions: https://github.com/vc-teahouse/Baseband-guard
+          -> Added BBG support to prevent unauthorised writes to certain partitions: https://github.com/vc-teahouse/Baseband-guard
 
           Notes:
           -> KernelSU Next & Wild KSU, SUS SU Mode 2 will show as disabled or not compatble due to non-kprobe hooks and is not needed anymore!
