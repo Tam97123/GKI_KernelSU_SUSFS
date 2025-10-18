@@ -198,7 +198,7 @@ jobs:
           echo "Adding BBG..."
           wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
           echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
-          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/landlock/landlock,baseband_guard/ } }' security/Kconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' security/Kconfig
 
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
@@ -362,11 +362,6 @@ jobs:
             echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
             echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
             echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
-
-            #This is to make sure it won't follow Google
-            sed -i 's/^CONFIG_MODULE_SIG=.*/CONFIG_MODULE_SIG=n/' "$defconfig"
-            sed -i 's/^CONFIG_MODULE_SIG_ALL=.*/CONFIG_MODULE_SIG_ALL=n/' "$defconfig"
-            
           fi  
           
           # KernelSU Core Configuration
