@@ -87,24 +87,13 @@ jobs:
           cd susfs4ksu
 
           COMMIT=$(git log --all --grep="$Bump version to v" --format="%H" | head -n 1)
-
-          if [ -z "$COMMIT" ]; then
-            echo "Not found any version. Abort.."
-            exit 1
-          fi
-
           LOGS=$(git log -1 --format=%s "$COMMIT")
 
           SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v[0-9]+(\.[0-9]+)*')
+          echo "SUSFS version: $SUSFS_VERSION"
 
-          if [ -z "$SUSFS_VERSION" ]; then
-            echo "Not found any version. Abort.."
-            exit 1
-          else
-            echo "SUSFS version: $SUSFS_VERSION"
-          fi
-
-          echo "$LOGS"
+          git rev-parse HEAD
+          git log -1 --format=%s HEAD
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
 
       - name: Initialize and Sync Kernel Source
