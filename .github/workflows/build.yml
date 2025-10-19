@@ -91,9 +91,9 @@ jobs:
 
           SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v[0-9]+(\.[0-9]+)*')
           echo "SUSFS version: $SUSFS_VERSION"
-
-          git rev-parse HEAD
+          git checkout HEAD
           git log -1 --format=%s HEAD
+
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
 
       - name: Initialize and Sync Kernel Source
