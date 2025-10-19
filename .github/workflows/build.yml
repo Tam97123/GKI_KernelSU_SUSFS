@@ -34,6 +34,19 @@ jobs:
     timeout-minutes: 120
 
     steps:
+      - name: Maximize Build Space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-dotnet: 'true'          # Frees ~2 GB
+          remove-android: 'true'         # Frees ~9 GB
+          remove-haskell: 'true'         # Frees ~5.2 GB
+          remove-codeql: 'true'          # Frees ~5.4 GB
+          remove-docker-images: 'true'   # Frees ~3.2 GB
+          remove-large-packages: 'true'  # Frees ~3.1 GB
+          remove-swapfile: 'true'        # Frees ~4 GB
+          remove-cached-tools: 'false'   # Avoid unless confirmed safe
+          verbose: 'true'                # Enable detailed logging
+          
       - name: Set CONFIG Environment Variable
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -44,8 +57,6 @@ jobs:
 
       - name: Setup Build Environment
         run: |
-          sudo apt update && sudo apt install -y libelf-dev libssl-dev build-essential
-          
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
           git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools &
@@ -130,20 +141,43 @@ jobs:
               
               cd ../..
               if [ -d "$OLD_CONFIG" ]; then
+                 echo "Renaming directory from $OLD_CONFIG to $NEW_CONFIG"
                 mv "$OLD_CONFIG" "$NEW_CONFIG"
+                if [ ! -d "$NEW_CONFIG" ]; then
+                  echo "Error: Directory rename failed, $NEW_CONFIG does not exist"
+                  exit 1
+                fi
+                echo "Directory successfully renamed to $NEW_CONFIG"
+              else
+                echo "Error: Source directory $OLD_CONFIG does not exist"
+                exit 1
               fi
             fi
           fi
 
       - name: Apply glibc 2.38 Compatibility Fix
-        if: ${{ inputs.android_version == 'android14' && inputs.kernel_version == '6.1' }}
         run: |
-          if [ ! -e build/build.sh ]; then 
+          # Use ACTUAL_SUBLEVEL for LTS builds, otherwise use the input sub_level
+          SUBLEVEL_TO_CHECK="${ACTUAL_SUBLEVEL:-${{ inputs.sub_level }}}"
+          
+          if ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $SUBLEVEL_TO_CHECK <= 186 ))) || 
+              ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $SUBLEVEL_TO_CHECK <= 119 ))) || 
+              ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $SUBLEVEL_TO_CHECK <= 110 ))) || 
+              ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "6.1" ]] && (( $SUBLEVEL_TO_CHECK <= 43 ))); then
             GLIBC_VERSION=$(ldd --version 2>/dev/null | head -n 1 | awk '{print $NF}') 
             if [ "$(printf '%s\n' "2.38" "$GLIBC_VERSION" | sort -V | head -n1)" = "2.38" ]; then 
-              cd $CONFIG/common/ && sed -i '/\$(Q)\$(MAKE) -C \$(SUBCMD_SRC) OUTPUT=\$(abspath \$(dir \$@))\/ \$(abspath \$@)/s//$(Q)$(MAKE) -C $(SUBCMD_SRC) EXTRA_CFLAGS="$(CFLAGS)" OUTPUT=$(abspath $(dir $@))\/ $(abspath $@)/' tools/bpf/resolve_btfids/Makefile 2>/dev/null || true
-            fi 
-          fi
+              cd $CONFIG/common/
+              sed -i '/\$(Q)\$(MAKE) -C \$(SUBCMD_SRC) OUTPUT=\$(abspath \$(dir \$@))\/ \$(abspath \$@)/s//$(Q)$(MAKE) -C $(SUBCMD_SRC) EXTRA_CFLAGS="$(CFLAGS)" OUTPUT=$(abspath $(dir $@))\/ $(abspath $@)/' tools/bpf/resolve_btfids/Makefile 2>/dev/null || true
+              if ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $SUBLEVEL_TO_CHECK <= 186 ))) || 
+                  ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $SUBLEVEL_TO_CHECK <= 119 ))) || 
+                  ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $SUBLEVEL_TO_CHECK <= 110 ))); then
+                sed -i '/char \*buf = NULL;/a int i;' tools/lib/subcmd/parse-options.c 2>/dev/null || true
+                sed -i 's/for (int i = 0; subcommands\[i\]; i++) {/for (i = 0; subcommands[i]; i++) {/' tools/lib/subcmd/parse-options.c 2>/dev/null || true
+                sed -i '/if (subcommands) {/a int i;' tools/lib/subcmd/parse-options.c 2>/dev/null || true
+                sed -i 's/for (int i = 0; subcommands\[i\]; i++)/for (i = 0; subcommands[i]; i++)/' tools/lib/subcmd/parse-options.c 2>/dev/null || true
+              fi
+            fi
+          fi 
 
       - name: Fix Less Then 6.6.50 Builds
         if: ${{ inputs.android_version == 'android15' && inputs.kernel_version == '6.6' }}
@@ -192,14 +226,13 @@ jobs:
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
           cd "$CONFIG"
+          cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
+          cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux
           
           # Apply core SUSFS patches
           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
           cd common
-          patch -p1 --forward < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch
-          cd ..
-          cp ../susfs4ksu/kernel_patches/fs/* ./common/fs/
-          cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+          patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch
           
           # Apply KSU integration patches
           case "${{ inputs.kernel_variant }}" in
@@ -207,40 +240,40 @@ jobs:
               echo "Applying SUSFS patches for Wild KSU..."
               cd ./Wild_KSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
-              patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
+              patch -p1 < 10_enable_susfs_for_ksu.patch || true
               
               cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_core_hook.c.patch ./
-              patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
+              patch -p1 --fuzz=3 < fix_core_hook.c.patch
               
               cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_sucompat.c.patch ./
-              patch -p1 --forward < fix_sucompat.c.patch
+              patch -p1 < fix_sucompat.c.patch
 
               cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_kernel_compat.c.patch ./
-              patch -p1 --forward < fix_kernel_compat.c.patch
+              patch -p1 < fix_kernel_compat.c.patch
               ;;
             "KSU")
               echo "Applying SUSFS patches for Official KernelSU..."
               cd ./KernelSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
-              patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
+              patch -p1 < 10_enable_susfs_for_ksu.patch || true
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
               cd ./KernelSU-Next
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
-              patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
+              patch -p1 < 10_enable_susfs_for_ksu.patch || true
 
               cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_apk_sign.c.patch ./
-              patch -p1 --forward < fix_apk_sign.c.patch
+              patch -p1 < fix_apk_sign.c.patch
               
               cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_core_hook.c.patch ./
-              patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
+              patch -p1 --fuzz=3 < fix_core_hook.c.patch
 
               cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_sucompat.c.patch ./
-              patch -p1 --forward < fix_sucompat.c.patch
+              patch -p1 < fix_sucompat.c.patch
 
               cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_kernel_compat.c.patch ./
-              patch -p1 --forward < fix_kernel_compat.c.patch
+              patch -p1 < fix_kernel_compat.c.patch
               ;;
               "SUKI")
               echo "Applying SUSFS patches for Official KernelSU..."
@@ -287,19 +320,19 @@ jobs:
           case "${{ inputs.kernel_variant }}" in
             "WILD")
               cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
-              patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
+              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
             ;;
             "KSU")
               cp ../../kernel_patches/sultan/ksu_hooks.patch ./
-              patch -p1 --forward -F 3 < ksu_hooks.patch
+              patch -p1 -F 3 < ksu_hooks.patch
             ;;
             "NEXT")
               cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
-              patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
+              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
             ;;
             "SUKI")
               cp ../../kernel_patches/suki/syscall_hooks.patch ./
-              patch -p1 --forward -F 3 < syscall_hooks.patch
+              patch -p1 -F 3 < syscall_hooks.patch
             ;;
           esac
           
@@ -411,7 +444,15 @@ jobs:
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
-          
+
+          # Sound Configuration
+          #echo "CONFIG_SND=y" >> "$defconfig"
+          #echo "CONFIG_SND_DRIVERS=y" >> "$defconfig"
+          #echo "CONFIG_SND_PCM=y" >> "$defconfig"
+          #echo "CONFIG_SND_TIMER=y" >> "$defconfig"
+          #echo "CONFIG_SND_DYNAMIC_MINORS=y" >> "$defconfig"
+          #echo "CONFIG_SND_PROC_FS=y" >> "$defconfig"
+          #echo "CONFIG_SND_ALOOP=m" >> "$defconfig"
           # Build Optimization Configuration
           echo "CONFIG_LTO_CLANG_THIN=y" >> "$defconfig"
           echo "CONFIG_LTO_CLANG=y" >> "$defconfig"
