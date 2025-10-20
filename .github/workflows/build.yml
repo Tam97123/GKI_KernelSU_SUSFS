@@ -34,6 +34,11 @@ jobs:
     timeout-minutes: 120
 
     steps:
+      - name: Check Initial Disk Space
+        run: |
+          echo "===== Initial Total Disk Space in GB ====="
+          df -BG
+          
       - name: Maximize Build Space
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
@@ -46,6 +51,11 @@ jobs:
           remove-swapfile: 'true'        # Frees ~4 GB
           remove-cached-tools: 'false'   # Avoid unless confirmed safe
           verbose: 'true'                # Enable detailed logging
+
+      - name: Check Disk Space After Cleanup
+        run: |
+          echo "===== Total Disk Space After Cleanup in GB ====="
+          df -BG
           
       - name: Set CONFIG Environment Variable
         run: |
@@ -123,6 +133,18 @@ jobs:
           fi
           
           $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
+
+      - name: Check Directory Space Usage
+        run: |
+          echo "===== Total Disk Space After Kernel Download in GB ====="
+          df -BG
+          
+          echo "===== Directory Space Usage in GB ====="
+          du -BG -d 1 | sort -nr
+          
+          echo "===== $CONFIG Directory Space Usage in GB ====="
+          cd "$CONFIG"
+          du -BG -d 2 | sort -nr
 
       - name: Extract Actual Sublevel for LTS Builds
         if: inputs.sub_level == 'X'
@@ -214,6 +236,38 @@ jobs:
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
               ;;
           esac
+
+      - name: Getting KernelSU Version
+        run: |
+          cd "$CONFIG"
+          case "${{ inputs.kernel_variant }}" in
+            "WILD")
+              echo "Applying SUSFS patches for WildSU..."
+              cd Wild_KSU
+              BASE_VERSION=10200
+              ;;
+            "KSU")
+              echo "Applying SUSFS patches for Official KernelSU..."
+              cd KernelSU
+              BASE_VERSION=10200
+              ;;
+            "NEXT")
+              echo "Applying SUSFS patches for KernelSU Next..."
+              cd KernelSU-Next
+              BASE_VERSION=10200
+              ;;
+            "SUKI")
+              echo "Applying SUSFS patches for SukiSU-Ultra..."
+              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
+              cd SukiSU-Ultra
+              BASE_VERSION=10700 
+              ;;
+          esac
+          COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
+          echo "Commits: $COMMIT_COUNT"
+          KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
+          echo "KSUVER=$KSU_VERSION"
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           
       - name: Add BBG
         run: |
@@ -280,39 +334,6 @@ jobs:
               cd ./KernelSU
               ;;
           esac
-
-      - name: Getting KernelSU Version
-        run: |
-          cd "$CONFIG"
-          case "${{ inputs.kernel_variant }}" in
-            "WILD")
-              echo "Applying SUSFS patches for WildSU..."
-              cd Wild_KSU
-              BASE_VERSION=10200
-              ;;
-            "KSU")
-              echo "Applying SUSFS patches for Official KernelSU..."
-              cd KernelSU
-              BASE_VERSION=10200
-              ;;
-            "NEXT")
-              echo "Applying SUSFS patches for KernelSU Next..."
-              cd KernelSU-Next
-              BASE_VERSION=10200
-              ;;
-            "SUKI")
-              echo "Applying SUSFS patches for SukiSU-Ultra..."
-              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
-              cd SukiSU-Ultra
-              BASE_VERSION=10700 
-              ;;
-          esac
-          COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
-          echo "Commits: $COMMIT_COUNT"
-          KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
-          echo "KSUVER=$KSU_VERSION"
-          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          
           
       - name: Apply Hooks Patches
         run: |
