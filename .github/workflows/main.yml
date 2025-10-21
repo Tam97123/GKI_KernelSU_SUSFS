@@ -81,18 +81,9 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
       RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.12"
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 8192
-          temp-reserve-mb: 2048
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-
       - name: Checkout code
         uses: actions/checkout@v4
+        
       - name: Get commit hashes and generate commit URLs
         run: |
           GITLAB_OWNER="simonpunk"
@@ -175,9 +166,19 @@ jobs:
           The developers are not responsible for any damage, data loss, or issues that may occur.
           Please ensure you have proper backups before installation.
       
-          NEW:
-          -> **Symbol Fix Variant**: Normal build with additional hack for compatibility!
-      
+          Bypass Modules:
+          - Includes module check bypass modifications 
+          - What are kernel modules? Kernel modules are pieces of code that can be loaded into the kernel at runtime to extend functionality (like device drivers, filesystem support, etc.). These are different from KernelSU/Magisk modules. 
+          - The Problem: Sometimes when installing a custom kernel, the device tries to load a kernel module that fails due to version mismatches, missing dependencies, or signature verification issues. This can cause boot failures or device instability. 
+          - The Solution: This version changes one line from false to true to force load the kernel module, bypassing the failure check that would normally prevent loading.
+
+          BBG (Baseband-guard):
+          - A lightweight LSM (Linux Security Module) for Android kernel
+          - Blocks unauthorized writes to critical partitions/device nodes
+          - Prevents malicious tampering with baseband and boot chain
+          - Kernel-level protection via LSM hooks
+          - Reduces risk of soft-brick/hard-brick issues
+          
           Features:
           -> ${{ inputs.kernel_variant }} managers
           -> SUSFS ඞ version: $SUSFS_VERSION
@@ -187,13 +188,14 @@ jobs:
           -> Ptrace Patch Support for Older Kernels (<5.16)
           -> IPSet Support for Advanced Network Filtering
           -> Wireguard Support
-          -> **Not** added BBG support to prevent unauthorised writes to certain partitions: https://github.com/vc-teahouse/Baseband-guard
+          -> BBR v1 Support
+          -> Added BBG support to prevent unauthorised writes to certain partitions: https://github.com/vc-teahouse/Baseband-guard
 
           Notes:
           -> KernelSU Next & Wild KSU, SUS SU Mode 2 will show as disabled or not compatble due to non-kprobe hooks and is not needed anymore!
           -> Official Kernel Flasher is broken with latest susfs, try [Kernel Flasher by fatalcoder524](https://github.com/fatalcoder524/KernelFlasher/) better than [Kernel Flasher by libxzr](https://github.com/libxzr/HorizonKernelFlasher/)!
           -> **boot.img files**: Available as CI artifacts only (not included in releases) - download from the Actions tab
-          -> **Warning**: boot.img files may not boot on some Android 16 devices
+          -> **Warning**: boot.img files may not boot on some devices
           
           Module: 
           -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
