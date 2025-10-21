@@ -269,14 +269,6 @@ jobs:
           echo "KSUVER=$KSU_VERSION"
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           
-      - name: Add BBG
-        run: |
-          cd "$CONFIG/common"
-          echo "Adding BBG..."
-          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-          echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig
-          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' security/Kconfig
-
       - name: Apply SUSFS Patches for KernelSU Variants
         run: |
           cd "$CONFIG"
@@ -357,7 +349,28 @@ jobs:
             ;;
           esac
           
-      - name: Apply Module Symbol Version Fix Patch
+      - name: Add BBG
+        run: |
+          cd "$CONFIG/common"
+          echo "Adding BBG..."
+          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig# Before sed: Show the original LSM default line for comparison
+          echo "=== Before sed ==="
+          sed -n '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ p }' security/Kconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' security/Kconfig
+          echo "=== After sed ==="
+          sed -n '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ p }' security/Kconfig
+          echo "=== Confirmation: grep for baseband_guard ==="
+          if ! grep -q "baseband_guard" security/Kconfig; then
+            echo "ERROR: baseband_guard not found after sed - stopping workflow"
+            exit 1
+          else
+            echo "SUCCESS: baseband_guard found in security configuration"
+            grep "baseband_guard" security/Kconfig
+          fi
+          cd ..
+          
+      - name: Apply Module Check Bypass
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" ]]; then
             cd "$CONFIG/common/kernel/module"
@@ -522,7 +535,7 @@ jobs:
         if: ${{ inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6' }}
         run: |
           echo "Patching Image file..."
-          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
+          if [ -f "build/build.sh" ]; then
             cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
           else
             cd "$CONFIG/bazel-bin/common/kernel_aarch64"
