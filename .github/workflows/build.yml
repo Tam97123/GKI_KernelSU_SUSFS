@@ -684,9 +684,9 @@ jobs:
           cd $CONFIG
           # Copy Image from normal build locations
           if [ -f "build/build.sh" ]; then
-            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
+            cp out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
           else
-            cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
+            cp bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
           fi
 
           cd AnyKernel3
