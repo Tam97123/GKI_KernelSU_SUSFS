@@ -531,6 +531,139 @@ jobs:
             tools/bazel build --config=fast --lto=thin --sandbox_debug --verbose_failures //common:kernel_aarch64_dist || exit 1
           fi
           
+          echo "BUILD_EXIT=$BUILD_EXIT" >> $GITHUB_ENV
+          if [ "$BUILD_EXIT" -eq 0 ]; then
+            echo "BUILD_SUCCEEDED=true" >> $GITHUB_ENV
+          else
+            echo "BUILD_SUCCEEDED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Kernel build postmortem (always)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$CONFIG" || true
+
+          echo "Collecting postmortem info from build-debug.log"
+          # Provide a short summary and tail
+          echo "=== Last 400 lines of build-debug.log ==="
+          tail -n 400 build-debug.log || true
+
+          # Save summary of errors matching common GCC/clang messages
+          grep -n -E "error: use of undeclared label|error:|warning:" build-debug.log > error-summary.txt || true
+          echo "Saved error-summary.txt"
+
+          # Try to find a line with pattern "<path/to/file.c>:<line>:<col>: error: ... 'label'"
+          # Example: /.../common/fs/proc/task_mmu.c:896:8: error: use of undeclared label 'show_pad'
+          grep -n -E ":[0-9]+:[0-9]+: error: use of undeclared label" build-debug.log | head -n 5 > undeclared-label-lines.txt || true
+          echo "Undeclared label matches (if any):"
+          cat undeclared-label-lines.txt || true
+
+          # Try to extract the path and lineno for the first match
+          FILE=""
+          LINENO=""
+          if [ -s undeclared-label-lines.txt ]; then
+            FIRST=$(head -n 1 undeclared-label-lines.txt)
+            # extract path:line:col
+            PATH_COL=$(echo "$FIRST" | sed -E 's/^([^:]+:[0-9]+):[0-9]+: .*/\1/')
+            FILE=$(echo "$PATH_COL" | sed -E 's/:([0-9]+)$//')
+            LINENO=$(echo "$PATH_COL" | sed -E 's/^[^:]+:([0-9]+)$/\1/')
+          else
+            # fallback: search for "show_pad" mentions
+            grep -n "show_pad" build-debug.log | head -n 1 > /tmp/_showpad || true
+            if [ -s /tmp/_showpad ]; then
+              # try to parse path from earlier lines in the log that mention a .c filename
+              FILE_LINE=$(grep -nE "\.c:[0-9]+:[0-9]+:" build-debug.log | head -n 1 || true)
+              if [ -n "$FILE_LINE" ]; then
+                PATH_COL=$(echo "$FILE_LINE" | cut -d: -f1-2)
+                FILE=$(echo "$PATH_COL" | cut -d: -f1)
+                LINENO=$(echo "$PATH_COL" | cut -d: -f2)
+              fi
+            fi
+          fi
+
+          if [ -n "$FILE" ]; then
+            echo "Detected file: $FILE at line $LINENO"
+            echo "$FILE" > detected-file.txt
+            echo "$LINENO" > detected-line.txt
+            # dump context
+            if [ -f "$FILE" ]; then
+              sed -n "$((LINENO-40)),$((LINENO+40))p" "$FILE" > file-context.txt || true
+              git blame -L $((LINENO-40)),$((LINENO+40)) -- "$FILE" > file-blame.txt || true
+              git grep -n "show_pad" || true
+            else
+              echo "File $FILE not present in workspace" > file-context.txt || true
+            fi
+          else
+            echo "No undeclared-label line detected automatically; will attempt generic greps."
+            # also save file list for manual inspection
+            find . -name "*task_mmu.c" -print > matching-task_mmu-paths.txt || true
+          fi
+
+          # Extract compile command heuristics for preprocessor run
+          # Join backslash-continued lines first then find a -c line referencing our file
+          awk 'BEGIN{buf=""} { if (sub(/\\$/,"")) {buf=buf substr($0,1,length($0)-1); next} if (buf) {print buf $0; buf=""; } else print $0 }' build-debug.log \
+            | grep -F -m1 " -c " > compile-cmd.txt || true
+
+          # fallback: first line mentioning the source filename
+          if [ ! -s compile-cmd.txt ] && [ -n "$FILE" ]; then
+            FN=$(basename "$FILE")
+            grep -n --color=never "$FN" build-debug.log | head -n 1 > compile-cmd.txt || true
+          fi
+
+          echo "=== compile-cmd.txt ==="
+          sed -n '1,200p' compile-cmd.txt || true
+
+          # Attempt to run preprocessor using extracted command
+          PREP_OUT="${FILE##*/}.i"
+          if [ -s compile-cmd.txt ]; then
+            RAW=$(sed -n '1p' compile-cmd.txt)
+            # sanitize: remove -o <xyz>
+            RAW2=$(echo "$RAW" | sed -E 's/ -o [^ ]+//g' | sed -E 's/\\$//g')
+            # replace -c <file> with -E -P -dD -o <file>.i
+            SAN=$(echo "$RAW2" | sed -E "s/ -c [^ ]+/ -E -P -dD -o ${PREP_OUT}/")
+            echo "Running preprocessor command:"
+            echo "$SAN"
+            bash -lc "$SAN" || echo "Preprocessor command failed (nonfatal)"
+          else
+            # fallback preprocess
+            CC=${CC:-gcc}
+            echo "No compile command found; falling back to: $CC -E -P -dD -Iinclude -I. $FILE -o $PREP_OUT"
+            $CC -E -P -dD -Iinclude -I. "$FILE" -o "$PREP_OUT" || echo "Fallback preprocess failed"
+          fi
+
+          # Dump summary files so upload step can pick them up
+          ls -la || true
+          echo "Postmortem collection complete."
+
+      - name: Upload debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-debug-artifacts
+          path: |
+            build-debug.log
+            error-summary.txt
+            undeclared-label-lines.txt
+            compile-cmd.txt
+            compile-lines.txt
+            detected-file.txt
+            detected-line.txt
+            file-context.txt
+            file-blame.txt
+            *.i
+            kernel-config.cfg
+            runner-uname.txt
+            runner-env.txt
+            matching-task_mmu-paths.txt
+
+      - name: Fail job if kernel build failed
+        if: env.BUILD_SUCCEEDED == 'false'
+        run: |
+          echo "Kernel build failed earlier (see build-debug.log). Failing job now."
+          exit $BUILD_EXIT
+
       - name: Patch KPM for SukiSU-Ultra
         if: ${{ inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6' }}
         run: |
