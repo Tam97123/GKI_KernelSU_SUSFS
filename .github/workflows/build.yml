@@ -519,24 +519,12 @@ jobs:
             perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
           fi
           
-      - name: Build Kernel
-        run : |
-          set -e
-          set -x
-          cd "$CONFIG"
-          echo "Building the kernel..."
-          if [ -f "build/build.sh" ]; then
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
-          else
-            tools/bazel build --config=fast --lto=thin --sandbox_debug --verbose_failures //common:kernel_aarch64_dist || exit 1
-          fi
-          
       - name: Build Kernel (verbose, capture log)
         shell: bash
         run: |
-          set -euo pipefail
+          # fail the step if build tool exits non-zero (keeps normal failure semantics)
+          set -e
           set -x
-          # Ensure a known path for debug output (repo root)
           DEBUG_LOG="$GITHUB_WORKSPACE/build-debug.log"
           : > "$DEBUG_LOG"
           echo "== BUILD START: $(date -u) ==" >> "$DEBUG_LOG"
@@ -547,30 +535,33 @@ jobs:
           echo "PWD after cd: $(pwd)" >> "$DEBUG_LOG"
           echo "=== ls -la (config dir) ===" >> "$DEBUG_LOG"
           ls -la >> "$DEBUG_LOG" 2>&1 || true
-          echo "=== uname and env few vars ===" >> "$DEBUG_LOG"
+          echo "=== uname and some env vars ===" >> "$DEBUG_LOG"
           uname -a >> "$DEBUG_LOG" 2>&1 || true
           echo "PATH=$PATH" >> "$DEBUG_LOG"
-          # Build and capture both stdout and stderr in an appendable log
+          # Run build and append ALL output to debug log. If build fails, step will fail
           if [ -f "build/build.sh" ]; then
-            echo "Running build/build.sh" | tee -a "$DEBUG_LOG"
+            echo "Running: build/build.sh" | tee -a "$DEBUG_LOG"
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh 2>&1 | tee -a "$DEBUG_LOG"
           else
-            echo "Running bazel build" | tee -a "$DEBUG_LOG"
+            echo "Running: bazel build" | tee -a "$DEBUG_LOG"
             tools/bazel build --config=fast --lto=thin --sandbox_debug --verbose_failures //common:kernel_aarch64_dist 2>&1 | tee -a "$DEBUG_LOG"
           fi
           echo "== BUILD END: $(date -u) ==" >> "$DEBUG_LOG"
 
       - name: Show debug artifacts and file sizes (pre-upload check)
+        if: always()
         shell: bash
         run: |
+          DEBUG_LOG="$GITHUB_WORKSPACE/build-debug.log"
           echo "=== workspace root listing ==="
           ls -la "$GITHUB_WORKSPACE" || true
           echo "=== top-level file sizes ==="
           du -h --max-depth=1 "$GITHUB_WORKSPACE" || true
-          DEBUG_LOG="$GITHUB_WORKSPACE/build-debug.log"
           echo "DEBUG_LOG path: $DEBUG_LOG"
           if [ -f "$DEBUG_LOG" ]; then
             echo "DEBUG_LOG exists. size:" $(wc -c < "$DEBUG_LOG") "bytes"
+            echo "---- head 120 lines of debug log ----"
+            head -n 120 "$DEBUG_LOG" || true
             echo "---- tail 200 lines of debug log ----"
             tail -n 200 "$DEBUG_LOG" || true
           else
