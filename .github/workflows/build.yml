@@ -39,18 +39,11 @@ jobs:
           echo "===== Initial Total Disk Space in GB ====="
           df -BG
           
-      - name: Maximize Build Space
-        uses: AdityaGarg8/remove-unwanted-software@v5
-        with:
-          remove-dotnet: 'true'          # Frees ~2 GB
-          remove-android: 'true'         # Frees ~9 GB
-          remove-haskell: 'true'         # Frees ~5.2 GB
-          remove-codeql: 'true'          # Frees ~5.4 GB
-          remove-docker-images: 'true'   # Frees ~3.2 GB
-          remove-large-packages: 'true'  # Frees ~3.1 GB
-          remove-swapfile: 'true'        # Frees ~4 GB
-          remove-cached-tools: 'false'   # Avoid unless confirmed safe
-          verbose: 'true'                # Enable detailed logging
+      - name: Download Apache Arrow's util_free_space.sh
+        run: |
+          curl -L -o util_free_space.sh https://raw.githubusercontent.com/apache/arrow/main/ci/scripts/util_free_space.sh
+          chmod +x util_free_space.sh
+          ./util_free_space.sh
 
       - name: Check Disk Space After Cleanup
         run: |
@@ -109,11 +102,8 @@ jobs:
 
           COMMIT=$(git log --all --grep="$Bump version to v" --format="%H" | head -n 1)
           LOGS=$(git log -1 --format=%s "$COMMIT")
-
           SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v[0-9]+(\.[0-9]+)*')
           echo "SUSFS version: $SUSFS_VERSION"
-          git checkout HEAD
-          git log -1 --format=%s HEAD
 
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
 
@@ -133,7 +123,7 @@ jobs:
           fi
           
           $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
-
+          
       - name: Check Directory Space Usage
         run: |
           echo "===== Total Disk Space After Kernel Download in GB ====="
@@ -146,8 +136,7 @@ jobs:
           cd "$CONFIG"
           du -BG -d 2 | sort -nr
 
-      - name: Extract Actual Sublevel for LTS Builds
-        if: inputs.sub_level == 'X'
+      - name: Extract Actual Sublevel
         run: |
           cd "$CONFIG/common"
           
@@ -155,44 +144,28 @@ jobs:
             ACTUAL_SUBLEVEL=$(grep '^SUBLEVEL = ' Makefile | awk '{print $3}')
             
             if [ -n "$ACTUAL_SUBLEVEL" ]; then
-              OLD_CONFIG="$CONFIG"
-              NEW_CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-$ACTUAL_SUBLEVEL"
-              
-              echo "CONFIG=$NEW_CONFIG" >> $GITHUB_ENV
               echo "ACTUAL_SUBLEVEL=$ACTUAL_SUBLEVEL" >> $GITHUB_ENV
-              
-              cd ../..
-              if [ -d "$OLD_CONFIG" ]; then
-                 echo "Renaming directory from $OLD_CONFIG to $NEW_CONFIG"
-                mv "$OLD_CONFIG" "$NEW_CONFIG"
-                if [ ! -d "$NEW_CONFIG" ]; then
-                  echo "Error: Directory rename failed, $NEW_CONFIG does not exist"
-                  exit 1
-                fi
-                echo "Directory successfully renamed to $NEW_CONFIG"
-              else
-                echo "Error: Source directory $OLD_CONFIG does not exist"
-                exit 1
-              fi
+              echo "Extracted ACTUAL_SUBLEVEL=$ACTUAL_SUBLEVEL; no directory changes performed."
+            else
+              echo "Warning: SUBLEVEL not found in Makefile; continuing with inputs.sub_level."
             fi
           fi
 
       - name: Apply glibc 2.38 Compatibility Fix
         run: |
           # Use ACTUAL_SUBLEVEL for LTS builds, otherwise use the input sub_level
-          SUBLEVEL_TO_CHECK="${ACTUAL_SUBLEVEL:-${{ inputs.sub_level }}}"
           
-          if ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $SUBLEVEL_TO_CHECK <= 186 ))) || 
-              ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $SUBLEVEL_TO_CHECK <= 119 ))) || 
-              ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $SUBLEVEL_TO_CHECK <= 110 ))) || 
-              ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "6.1" ]] && (( $SUBLEVEL_TO_CHECK <= 43 ))); then
+          if ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $ACTUAL_SUBLEVEL <= 186 ))) || 
+              ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $ACTUAL_SUBLEVEL <= 119 ))) || 
+              ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $ACTUAL_SUBLEVEL <= 110 ))) || 
+              ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "6.1" ]] && (( $ACTUAL_SUBLEVEL <= 43 ))); then
             GLIBC_VERSION=$(ldd --version 2>/dev/null | head -n 1 | awk '{print $NF}') 
             if [ "$(printf '%s\n' "2.38" "$GLIBC_VERSION" | sort -V | head -n1)" = "2.38" ]; then 
               cd $CONFIG/common/
               sed -i '/\$(Q)\$(MAKE) -C \$(SUBCMD_SRC) OUTPUT=\$(abspath \$(dir \$@))\/ \$(abspath \$@)/s//$(Q)$(MAKE) -C $(SUBCMD_SRC) EXTRA_CFLAGS="$(CFLAGS)" OUTPUT=$(abspath $(dir $@))\/ $(abspath $@)/' tools/bpf/resolve_btfids/Makefile 2>/dev/null || true
-              if ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $SUBLEVEL_TO_CHECK <= 186 ))) || 
-                  ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $SUBLEVEL_TO_CHECK <= 119 ))) || 
-                  ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $SUBLEVEL_TO_CHECK <= 110 ))); then
+              if ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $ACTUAL_SUBLEVEL <= 186 ))) || 
+                  ([[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $ACTUAL_SUBLEVEL <= 119 ))) || 
+                  ([[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $ACTUAL_SUBLEVEL <= 110 ))); then
                 sed -i '/char \*buf = NULL;/a int i;' tools/lib/subcmd/parse-options.c 2>/dev/null || true
                 sed -i 's/for (int i = 0; subcommands\[i\]; i++) {/for (i = 0; subcommands[i]; i++) {/' tools/lib/subcmd/parse-options.c 2>/dev/null || true
                 sed -i '/if (subcommands) {/a int i;' tools/lib/subcmd/parse-options.c 2>/dev/null || true
@@ -202,7 +175,7 @@ jobs:
           fi 
 
       - name: Fix Less Then 6.6.50 Builds
-        if: ${{ inputs.android_version == 'android15' && inputs.kernel_version == '6.6' }}
+        if: inputs.android_version == 'android15' && inputs.kernel_version == '6.6'
         run: |
           cd "$CONFIG/common"
           if ! grep -qxF '#include <trace/hooks/fs.h>' ./fs/namespace.c; then
@@ -242,24 +215,24 @@ jobs:
           cd "$CONFIG"
           case "${{ inputs.kernel_variant }}" in
             "WILD")
-              echo "Applying SUSFS patches for WildSU..."
-              cd Wild_KSU
+              echo "Applying SUSFS patches for Wild KSU..."
+              cd Wild_KSU/kernel
               BASE_VERSION=10200
               ;;
             "KSU")
               echo "Applying SUSFS patches for Official KernelSU..."
-              cd KernelSU
+              cd KernelSU/kernel
               BASE_VERSION=10200
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
-              cd KernelSU-Next
+              cd KernelSU-Next/kernel
               BASE_VERSION=10200
               ;;
             "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
               git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
-              cd SukiSU-Ultra
+              cd SukiSU-Ultra/kernel
               BASE_VERSION=10700 
               ;;
           esac
@@ -279,6 +252,15 @@ jobs:
           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
           cd common
           patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch
+
+          # Defined goto show_pad
+          if ( ( [[ "${{ inputs.android_version }}" == "android12" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $ACTUAL_SUBLEVEL <= 209 )) ) \
+               || ( [[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $ACTUAL_SUBLEVEL <= 209 )) ) \
+               || ( [[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $ACTUAL_SUBLEVEL <= 148 )) ) \
+               || ( [[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( $ACTUAL_SUBLEVEL <= 148 )) ) \
+               || ( [[ "${{ inputs.android_version }}" == "android14" ]] && [[ "${{ inputs.kernel_version }}" == "6.1" ]] && (( $ACTUAL_SUBLEVEL <= 75 )) ) ); then
+            sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
+          fi
           
           # Apply KSU integration patches
           case "${{ inputs.kernel_variant }}" in
@@ -351,26 +333,14 @@ jobs:
           
       - name: Add BBG
         run: |
-          cd "$CONFIG/common"
+          cd "$CONFIG"
           echo "Adding BBG..."
           wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-          echo "CONFIG_BBG=y" >> arch/arm64/configs/gki_defconfig# Before sed: Show the original LSM default line for comparison
-          echo "=== Before sed ==="
-          sed -n '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ p }' security/Kconfig
-          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' security/Kconfig
-          echo "=== After sed ==="
-          sed -n '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ p }' security/Kconfig
-          echo "=== Confirmation: grep for baseband_guard ==="
-          if ! grep -q "baseband_guard" security/Kconfig; then
-            echo "ERROR: baseband_guard not found after sed - stopping workflow"
-            exit 1
-          else
-            echo "SUCCESS: baseband_guard found in security configuration"
-            grep "baseband_guard" security/Kconfig
-          fi
-          cd ..
-          
+          echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
+
       - name: Apply Module Check Bypass
+        if: ${{ matrix.apply_bypass == 'bypass' }}
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" ]]; then
             cd "$CONFIG/common/kernel/module"
@@ -381,7 +351,7 @@ jobs:
           fi
 
       - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
-        if: ${{ inputs.kernel_version == '6.6' }}
+        if: ${{ ( inputs.kernel_version == '6.6' ) }}
         run: |
           SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_galaxy
           echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
@@ -402,6 +372,8 @@ jobs:
         run: |
           cd "$CONFIG"
           defconfig="./common/arch/arm64/configs/gki_defconfig"
+          # Remove check_defconfig
+          sed -i 's/check_defconfig//' ./common/build.config.gki
           
           echo "Applying kernel configurations one by one..."
 
@@ -443,18 +415,24 @@ jobs:
           
           # IPSet support
           echo "CONFIG_IP_SET=y" >> "$defconfig"
-          echo "CONFIG_IP_SET_MAX=256" >> "$defconfig"
+          echo "CONFIG_IP_SET_MAX=65534" >> "$defconfig"
           echo "CONFIG_IP_SET_BITMAP_IP=y" >> "$defconfig"
           echo "CONFIG_IP_SET_BITMAP_IPMAC=y" >> "$defconfig"
           echo "CONFIG_IP_SET_BITMAP_PORT=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_IP=y" >> "$defconfig"
+          echo "CONFIG_IP_SET_HASH_IPMARK=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_IPPORT=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_IPPORTIP=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_IPPORTNET=y" >> "$defconfig"
+          echo "CONFIG_IP_SET_HASH_IPMAC=y" >> "$defconfig"
+          echo "CONFIG_IP_SET_HASH_MAC=y" >> "$defconfig"
+          echo "CONFIG_IP_SET_HASH_NETPORTNET=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NET=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NETNET=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NETPORT=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> "$defconfig"
+          echo "CONFIG_IP_SET_LIST_SET=y" >> "$defconfig"
+          
           # SUSFS Configuration
           echo "CONFIG_KSU_SUSFS=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=n" >> "$defconfig"
@@ -478,28 +456,18 @@ jobs:
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
-
-          # Sound Configuration
-          #echo "CONFIG_SND=y" >> "$defconfig"
-          #echo "CONFIG_SND_DRIVERS=y" >> "$defconfig"
-          #echo "CONFIG_SND_PCM=y" >> "$defconfig"
-          #echo "CONFIG_SND_TIMER=y" >> "$defconfig"
-          #echo "CONFIG_SND_DYNAMIC_MINORS=y" >> "$defconfig"
-          #echo "CONFIG_SND_PROC_FS=y" >> "$defconfig"
-          #echo "CONFIG_SND_ALOOP=m" >> "$defconfig"
+          
           # Build Optimization Configuration
           echo "CONFIG_LTO_CLANG_THIN=y" >> "$defconfig"
           echo "CONFIG_LTO_CLANG=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
-          
-          # Remove check_defconfig
-          sed -i 's/check_defconfig//' ./common/build.config.gki
+          echo "CONFIG_OPTIMIZE_INLINING=y" >> "$defconfig"
           
       - name: Change Kernel Uname
         run: |
           cd "$CONFIG"
-          #Set kernel uname
+          # Set kernel uname
           if [ ! -z "${{ inputs.kernel_uname }}" ]; then
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
             sed -i '$s|echo "\$res"|echo "\-${{ inputs.kernel_uname }}"|' ./common/scripts/setlocalversion
@@ -507,9 +475,9 @@ jobs:
             echo "Didn't set kernel uname! Set to default value."
             sed -i '$s|echo "\$res"|echo "\-${{ inputs.android_version }}-$KSUVER-Tam"|' ./common/scripts/setlocalversion
           fi
-          #Set Kernel Timestamp
+          # Set Kernel Timestamp
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
-          #Remove Dirty Flag
+          # Remove Dirty Flag
           if [ -f "build/build.sh" ]; then
             sed -i 's/-dirty//' ./common/scripts/setlocalversion
           else
@@ -519,57 +487,18 @@ jobs:
             perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
           fi
           
-      - name: Build Kernel (verbose, capture log)
-        shell: bash
-        run: |
-          # fail the step if build tool exits non-zero (keeps normal failure semantics)
+      - name: Build Kernels
+        run : |
           set -e
           set -x
-          DEBUG_LOG="$GITHUB_WORKSPACE/build-debug.log"
-          : > "$DEBUG_LOG"
-          echo "== BUILD START: $(date -u) ==" >> "$DEBUG_LOG"
-          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE" >> "$DEBUG_LOG"
-          echo "CONFIG: $CONFIG" >> "$DEBUG_LOG"
-          echo "PWD before cd: $(pwd)" >> "$DEBUG_LOG"
           cd "$CONFIG"
-          echo "PWD after cd: $(pwd)" >> "$DEBUG_LOG"
-          echo "=== ls -la (config dir) ===" >> "$DEBUG_LOG"
-          ls -la >> "$DEBUG_LOG" 2>&1 || true
-          echo "=== uname and some env vars ===" >> "$DEBUG_LOG"
-          uname -a >> "$DEBUG_LOG" 2>&1 || true
-          echo "PATH=$PATH" >> "$DEBUG_LOG"
-          # Run build and append ALL output to debug log. If build fails, step will fail
+          echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
-            echo "Running: build/build.sh" | tee -a "$DEBUG_LOG"
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh 2>&1 | tee -a "$DEBUG_LOG"
+            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           else
-            echo "Running: bazel build" | tee -a "$DEBUG_LOG"
-            tools/bazel build --config=fast --lto=thin --sandbox_debug --verbose_failures //common:kernel_aarch64_dist 2>&1 | tee -a "$DEBUG_LOG"
+            tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
           fi
-          echo "== BUILD END: $(date -u) ==" >> "$DEBUG_LOG"
 
-      - name: Show debug artifacts and file sizes (pre-upload check)
-        if: always()
-        shell: bash
-        run: |
-          DEBUG_LOG="$GITHUB_WORKSPACE/build-debug.log"
-          echo "=== workspace root listing ==="
-          ls -la "$GITHUB_WORKSPACE" || true
-          echo "=== top-level file sizes ==="
-          du -h --max-depth=1 "$GITHUB_WORKSPACE" || true
-          echo "DEBUG_LOG path: $DEBUG_LOG"
-          if [ -f "$DEBUG_LOG" ]; then
-            echo "DEBUG_LOG exists. size:" $(wc -c < "$DEBUG_LOG") "bytes"
-            echo "---- head 120 lines of debug log ----"
-            head -n 120 "$DEBUG_LOG" || true
-            echo "---- tail 200 lines of debug log ----"
-            tail -n 200 "$DEBUG_LOG" || true
-          else
-            echo "WARNING: DEBUG_LOG not found!"
-            # create a marker so artifact upload won't be empty
-            echo "NO_DEBUG_LOG_CREATED_AT_$(date -u)" > "$DEBUG_LOG"
-          fi
-          
       - name: Patch KPM for SukiSU-Ultra
         if: ${{ inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6' }}
         run: |
@@ -587,12 +516,11 @@ jobs:
 
       - name: Create Kernel ZIP
         run: |
-          cd $CONFIG
           # Copy Image from normal build locations
-          if [ -f "build/build.sh" ]; then
-            cp out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
+          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
           else
-            cp bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
+            cp ./CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
           fi
 
           cd AnyKernel3
@@ -670,11 +598,5 @@ jobs:
         with:
           name: ${{ inputs.kernel_variant }}-${{ env.KSUVER }}-kernel-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}
           path: |
-            build-debug.log
-            $CONFIG/common/fs/proc/task_mmu.c
-            $CONFIG/common/fs/proc/*.c
-            $CONFIG/common/fs/proc/*.h
-            $CONFIG/bazel-bin/common/kernel_aarch64/**/*
-            $CONFIG/out/**/* 
             *.zip
             *.img
