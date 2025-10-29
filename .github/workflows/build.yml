@@ -251,7 +251,7 @@ jobs:
           # Apply core SUSFS patches
           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
           cd common
-          patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch
+          patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
 
           # Defined goto show_pad
           if ( ( [[ "${{ inputs.android_version }}" == "android12" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $ACTUAL_SUBLEVEL <= 209 )) ) \
