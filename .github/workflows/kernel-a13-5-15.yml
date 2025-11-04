@@ -16,6 +16,7 @@ on:
 
 jobs:
   build-kernels-a13-5-15:
+    name: "5.15.${{ matrix.sub_level }}-${{ matrix.os_patch_level }}"
     strategy:
       fail-fast: false
       matrix:
