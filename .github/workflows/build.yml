@@ -315,6 +315,9 @@ jobs:
               cd ../KernelSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
+
+              cp ../../kernel_patches/sultan/ksu_hooks.patch ./
+              patch -p1 < ksu_hooks.patch
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
