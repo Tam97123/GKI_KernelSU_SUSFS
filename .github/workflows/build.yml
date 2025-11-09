@@ -315,9 +315,12 @@ jobs:
               cd ../KernelSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
+              
+              cp ../../kernel_patches/sultan/fix_inode.c.patch ./
+              patch -p1 -F 3 < fix_inode.c.patch
 
-              cp ../../kernel_patches/sultan/ksu_hooks.patch ./
-              patch -p1 < ksu_hooks.patch
+              cp ../../kernel_patches/sultan/fix_core_hook.c.patch ./
+              patch -p1 -F 3 < fix_core_hook.c.patch
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
@@ -338,7 +341,7 @@ jobs:
               patch -p1 < fix_kernel_compat.c.patch
               ;;
               "SUKI")
-              echo "Applying SUSFS patches for Official KernelSU..."
+              echo "Applying SUSFS patches for SukiSU..."
               cd ../KernelSU
               ;;
           esac
