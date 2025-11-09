@@ -69,7 +69,7 @@ jobs:
       kernel_variant: ${{ inputs.kernel_variant }}
 
   release:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs:
       - build-kernels-a12-5-10
       - build-kernels-a13-5-10
