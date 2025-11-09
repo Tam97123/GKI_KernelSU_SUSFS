@@ -300,11 +300,11 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
               
-              cp ../../kernel_patches/sultan/fix_inode.c.patch ./
-              patch -p1 -F 3 < fix_inode.c.patch
+              #cp ../../kernel_patches/sultan/fix_inode.c.patch ./
+              #patch -p1 -F 3 < fix_inode.c.patch
 
-              cp ../../kernel_patches/sultan/fix_core_hook.c.patch ./
-              patch -p1 -F 3 < fix_core_hook.c.patch
+              #cp ../../kernel_patches/sultan/fix_core_hook.c.patch ./
+              #patch -p1 -F 3 < fix_core_hook.c.patch
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
