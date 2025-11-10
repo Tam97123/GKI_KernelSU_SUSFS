@@ -76,9 +76,10 @@ jobs:
           echo "REPO=$GITHUB_WORKSPACE/./git-repo/repo" >> $GITHUB_ENV
 
       - name: Set Git configuration
-        run:|
+        run: |
           git config --global user.name "Tam"
           git config --global user.email "tamtranduc001@gmail.com"
+          
       - name: Set boot sign key
         env:
           BOOT_SIGN_KEY: ${{ secrets.BOOT_SIGN_KEY }}
@@ -125,6 +126,16 @@ jobs:
           fi
           
           $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
+          
+          #Fix the bug in version 5.15 where only the old C library was supported
+          FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          if grep -q deprecated <<< "$REMOTE_BRANCH" && \
+             { [ "$FORMATTED_BRANCH" == "android13-5.15" ] && \
+               [ ${{ inputs.sub_level }} -lt 123 ]; }; then
+            cd common
+            curl -LSsO https://github.com/zzh20188/GKI_KernelSU_SUSFS/raw/refs/heads/dev/5.15-patch/fix_5.15.legacy.patch
+            patch -p1 < fix_5.15.legacy.patch
+          fi
           
       - name: Check Directory Space Usage
         run: |
@@ -264,7 +275,7 @@ jobs:
           cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
           cd common
           patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
-
+          
           # Remove and fix go to show_pad
           if ( ( [[ "${{ inputs.android_version }}" == "android12" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && (( $ACTUAL_SUBLEVEL <= 209 )) ) \
                || ( [[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.10" ]] && [[ "${{ inputs.os_patch_level }}" != "2024-05" ]] && (( $ACTUAL_SUBLEVEL <= 209 )) ) \
@@ -302,7 +313,14 @@ jobs:
             cp ../../kernel_patches/experimental/susfs/fix_task_mmu.c.patch ./
             patch -p1 < fix_task_mmu.c.patch || true
           fi
-
+          
+          FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          if grep -q deprecated <<< "$REMOTE_BRANCH" && \
+             { [ "$FORMATTED_BRANCH" == "android12-5.10" ] && \
+               [ ${{ inputs.sub_level }} -lt 136 ]; }; then
+            cp ../../kernel_patches/experimental/susfs/fdinfo.c.patch ./
+            patch -p1 < 2_fdinfo.c.patch
+          fi
           
           # Apply KSU integration patches
           case "${{ inputs.kernel_variant }}" in
@@ -326,13 +344,16 @@ jobs:
               cd ../KernelSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
-              
-              cd ..
-              cp ../kernel_patches/sultan/fix_inode.c.patch ./
-              patch -p1 < fix_inode.c.patch || true
 
-              cp ../kernel_patches/sultan/fix_core_hook.c.patch ./
-              patch -p1 < fix_core_hook.c.patch || true
+              cp ../../kernel_patches/sultan/rm_devpt.patch ./
+              patch -p1 < rm_devpt.patch
+              
+              #cd ..
+              #cp ../kernel_patches/sultan/fix_inode.c.patch ./
+              #patch -p1 < fix_inode.c.patch || true
+
+              #cp ../kernel_patches/sultan/fix_core_hook.c.patch ./
+              #patch -p1 < fix_core_hook.c.patch || true
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
