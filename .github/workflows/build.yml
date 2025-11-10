@@ -34,7 +34,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
-    steps:     
+    steps:
+      - name: Maximize Build Space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-dotnet: 'true'          # Frees ~2 GB
+          remove-android: 'true'         # Frees ~9 GB
+          remove-haskell: 'true'         # Frees ~5.2 GB
+          remove-codeql: 'true'          # Frees ~5.4 GB
+          remove-docker-images: 'true'   # Frees ~3.2 GB
+          remove-large-packages: 'true'  # Frees ~3.1 GB
+          remove-swapfile: 'true'        # Frees ~4 GB
+          remove-cached-tools: 'false'   # Avoid unless confirmed safe
+          verbose: 'true'                # Enable detailed logging
+          
       - name: Set CONFIG Environment Variable
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -62,6 +75,10 @@ jobs:
           chmod a+rx ./git-repo/repo
           echo "REPO=$GITHUB_WORKSPACE/./git-repo/repo" >> $GITHUB_ENV
 
+      - name: Set Git configuration
+        run:|
+          git config --global user.name "Tam"
+          git config --global user.email "tamtranduc001@gmail.com"
       - name: Set boot sign key
         env:
           BOOT_SIGN_KEY: ${{ secrets.BOOT_SIGN_KEY }}
@@ -194,6 +211,16 @@ jobs:
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
               ;;
           esac
+
+      - name: Add Suki infomation manager
+        if: ${{ inputs.kernelsu_variant == 'SUKI' }}
+        run: |
+          if [ ! -z "${{ vars.MANAGER_STR }}" ]; then
+            cd "$CONFIG"
+            cd ./KernelSU
+            sed -i 's|\$(shell cd \$(srctree)/\$(src); \$(GIT_BIN) rev-parse --short=8 HEAD)|${{ vars.MANAGER_STR }}|g' ./kernel/Makefile 
+            sed -n '50,60p' ./kernel/Makefile
+          fi
 
       - name: Getting KernelSU Version
         run: |
