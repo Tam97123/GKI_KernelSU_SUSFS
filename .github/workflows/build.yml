@@ -128,14 +128,14 @@ jobs:
           $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
           
           #Fix the bug in version 5.15 where only the old C library was supported
-          FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-          if grep -q deprecated <<< "$REMOTE_BRANCH" && \
-             { [ "$FORMATTED_BRANCH" == "android13-5.15" ] && \
-               [ ${{ inputs.sub_level }} -lt 123 ]; }; then
-            cd common
-            curl -LSsO https://github.com/zzh20188/GKI_KernelSU_SUSFS/raw/refs/heads/dev/5.15-patch/fix_5.15.legacy.patch
-            patch -p1 < fix_5.15.legacy.patch
-          fi
+          #FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          #if grep -q deprecated <<< "$REMOTE_BRANCH" && \
+          #   { [ "$FORMATTED_BRANCH" == "android13-5.15" ] && \
+          #     [ ${{ inputs.sub_level }} -lt 123 ]; }; then
+          #  cd common
+          #  curl -LSsO https://github.com/zzh20188/GKI_KernelSU_SUSFS/raw/refs/heads/dev/5.15-patch/fix_5.15.legacy.patch
+          #  patch -p1 < fix_5.15.legacy.patch
+          #fi
           
       - name: Check Directory Space Usage
         run: |
@@ -223,16 +223,6 @@ jobs:
               ;;
           esac
 
-      - name: Add Suki infomation manager
-        if: ${{ inputs.kernelsu_variant == 'SUKI' }}
-        run: |
-          if [ ! -z "${{ vars.MANAGER_STR }}" ]; then
-            cd "$CONFIG"
-            cd ./KernelSU
-            sed -i 's|\$(shell cd \$(srctree)/\$(src); \$(GIT_BIN) rev-parse --short=8 HEAD)|${{ vars.MANAGER_STR }}|g' ./kernel/Makefile 
-            sed -n '50,60p' ./kernel/Makefile
-          fi
-
       - name: Getting KernelSU Version
         run: |
           cd "$CONFIG"
@@ -314,14 +304,6 @@ jobs:
             patch -p1 < fix_task_mmu.c.patch || true
           fi
           
-          FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-          if grep -q deprecated <<< "$REMOTE_BRANCH" && \
-             { [ "$FORMATTED_BRANCH" == "android12-5.10" ] && \
-               [ ${{ inputs.sub_level }} -lt 136 ]; }; then
-            cp ../../kernel_patches/experimental/susfs/fdinfo.c.patch ./
-            patch -p1 < 2_fdinfo.c.patch
-          fi
-          
           # Apply KSU integration patches
           case "${{ inputs.kernel_variant }}" in
             "WILD")
@@ -396,8 +378,8 @@ jobs:
               patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
             ;;
             "SUKI")
-              cp ../../kernel_patches/suki/syscall_hooks.patch ./
-              patch -p1 -F 3 < syscall_hooks.patch
+              cp ../../kernel_patches/suki/scope_min_manual_hooks_v1.6.patch ./
+              patch -p1 -F 3 < scope_min_manual_hooks_v1.6.patch
             ;;
           esac
           
@@ -409,8 +391,25 @@ jobs:
           echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
 
+      - name: Apply LZ4KD & ZSTDN patches
+        if: inputs.kernelsu_variant == 'SUKI'
+        run: |
+          cd "$CONFIG/common"
+          cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
+          cp -r ../../SukiSU_patch/other/zram/lz4k/lib/* ./lib/
+          cp -r ../../SukiSU_patch/other/zram/lz4k/crypto/* ./crypto/
+          cp -r ../../SukiSU_patch/other/zram/lz4k_oplus ./lib/
+
+          cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
+          echo "Applying lz4kd patch"
+          patch -p1 -F 3 < lz4kd.patch || true
+
+          cp ../../SukiSU_patch/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
+          echo "Applying lz4k_oplus patch"
+          patch -p1 -F 3 < lz4k_oplus.patch || true
+          
       - name: Apply Module Check Bypass
-        if: ${{ matrix.apply_bypass == 'bypass' }}
+        if: matrix.apply_bypass == 'bypass'
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" ]]; then
             cd "$CONFIG/common/kernel/module"
@@ -421,7 +420,7 @@ jobs:
           fi
 
       - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
-        if: ${{ ( inputs.kernel_version == '6.6' ) }}
+        if: inputs.kernel_version == '6.6'
         run: |
           SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_galaxy
           echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
@@ -624,7 +623,7 @@ jobs:
           fi
 
       - name: Patch KPM for SukiSU-Ultra
-        if: ${{ inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6' }}
+        if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
           echo "Patching Image file..."
           if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
