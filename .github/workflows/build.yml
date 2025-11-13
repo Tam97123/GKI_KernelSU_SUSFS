@@ -646,8 +646,6 @@ jobs:
           set -e
           set -x
           # Set image directory
-          Legacy_Images="./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" >> $GITHUB_ENV
-          Bazel_Images="./$CONFIG/bazel-bin/common/kernel_aarch64/Image" >> $GITHUB_ENV
           cd "$CONFIG"
           echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
@@ -660,12 +658,10 @@ jobs:
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
           echo "Patching Image file..."
-          if [ -f "$Legacy_Images" ]; then
-            cd "$Legacy_images"
-            cd ..
+          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Images" ]; then
+            cd "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
           else
-            cd "$Bazel_Images"
-            cd ..
+            cd "./$CONFIG/bazel-bin/common/kernel_aarch64"
           fi
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
           chmod +x patch
@@ -677,10 +673,10 @@ jobs:
       - name: Create Kernel ZIP
         run: |
           # Copy Image from normal build locations
-          if [ -f "$Legacy_Images" ]; then
-            cp $Legacy_Images AnyKernel3/Image
+          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
           else
-            cp $Bazel_Images AnyKernel3/Image
+            cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
           fi
 
           cd AnyKernel3
@@ -698,12 +694,12 @@ jobs:
         run: |
           mkdir bootimgs
           echo "Creating bootimgs folder and copying images..."
-          if [ -f "$Legacy_Images" ]; then
-            cp $Legacy_Images ./bootimgs
-            cp $Legacy_Images ./
+          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./bootimgs
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./
           else
-            cp $Bazel_Images ./bootimgs
-            cp $Bazel_Images ./
+            cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./bootimgs
+            cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./
           fi
 
       - name: Boot image build script
