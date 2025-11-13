@@ -158,7 +158,7 @@ jobs:
 
       - name: Set release body
         run: |
-          cat << 'EOF' > release_body.md
+          cat << EOF > release_body.md
           
           **IMPORTANT DISCLAIMER**
           This software is under development and may be unstable. It is provided for testing and educational purposes only.
