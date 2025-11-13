@@ -639,6 +639,8 @@ jobs:
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
           echo "Patching Image file..."
+          pwd
+          ls -l
           if [ -f "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Images" ]; then
             cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
           else
