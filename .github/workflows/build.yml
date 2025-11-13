@@ -75,11 +75,6 @@ jobs:
           chmod a+rx ./git-repo/repo
           echo "REPO=$GITHUB_WORKSPACE/./git-repo/repo" >> $GITHUB_ENV
 
-      - name: Set Git configuration
-        run: |
-          git config --global user.name "Tam"
-          git config --global user.email "tamtranduc001@gmail.com"
-          
       - name: Set boot sign key
         env:
           BOOT_SIGN_KEY: ${{ secrets.BOOT_SIGN_KEY }}
@@ -649,8 +644,6 @@ jobs:
           else
             cd "$CONFIG/bazel-bin/common/kernel_aarch64"
           fi
-          pwd
-          ls -l
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
           chmod +x patch
           ./patch
