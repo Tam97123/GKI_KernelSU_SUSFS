@@ -95,6 +95,7 @@ jobs:
 
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://github.com/Tam97123/kernel_patches.git
+          git clone https://github.com/ShirkNeko/SukiSU_patch.git
 
           echo "SUSFS_BRANCH=$SUSFS_BRANCH" >> $GITHUB_ENV
       
