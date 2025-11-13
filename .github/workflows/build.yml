@@ -330,12 +330,12 @@ jobs:
               cp ../../kernel_patches/sultan/rm_devpt.patch ./
               patch -p1 < rm_devpt.patch
               
-              #cd ..
-              #cp ../kernel_patches/sultan/fix_inode.c.patch ./
-              #patch -p1 < fix_inode.c.patch || true
+              cd ../common
+              cp ../kernel_patches/sultan/fix_inode.c.patch ./
+              patch -p1 < fix_inode.c.patch || true
 
-              #cp ../kernel_patches/sultan/fix_core_hook.c.patch ./
-              #patch -p1 < fix_core_hook.c.patch || true
+              cp ../kernel_patches/sultan/fix_core_hook.c.patch ./
+              patch -p1 < fix_core_hook.c.patch || true
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
@@ -392,7 +392,7 @@ jobs:
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
 
       - name: Apply LZ4KD & ZSTDN patches
-        if: inputs.kernelsu_variant == 'SUKI'
+        if: inputs.kernel_variant == 'SUKI'
         run: |
           cd "$CONFIG/common"
           cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
