@@ -128,16 +128,6 @@ jobs:
           
           $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
           
-          #Fix the bug in version 5.15 where only the old C library was supported
-          #FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-          #if grep -q deprecated <<< "$REMOTE_BRANCH" && \
-          #   { [ "$FORMATTED_BRANCH" == "android13-5.15" ] && \
-          #     [ ${{ inputs.sub_level }} -lt 123 ]; }; then
-          #  cd common
-          #  curl -LSsO https://github.com/zzh20188/GKI_KernelSU_SUSFS/raw/refs/heads/dev/5.15-patch/fix_5.15.legacy.patch
-          #  patch -p1 < fix_5.15.legacy.patch
-          #fi
-          
       - name: Check Directory Space Usage
         run: |
           echo "===== Total Disk Space After Kernel Download in GB ====="
@@ -459,10 +449,8 @@ jobs:
 
             if [ "${{ inputs.kernel_version }}" != "6.6" ] && [ "${{ inputs.kernel_version }}" != "5.10" ]; then
               if grep -q "CONFIG_ZSMALLOC" -- "$defconfig"; then
-                echo "提示：文件 $defconfig 包含字符串 CONFIG_ZSMALLOC。"
                 sed -i 's/CONFIG_ZSMALLOC=m/CONFIG_ZSMALLOC=y/g' "$defconfig"
               else
-                echo "警告：文件 $defconfig 不包含字符串 CONFIG_ZSMALLOC。"
                 echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
               fi
               sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$defconfig"
@@ -476,7 +464,6 @@ jobs:
             if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
               sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$CONFIG/common/modules.bzl"
               echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
-              echo 'Android14_Bazel:已修复zram&zsmalloc'
             fi
 
             if grep -q "CONFIG_ZSMALLOC=y" "$defconfig" && grep -q "CONFIG_ZRAM=y" "$defconfig"; then
@@ -624,10 +611,10 @@ jobs:
           # Set kernel uname
           if [ ! -z "${{ inputs.kernel_uname }}" ]; then
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-            sed -i '$s|echo "\$res"|echo "\${{ inputs.kernel_uname }}"|' ./common/scripts/setlocalversion
+            sed -i '$s|echo "\$res"|echo "-\${{ inputs.kernel_uname }}"|' ./common/scripts/setlocalversion
           else
             echo "Didn't set kernel uname! Set to default value."
-            sed -i '$s|echo "\$res"|echo "\${{ inputs.android_version }}-$KSUVER-Tam"|' ./common/scripts/setlocalversion
+            sed -i '$s|echo "\$res"|echo "-\${{ inputs.android_version }}-$KSUVER-Tam"|' ./common/scripts/setlocalversion
           fi
           # Set Kernel Timestamp
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
