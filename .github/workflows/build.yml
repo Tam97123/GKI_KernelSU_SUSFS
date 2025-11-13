@@ -643,14 +643,14 @@ jobs:
       - name: Patch KPM for SukiSU-Ultra
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
+          echo "Patching Image file..."
+          if [ -f "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Images" ]; then
+            cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
+          else
+            cd "$CONFIG/bazel-bin/common/kernel_aarch64"
+          fi
           pwd
           ls -l
-          echo "Patching Image file..."
-          if [ -f "./out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Images" ]; then
-            cd "./out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-          else
-            cd "./bazel-bin/common/kernel_aarch64"
-          fi
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
           chmod +x patch
           ./patch
