@@ -448,17 +448,47 @@ jobs:
 
           # Suki ZRAM and KPM
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
+            if [ "${{ inputs.kernel_version }}" = "5.10" ]; then
+              echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
+              echo "CONFIG_ZRAM=y" >> "$defconfig"
+              echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
+              echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
+              echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
+            fi
+
+            if [ "${{ inputs.kernel_version }}" != "6.6" ] && [ "${{ inputs.kernel_version }}" != "5.10" ]; then
+              if grep -q "CONFIG_ZSMALLOC" -- "$defconfig"; then
+                echo "提示：文件 $defconfig 包含字符串 CONFIG_ZSMALLOC。"
+                sed -i 's/CONFIG_ZSMALLOC=m/CONFIG_ZSMALLOC=y/g' "$defconfig"
+              else
+                echo "警告：文件 $defconfig 不包含字符串 CONFIG_ZSMALLOC。"
+                echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
+              fi
+              sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$defconfig"
+            fi
+
+            if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
+              echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
+              sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$defconfig"
+            fi
+
+            if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
+              sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$CONFIG/common/modules.bzl"
+              echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
+              echo 'Android14_Bazel:已修复zram&zsmalloc'
+            fi
+
+            if grep -q "CONFIG_ZSMALLOC=y" "$defconfig" && grep -q "CONFIG_ZRAM=y" "$defconfig"; then
+              echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
+              echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
+              echo "CONFIG_CRYPTO_LZ4KD=y" >> "$defconfig"
+              echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
+              echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
+              echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
+            fi
             echo "CONFIG_KPM=y" >> "$defconfig"
-            echo "CONFIG_MODULE_SIG=n" >> "$defconfig"
-            echo "CONFIG_MODULE_SIG_ALL=n" >> "$defconfig"
-            echo "CONFIG_CRYPTO_LZO=y" >> "$defconfig"
-            echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$defconfig"
-            echo "CONFIG_CRYPTO_LZ4HC=y" >> "$defconfig"
-            echo "CONFIG_CRYPTO_LZ4K=y" >> "$defconfig"
-            echo "CONFIG_CRYPTO_LZ4KD=y" >> "$defconfig"
-            echo "CONFIG_CRYPTO_842=y" >> "$defconfig"
-            echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
-            echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
+            echo "CONFIG_KSU_MANUAL_HOOK=y" >> "$defconfig"
           fi  
           
           # KernelSU Core Configuration
@@ -614,6 +644,9 @@ jobs:
         run : |
           set -e
           set -x
+          # Set image directory
+          Legacy_Images="./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" >> $GITHUB_ENV
+          Bazel_Images="./$CONFIG/bazel-bin/common/kernel_aarch64/Image" >> $GITHUB_ENV
           cd "$CONFIG"
           echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
@@ -626,24 +659,27 @@ jobs:
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
           echo "Patching Image file..."
-          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
-            cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
+          if [ -f "$Legacy_Images" ]; then
+            cd "$Legacy_images"
+            cd ..
           else
-            cd "$CONFIG/bazel-bin/common/kernel_aarch64"
+            cd "$Bazel_Images"
+            cd ..
           fi
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
           chmod +x patch
           ./patch
           rm -f Image
           mv oImage Image
-
+          cd ../../..
+          
       - name: Create Kernel ZIP
         run: |
           # Copy Image from normal build locations
-          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
-            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image AnyKernel3/Image
+          if [ -f "$Legacy_Images" ]; then
+            cp $Legacy_Images AnyKernel3/Image
           else
-            cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
+            cp $Bazel_Images AnyKernel3/Image
           fi
 
           cd AnyKernel3
@@ -661,12 +697,12 @@ jobs:
         run: |
           mkdir bootimgs
           echo "Creating bootimgs folder and copying images..."
-          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
-            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./bootimgs
-            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./
+          if [ -f "$Legacy_Images" ]; then
+            cp $Legacy_Images ./bootimgs
+            cp $Legacy_Images ./
           else
-            cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./bootimgs
-            cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./
+            cp $Bazel_Images ./bootimgs
+            cp $Bazel_Images ./
           fi
 
       - name: Boot image build script
