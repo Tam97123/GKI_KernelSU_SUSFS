@@ -462,7 +462,7 @@ jobs:
             fi
 
             if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
-              sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$CONFIG/common/modules.bzl"
+              sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' ./common/modules.bzl
               echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
             fi
 
@@ -475,7 +475,6 @@ jobs:
               echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
             fi
             echo "CONFIG_KPM=y" >> "$defconfig"
-            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
             echo "CONFIG_KSU_MANUAL_HOOK=y" >> "$defconfig"
           fi  
           
@@ -644,11 +643,13 @@ jobs:
       - name: Patch KPM for SukiSU-Ultra
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
+          pwd
+          ls -l
           echo "Patching Image file..."
-          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Images" ]; then
-            cd "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
+          if [ -f "./out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Images" ]; then
+            cd "./out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
           else
-            cd "./$CONFIG/bazel-bin/common/kernel_aarch64"
+            cd "./bazel-bin/common/kernel_aarch64"
           fi
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
           chmod +x patch
