@@ -639,9 +639,9 @@ jobs:
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
           echo "Patching Image file..."
-          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist" ]; then
+          if [ -d "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist" ]; then
             cd "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-          elif [ -f "./$CONFIG/bazel-bin/common/kernel_aarch64" ]; then
+          elif [ -d "./$CONFIG/bazel-bin/common/kernel_aarch64" ]; then
             cd "./$CONFIG/bazel-bin/common/kernel_aarch64"
           else
             echo "Not found Images. Abort..."
