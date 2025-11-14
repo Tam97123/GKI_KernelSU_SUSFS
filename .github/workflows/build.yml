@@ -639,10 +639,13 @@ jobs:
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
           echo "Patching Image file..."
-          if [ -f "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Images" ]; then
-            cd "$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
+          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist" ]; then
+            cd "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
+          elif [ -f "./$CONFIG/bazel-bin/common/kernel_aarch64" ]; then
+            cd "./$CONFIG/bazel-bin/common/kernel_aarch64"
           else
-            cd "$CONFIG/bazel-bin/common/kernel_aarch64"
+            echo "Not found Images. Abort..."
+            exit 1
           fi
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
           chmod +x patch
