@@ -630,7 +630,7 @@ jobs:
           cd "$CONFIG"
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
             echo "Update modules for SukiSU-Ultra..."
-            cp ./out/android13-5.15/common/modules.order ./common/android/gki_aarch64_modules
+            cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
           fi
           echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
