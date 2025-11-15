@@ -627,16 +627,16 @@ jobs:
           set -e
           set -x
           # Set image directory
-          cd "$CONFIG"
-          if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
-            echo "Update modules for SukiSU-Ultra..."
-            cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
-          fi
+          cd "$CONFIG"     
           echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           else
             tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
+          fi
+          if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
+            echo "Update modules for SukiSU-Ultra..."
+            cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
           fi
 
       - name: Patch KPM for SukiSU-Ultra
