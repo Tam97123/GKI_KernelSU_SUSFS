@@ -603,15 +603,15 @@ jobs:
         run: |
           cd "$CONFIG"
           # Set kernel uname
-          if [ ! -z "${{ inputs.kernel_uname }}" ]; then
-            echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-            sed -i '$s|echo "\$res"|echo "-\${{ inputs.kernel_uname }}"|' ./common/scripts/setlocalversion
-          else
+          if [ -z "${{ inputs.kernel_uname }}" ]; then
             echo "Didn't set kernel uname! Set to default value."
-            sed -i '$s|echo "\$res"|echo "-\${{ inputs.android_version }}-$KSUVER-Tam"|' ./common/scripts/setlocalversion
+            sed -i "\$s|echo "\$res\"|echo "-\${{ inputs.android_version }}-$KSUVER-Tam\"|" \ ./common/scripts/setlocalversion
+          else
+            echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
+            sed -i "\$s|echo "\$res\"|echo "-\${{ inputs.kernel_uname }}\"|" \ ./common/scripts/setlocalversion
           fi
           # Set Kernel Timestamp
-          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon July 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
+          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon Jul 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
           # Remove Dirty Flag
           if [ -f "build/build.sh" ]; then
             sed -i 's/-dirty//' ./common/scripts/setlocalversion
