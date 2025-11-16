@@ -224,12 +224,11 @@ jobs:
             "NEXT")
               cd KernelSU-Next
               BASE_VERSION=10200
-              
               ;;
             "SUKI")
-              cd SukiSU-Ultra
+              cd KernelSU
               BASE_VERSION=37185
-              #As devs caculated verison as 40000 - 2815
+              # As devs caculated verison as 40000 - 2815
               ;;
           esac
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
@@ -602,10 +601,10 @@ jobs:
           # Set kernel uname
           if [ -z "${{ inputs.kernel_uname }}" ]; then
             echo "Didn't set kernel uname! Set to default value."
-            sed -i "\$s|echo "\$res\"|echo "-\${{ inputs.android_version }}-$KSUVER-Tam\"|" \ ./common/scripts/setlocalversion
+            sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${KSUVER}-Tam\"|" ./common/scripts/setlocalversion
           else
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-            sed -i "\$s|echo "\$res\"|echo "-\${{ inputs.kernel_uname }}\"|" \ ./common/scripts/setlocalversion
+            sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.kernel_uname }}\"|" ./common/scripts/setlocalversion
           fi
           # Set Kernel Timestamp
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon Jul 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
@@ -614,7 +613,7 @@ jobs:
             sed -i 's/-dirty//' ./common/scripts/setlocalversion
           else
             sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
-            #Remove Abi Exports and Error
+            # Remove Abi Exports and Error
             rm -rf ./common/android/abi_gki_protected_exports_*
             perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
           fi
@@ -624,18 +623,28 @@ jobs:
           set -e
           set -x
           # Set image directory
-          cd "$CONFIG"     
+          cd "$CONFIG"
           echo "Building the kernel..."
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || true
-            echo "Update modules for SukiSU-Ultra..."
-            cp out/android13-5.15/common/modules.order common/android/gki_aarch64_module
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           elif [ -f "build/build.sh" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           else
             tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
           fi
+
+      - name: Build Kernels Again for Android 13-5.15
+        if: inputs.kernel_variant == 'SUKI' && inputs.android_version == 'android13' && inputs.kernel_version == '5.15'
+        run : |
+          # Build take many files so let separate jobs
+          set -e
+          set -x
+          # Set image directory
+          cd "$CONFIG"
+          echo "Update modules for SukiSU-Ultra..."
+          cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
+          echo "Building the kernel..."
+          LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
 
       - name: Patch KPM for SukiSU-Ultra
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
