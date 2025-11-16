@@ -103,7 +103,7 @@ jobs:
           LOGS=$(git log -1 --format=%s "$COMMIT")
           SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v[0-9]+(\.[0-9]+)*')
           echo "SUSFS version: $SUSFS_VERSION"
-
+          
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
 
       - name: Initialize and Sync Kernel Source
@@ -205,7 +205,7 @@ jobs:
               ;;
             "SUKI")
               echo "Adding SukiSU-Ultra..."
-              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
               ;;
           esac
 
@@ -214,31 +214,28 @@ jobs:
           cd "$CONFIG"
           case "${{ inputs.kernel_variant }}" in
             "WILD")
-              echo "Applying SUSFS patches for Wild KSU..."
-              cd Wild_KSU/kernel
+              cd Wild_KSU
               BASE_VERSION=10200
               ;;
             "KSU")
-              echo "Applying SUSFS patches for Official KernelSU..."
-              cd KernelSU/kernel
+              cd KernelSU
               BASE_VERSION=10200
               ;;
             "NEXT")
-              echo "Applying SUSFS patches for KernelSU Next..."
-              cd KernelSU-Next/kernel
+              cd KernelSU-Next
               BASE_VERSION=10200
+              
               ;;
             "SUKI")
-              echo "Applying SUSFS patches for SukiSU-Ultra..."
-              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
-              cd SukiSU-Ultra/kernel
-              BASE_VERSION=10700 
+              cd SukiSU-Ultra
+              BASE_VERSION=37185
+              #As devs caculated verison as 40000 - 2815
               ;;
           esac
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
           echo "Commits: $COMMIT_COUNT"
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
-          echo "KSUVER=$KSU_VERSION"
+          echo "${{ inputs.kernel_variant }} version: $KSU_VERSION"
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           
       - name: Apply SUSFS Patches for KernelSU Variants
@@ -632,7 +629,7 @@ jobs:
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || true
             echo "Update modules for SukiSU-Ultra..."
-            cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
+            cp out/android13-5.15/common/modules.order common/android/gki_aarch64_module
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           elif [ -f "build/build.sh" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
@@ -644,9 +641,9 @@ jobs:
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
         run: |
           echo "Patching Image file..."
-          if [ -d "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist" ]; then
+          if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
             cd "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-          elif [ -d "./$CONFIG/bazel-bin/common/kernel_aarch64" ]; then
+          elif [ -f "./$CONFIG/bazel-bin/common/kernel_aarch64/Image" ]; then
             cd "./$CONFIG/bazel-bin/common/kernel_aarch64"
           else
             echo "Not found Images. Abort..."
