@@ -79,7 +79,7 @@ jobs:
       - build-kernels-a15-6-6
     env:
       GITHUB_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v1.5.12"
+      RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${SUSFS_VERSION}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -140,7 +140,7 @@ jobs:
         run: |
             LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name')
             if [ -z "$LATEST_TAG" ]; then
-              LATEST_TAG="$SUSFS_VERSION-r0"
+              LATEST_TAG="{$SUSFS_VERSION}-r0"
             fi
             
             NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')
@@ -180,8 +180,8 @@ jobs:
           - Reduces risk of soft-brick/hard-brick issues
           
           Features:
-          -> ${{ inputs.kernel_variant }} managers version "$KSUVER"
-          -> SUSFS ඞ version: "$SUSFS_VERSION"
+          -> ${{ inputs.kernel_variant }} managers version ${KSUVER}
+          -> SUSFS ඞ version: ${SUSFS_VERSION}
           -> Multi Manager Support for KernelSU-Next, Wild KSU, KernelSU, MKSU! Needs Testing: RKSU, xxKSU, KowSU and SukiSU
           -> Scope-Minimized Manual hooks v1.4
           -> Magic Mount Support
