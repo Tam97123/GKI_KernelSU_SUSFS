@@ -230,7 +230,7 @@ jobs:
               ;;
             "SUKI")
               echo "Adding SukiSU-Ultra..."
-              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
               ;;
           esac
 
@@ -251,6 +251,7 @@ jobs:
               BASE_VERSION=10200
               ;;
             "SUKI")
+              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
               cd KernelSU
               BASE_VERSION=37185
               # As devs caculated verison as 40000 - 2815
@@ -364,8 +365,7 @@ jobs:
               patch -p1 < fix_kernel_compat.c.patch
               ;;
               "SUKI")
-              echo "Applying SUSFS patches for SukiSU..."
-              cd ../KernelSU
+              echo "Applying SUSFS patches for SukiSU-Ultra..."
               ;;
           esac
           
