@@ -372,21 +372,21 @@ jobs:
        - name: Apply Hooks Patches
          if: inputs.kernel_variant != 'SUKI'
          run: |
-          cd "$CONFIG/common"
-          case "${{ inputs.kernel_variant }}" in
-            "WILD")
-              cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
-              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
-            ;;
-            "KSU")
-              cp ../../kernel_patches/sultan/ksu_hooks.patch ./
-              patch -p1 -F 3 < ksu_hooks.patch
-            ;;
-            "NEXT")
-              cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
-              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
-            ;;
-          esac
+           cd "$CONFIG/common"
+           case "${{ inputs.kernel_variant }}" in
+             "WILD")
+               cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
+               patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+             ;;
+             "KSU")
+               cp ../../kernel_patches/sultan/ksu_hooks.patch ./
+               patch -p1 -F 3 < ksu_hooks.patch
+             ;;
+             "NEXT")
+               cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
+               patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+             ;;
+           esac
           
       - name: Add BBG
         run: |
