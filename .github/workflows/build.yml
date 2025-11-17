@@ -575,7 +575,7 @@ jobs:
           fi
 
       - name: Build Kernels Again for Android 13-5.15
-        if: -f "./$CONFIG/out/android13-5.15/dist/Image" && inputs.kernel_variant == 'SUKI' && inputs.android_version == 'android13' && inputs.kernel_version == '5.15'
+        if: inputs.kernel_variant == 'SUKI' && inputs.android_version == 'android13' && inputs.kernel_version == '5.15'
         run : |
           # Build take many files so let separate jobs
           set -e
