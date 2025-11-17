@@ -102,6 +102,10 @@ jobs:
           COMMIT=$(git log --all --grep="$Bump version to v" --format="%H" | head -n 1)
           LOGS=$(git log -1 --format=%s "$COMMIT")
           SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v[0-9]+(\.[0-9]+)*')
+
+          COMMIT=$(git log --all --grep="Bump version to" --format="%H" | head -n1)
+          LOGS=$(git log -1 --format=%s "$COMMIT")
+          SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v?[0-9]+(\.[0-9]+){2}')
           echo "SUSFS version: $SUSFS_VERSION"
           
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
@@ -235,6 +239,7 @@ jobs:
           echo "Commits: $COMMIT_COUNT"
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
           echo "${{ inputs.kernel_variant }} version: $KSU_VERSION"
+          
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           
       - name: Apply SUSFS Patches for KernelSU Variants
@@ -343,23 +348,23 @@ jobs:
               ;;
           esac
           
-      - name: Apply Hooks Patches
-        run: |
-          cd "$CONFIG/common"
-          case "${{ inputs.kernel_variant }}" in
-            "WILD")
-              cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
-              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
-            ;;
-            "KSU")
-              cp ../../kernel_patches/sultan/ksu_hooks.patch ./
-              patch -p1 -F 3 < ksu_hooks.patch
-            ;;
-            "NEXT")
-              cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
-              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
-            ;;
-          esac
+      # - name: Apply Hooks Patches
+      #  run: |
+      #    cd "$CONFIG/common"
+      #    case "${{ inputs.kernel_variant }}" in
+      #      "WILD")
+      #        cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
+      #        patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+      #      ;;
+      #      "KSU")
+      #        cp ../../kernel_patches/sultan/ksu_hooks.patch ./
+      #        patch -p1 -F 3 < ksu_hooks.patch
+      #      ;;
+      #      "NEXT")
+      #        cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
+      #        patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+      #      ;;
+      #    esac
           
       - name: Add BBG
         run: |
