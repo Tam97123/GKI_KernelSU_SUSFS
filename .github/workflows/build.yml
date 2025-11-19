@@ -27,6 +27,12 @@ on:
       revision:
         required: false
         type: string
+      use_kpm:        
+        required: false
+        type: string
+      use_zram:
+        required: false
+        type: string
 
 jobs:
   build-gki:
@@ -397,7 +403,7 @@ jobs:
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
 
       - name: Apply LZ4KD & ZSTDN patches
-        if: inputs.kernel_variant == 'SUKI'
+        if: inputs.kernel_variant == 'SUKI' && inputs.use_zram == 'true'
         run: |
           cd "$CONFIG/common"
           cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
@@ -452,7 +458,7 @@ jobs:
           echo "Applying kernel configurations one by one..."
 
           # Suki ZRAM and KPM
-          if [ "${{ inputs.kernel_variant }}" == "SUKI" ]; then
+          if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.use_zram }}" == "true" ]; then
             if [ "${{ inputs.kernel_version }}" = "5.10" ]; then
               echo "CONFIG_ZSMALLOC=y" >> "$defconfig"
               echo "CONFIG_ZRAM=y" >> "$defconfig"
@@ -488,7 +494,10 @@ jobs:
               echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$defconfig"
               echo "CONFIG_ZRAM_WRITEBACK=y" >> "$defconfig"
             fi
+            
+            if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.use_kpm }}" == "true" ]; then
             echo "CONFIG_KPM=y" >> "$defconfig"
+            fi
           fi  
           
           # KernelSU Core Configuration
@@ -616,7 +625,7 @@ jobs:
           fi
           
       - name: Patch KPM for SukiSU-Ultra
-        if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6'
+        if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6' && inputs.use_kpm == 'true'
         run: |
           echo "Patching Image file..."
           if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
