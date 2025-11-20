@@ -603,8 +603,14 @@ jobs:
           cd "$CONFIG"
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || true
-            if [ ! -f "./out/android13-5.15/common/modules.order"]; then
-              exit 1
+            if [ ! -f "./out/android13-5.15/dist/Image" ]; then
+              if [ ! -f "./out/android13-5.15/common/modules.order" ]; then
+                exit 1
+              else
+                cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
+                echo "Building the kernel again..."
+                LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
+              fi
             fi
           elif [ -f "build/build.sh" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
@@ -612,21 +618,6 @@ jobs:
             tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
           fi
 
-      - name: Build Kernels Again for Android 13-5.15
-        if: inputs.kernel_variant == 'SUKI' && inputs.android_version == 'android13' && inputs.kernel_version == '5.15'
-        run : |
-          cd "$CONFIG"
-          if [ ! -f "./out/android13-5.15/dist/Image" ]; then
-            # Build take many files so let separate jobs
-            set -e
-            set -x
-            # Set image directory
-            echo "Update modules for SukiSU-Ultra..."
-            cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
-            echo "Building the kernel..."
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
-          fi
-          
       - name: Patch KPM for SukiSU-Ultra
         if: inputs.kernel_variant == 'SUKI' && inputs.kernel_version != '6.6' && inputs.use_kpm == 'true'
         run: |
