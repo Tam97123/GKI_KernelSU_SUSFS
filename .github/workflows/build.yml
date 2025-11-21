@@ -246,7 +246,7 @@ jobs:
           case "${{ inputs.kernel_variant }}" in
             "WILD")
               cd Wild_KSU
-              BASE_VERSION=10200
+              BASE_VERSION=20000
               ;;
             "KSU")
               cd KernelSU
@@ -260,7 +260,6 @@ jobs:
               git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git -b main SukiSU-Ultra
               cd SukiSU-Ultra
               BASE_VERSION=37185
-              # As devs caculated verison as 40000 - 2815
               ;;
           esac
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
@@ -341,17 +340,6 @@ jobs:
               cd ../KernelSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
-
-              #cp ../../kernel_patches/sultan/rm_devpt.patch ./
-              #patch -p1 < rm_devpt.patch
-              
-              #cd ../common
-              #cp ../kernel_patches/sultan/fix_inode.c.patch ./
-              #patch -p1 < fix_inode.c.patch || true
-
-              #cp ../kernel_patches/sultan/fix_core_hook.c.patch ./
-              #patch -p1 < fix_core_hook.c.patch || true
-              ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
               cd ../KernelSU-Next
@@ -383,11 +371,6 @@ jobs:
             "WILD")
               cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
               patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
-            ;;
-            #"KSU")
-            #  cp ../../kernel_patches/sultan/ksu_hooks.patch ./
-            #  patch -p1 -F 3 < ksu_hooks.patch
-            #;;
             "NEXT")
               cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
               patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
