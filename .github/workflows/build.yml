@@ -18,9 +18,6 @@ on:
       kernel_variant:
         required: true
         type: string
-      sub_level:
-        required: true
-        type: string
       os_patch_level:
         required: true
         type: string
