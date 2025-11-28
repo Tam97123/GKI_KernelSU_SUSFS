@@ -1,0 +1,51 @@
+name: Kernel Config - A16 6.12
+
+permissions:
+  contents: write  # Allow writing to repository contents
+  actions: write   # Allows triggering actions
+
+on:
+  workflow_call:
+    inputs:
+      kernel_variant:
+        required: true
+        type: string
+      kernel_uname:
+        required: false
+        type: string
+      use_kpm:        
+        required: false
+        type: string
+      use_zram:
+        required: false
+        type: string
+jobs:
+  build-kernels-a15:
+    name: "6.12.${{ matrix.sub_level }}-${{ matrix.os_patch_level }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sub_level: "23"
+            os_patch_level: "2025-05"
+	  - sub_level: "30"
+	    os_patch_level: "2025-06"
+          - sub_level: "30"
+            os_patch_level: "2025-07"
+          - sub_level: "38"
+            os_patch_level: "2025-08"
+          - sub_level: "38"
+            os_patch_level: "2025-09"
+          - sub_level: "X"
+            os_patch_level: "lts"
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      android_version: "android16"
+      kernel_version: "6.12"
+      sub_level: ${{ matrix.sub_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      kernel_variant: ${{ inputs.kernel_variant }}
+      kernel_uname: ${{ inputs.kernel_uname }}
+      use_kpm: ${{ inputs.use_kpm }}
+      use_zram: ${{ inputs.use_zram }}
