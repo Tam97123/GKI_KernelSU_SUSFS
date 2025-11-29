@@ -130,8 +130,9 @@ jobs:
               "android15-6.6")
                 git checkout f450ec00bf592d080f59b01ff6f9242456c9a427
                 ;;
-	      "android16-6.12")
-		git checkout f450ec00bf592d080f59b01ff6f9242456c9a427
+              "android16-6.12")
+                git checkout f450ec00bf592d080f59b01ff6f9242456c9a427
+				;;
             esac
             SUSFS_VERSION=v1.5.12
           fi
