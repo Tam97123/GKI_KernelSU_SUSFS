@@ -67,6 +67,16 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      
+  build-kernels-a16-6-12:
+    name: ${{ inputs.kernel_variant }}-Android_16-6.12
+    uses: ./.github/workflows/kernel-a16-6-12.yml
+    secrets: inherit
+    with:
+      kernel_variant: ${{ inputs.kernel_variant }}
+      kernel_uname: ${{ inputs.kernel_uname }}
+      use_kpm: ${{ inputs.use_kpm }}
+      use_zram: ${{ inputs.use_zram }}
 
   release:
     runs-on: ubuntu-latest
@@ -77,6 +87,7 @@ jobs:
       - build-kernels-a14-5-15
       - build-kernels-a14-6-1
       - build-kernels-a15-6-6
+      - build-kernels-a16-6-12
     env:
       GITHUB_TOKEN: ${{ github.token }}
       RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${SUSFS_VERSION}"
@@ -96,6 +107,7 @@ jobs:
             ["gki_android14_5_15"]="gki-android14-5.15"
             ["gki_android14_6_1"]="gki-android14-6.1"
             ["gki_android15_6_6"]="gki-android15-6.6"
+            ["gki_android16_6_12"]="gki-android16-6.12"
           )
           
           for var_name in "${!BRANCH_MAP[@]}"; do
@@ -218,6 +230,7 @@ jobs:
             -> gki-android14-5.15: [${{ env.COMMIT_HASH_gki_android14_5_15 }}](${{ env.COMMIT_URL_gki_android14_5_15 }})
             -> gki-android14-6.1: [${{ env.COMMIT_HASH_gki_android14_6_1 }}](${{ env.COMMIT_URL_gki_android14_6_1 }})
             -> gki-android15-6.6: [${{ env.COMMIT_HASH_gki_android15_6_6 }}](${{ env.COMMIT_URL_gki_android15_6_6 }})
+            -> gki-android16-6.12: [${{ env.COMMIT_HASH_gki_android15_6_12 }}](${{ env.COMMIT_URL_gki_android15_6_12 }})
           EOF
 
       - name: Create GitHub Release
