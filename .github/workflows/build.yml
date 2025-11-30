@@ -318,15 +318,12 @@ jobs:
             cp ../../kernel_patches/experimental/susfs/fix_task_mmu.c.patch ./
             patch -p1 < fix_task_mmu.c.patch || true
           fi
-          pwd && ls -l
-          cd "$CONFIG"
-          pwd && ls -l
           
           # Apply KSU integration patches
           case "${{ inputs.kernel_variant }}" in
             "WILD")
               echo "Applying SUSFS patches for Wild KSU..."
-              cd ../Wild_KSU
+              cd ../../Wild_KSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
               
@@ -341,13 +338,13 @@ jobs:
               ;;
             "KSU")
               echo "Applying SUSFS patches for Official KernelSU..."
-              cd ../KernelSU
+              cd ../../KernelSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
-              cd ../KernelSU-Next
+              cd ../../KernelSU-Next
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
 
