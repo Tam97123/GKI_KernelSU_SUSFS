@@ -52,7 +52,7 @@ jobs:
           remove-large-packages: 'true'  # Frees ~3.1 GB
           remove-swapfile: 'true'        # Frees ~4 GB
           remove-cached-tools: 'false'   # Avoid unless confirmed safe
-          verbose: 'true'                # Enable detailed logging
+          verbose: 'false'                # Disable detailed logging
           
       - name: Set CONFIG Environment Variable
         run: |
@@ -318,11 +318,9 @@ jobs:
             cp ../../kernel_patches/experimental/susfs/fix_task_mmu.c.patch ./
             patch -p1 < fix_task_mmu.c.patch || true
           fi
-          pwd
-          ls -l
+          pwd && ls -l
           cd "$CONFIG"
-          pwd
-          ls -l
+          pwd && ls -l
           
           # Apply KSU integration patches
           case "${{ inputs.kernel_variant }}" in
