@@ -191,6 +191,16 @@ jobs:
           - Kernel-level protection via LSM hooks
           - Reduces risk of soft-brick/hard-brick issues
           
+          KPM (KernelPatch Modules):
+          - Support for modules that allow you to inject any code into the kernel
+          - Provides kernel function inline-hook and syscall-table-hook
+          
+          ZRAM (Compcache):
+          - ZRAM is a Linux kernel module that creates a compressed block device in RAM
+          - Instead of swapping data to slow storage (like SSD or eMMC), the kernel compresses data and keeps it in RAM.
+          - Because compressed data is smaller, it can fit more “virtual RAM” into the same physical RAM.
+          - By add more ZRAM algorithms, kernel has more choice to compress memory data (faster or better)
+          
           Features:
           -> ${{ inputs.kernel_variant }} managers version ${KSUVER}
           -> SUSFS ඞ version: ${SUSFS_VERSION}
@@ -201,13 +211,12 @@ jobs:
           -> IPSet Support for Advanced Network Filtering
           -> Wireguard Support
           -> BBR v1 Support
-          -> Added BBG support to prevent unauthorised writes to certain partitions: https://github.com/vc-teahouse/Baseband-guard
 
           Notes:
           -> KernelSU Next & Wild KSU, SUS SU Mode 2 will show as disabled or not compatble due to non-kprobe hooks and is not needed anymore!
           -> Official Kernel Flasher is broken with latest susfs, try [Kernel Flasher by fatalcoder524](https://github.com/fatalcoder524/KernelFlasher/) better than [Kernel Flasher by libxzr](https://github.com/libxzr/HorizonKernelFlasher/)!
           -> **boot.img files**: Available as CI artifacts only (not included in releases) - download from the Actions tab
-          -> **Warning**: boot.img files may not boot on some devices
+          -> **Warning**: boot.img files may not boot on some android 16 devices
           
           Module: 
           -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
