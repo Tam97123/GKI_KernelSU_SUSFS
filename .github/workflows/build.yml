@@ -319,14 +319,6 @@ jobs:
             cp ../../kernel_patches/experimental/susfs/fix_task_mmu.c.patch ./
             patch -p1 < fix_task_mmu.c.patch || true
           fi
-          pwd
-          ls -a
-          cd ..
-          pwd
-          ls -a
-          cd ..
-          pwd
-          ls -a
           
           # Apply KSU integration patches
           case "${{ inputs.kernel_variant }}" in
