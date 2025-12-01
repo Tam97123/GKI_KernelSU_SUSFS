@@ -318,6 +318,14 @@ jobs:
             cp ../../kernel_patches/experimental/susfs/fix_task_mmu.c.patch ./
             patch -p1 < fix_task_mmu.c.patch || true
           fi
+          pwd
+          ls -a
+          cd ..
+          pwd
+          ls -a
+          cd ..
+          pwd
+          ls -a
           
           # Apply KSU integration patches
           case "${{ inputs.kernel_variant }}" in
@@ -345,7 +353,6 @@ jobs:
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
               cd ../KernelSU-Next
-              ls && pwd
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
 
