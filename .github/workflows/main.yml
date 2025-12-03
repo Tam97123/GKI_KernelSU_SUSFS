@@ -67,6 +67,16 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      
+  build-kernels-a16-6-12:
+    name: ${{ inputs.kernel_variant }}-Android_16-6.12
+    uses: ./.github/workflows/kernel-a16-6-12.yml
+    secrets: inherit
+    with:
+      kernel_variant: ${{ inputs.kernel_variant }}
+      kernel_uname: ${{ inputs.kernel_uname }}
+      use_kpm: ${{ inputs.use_kpm }}
+      use_zram: ${{ inputs.use_zram }}
 
   release:
     runs-on: ubuntu-latest
@@ -77,6 +87,7 @@ jobs:
       - build-kernels-a14-5-15
       - build-kernels-a14-6-1
       - build-kernels-a15-6-6
+      - build-kernels-a16-6-12
     env:
       GITHUB_TOKEN: ${{ github.token }}
       RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${SUSFS_VERSION}"
@@ -96,6 +107,7 @@ jobs:
             ["gki_android14_5_15"]="gki-android14-5.15"
             ["gki_android14_6_1"]="gki-android14-6.1"
             ["gki_android15_6_6"]="gki-android15-6.6"
+            ["gki_android16_6_12"]="gki-android16-6.12"
           )
           
           for var_name in "${!BRANCH_MAP[@]}"; do
@@ -179,6 +191,16 @@ jobs:
           - Kernel-level protection via LSM hooks
           - Reduces risk of soft-brick/hard-brick issues
           
+          KPM (KernelPatch Modules):
+          - Support for modules that allow you to inject any code into the kernel
+          - Provides kernel function inline-hook and syscall-table-hook
+          
+          ZRAM (Compcache):
+          - ZRAM is a Linux kernel module that creates a compressed block device in RAM
+          - Instead of swapping data to slow storage (like SSD or eMMC), the kernel compresses data and keeps it in RAM.
+          - Because compressed data is smaller, it can fit more “virtual RAM” into the same physical RAM.
+          - By add more ZRAM algorithms, kernel has more choice to compress memory data (faster or better)
+          
           Features:
           -> ${{ inputs.kernel_variant }} managers version ${KSUVER}
           -> SUSFS ඞ version: ${SUSFS_VERSION}
@@ -189,13 +211,12 @@ jobs:
           -> IPSet Support for Advanced Network Filtering
           -> Wireguard Support
           -> BBR v1 Support
-          -> Added BBG support to prevent unauthorised writes to certain partitions: https://github.com/vc-teahouse/Baseband-guard
 
           Notes:
           -> KernelSU Next & Wild KSU, SUS SU Mode 2 will show as disabled or not compatble due to non-kprobe hooks and is not needed anymore!
           -> Official Kernel Flasher is broken with latest susfs, try [Kernel Flasher by fatalcoder524](https://github.com/fatalcoder524/KernelFlasher/) better than [Kernel Flasher by libxzr](https://github.com/libxzr/HorizonKernelFlasher/)!
           -> **boot.img files**: Available as CI artifacts only (not included in releases) - download from the Actions tab
-          -> **Warning**: boot.img files may not boot on some devices
+          -> **Warning**: boot.img files may not boot on some android 16 devices
           
           Module: 
           -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
@@ -218,6 +239,7 @@ jobs:
             -> gki-android14-5.15: [${{ env.COMMIT_HASH_gki_android14_5_15 }}](${{ env.COMMIT_URL_gki_android14_5_15 }})
             -> gki-android14-6.1: [${{ env.COMMIT_HASH_gki_android14_6_1 }}](${{ env.COMMIT_URL_gki_android14_6_1 }})
             -> gki-android15-6.6: [${{ env.COMMIT_HASH_gki_android15_6_6 }}](${{ env.COMMIT_URL_gki_android15_6_6 }})
+            -> gki-android16-6.12: [${{ env.COMMIT_HASH_gki_android15_6_12 }}](${{ env.COMMIT_URL_gki_android15_6_12 }})
           EOF
 
       - name: Create GitHub Release
