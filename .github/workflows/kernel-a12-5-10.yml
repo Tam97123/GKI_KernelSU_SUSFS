@@ -19,6 +19,9 @@ on:
       use_zram:
         required: false
         type: string
+      skip:
+        required: false
+        type: string
         
 jobs:
   build-kernels-a12:
@@ -113,3 +116,4 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      skip: ${{ inputs.skip }}
