@@ -444,8 +444,7 @@ jobs:
           defconfig="./common/arch/arm64/configs/gki_defconfig"
           # Remove check_defconfig
           if [ "${{ inputs.kernel_version }}" == "6.12" ]; then
-            sed -i '/name = "kernel_aarch64",/a\
-            check_defconfig = "disabled",' common/BUILD.bazel
+            sed -i '/name = "kernel_aarch64",/a\check_defconfig = "disabled",' common/BUILD.bazel
             awk '/name = "kernel_aarch64"/,/^\)/ common/BUILD.bazel
           else
             sed -i 's/check_defconfig//' ./common/build.config.gki
