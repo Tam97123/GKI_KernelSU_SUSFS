@@ -43,6 +43,7 @@ jobs:
     secrets: inherit
     with:
       skip: true
+      
   build-kernels-a12-5-10:
     name: ${{ inputs.kernel_variant }}-Android_12-5.10
     if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a12-5.10')
