@@ -37,9 +37,10 @@ on:
         type: boolean
         default: false
       skip:
+        description: 'Skip remove file on runners (more 10+ mins)'
         required: false
-        type: string
-        default: "unknown"
+        type: boolean
+        default: true
         
 jobs:
   build-kernels-a12-5-10:
