@@ -38,6 +38,11 @@ on:
         default: false
         
 jobs:
+  skip-rm:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      skip: true
   build-kernels-a12-5-10:
     name: ${{ inputs.kernel_variant }}-Android_12-5.10
     if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a12-5.10')
@@ -55,7 +60,7 @@ jobs:
     uses: ./.github/workflows/kernel-a13-5-10.yml
     secrets: inherit
     with:
-      kernel_variant: ${{ inputs.kernel_variant }}
+    true  kernel_variant: ${{ inputs.kernel_variant }}
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
