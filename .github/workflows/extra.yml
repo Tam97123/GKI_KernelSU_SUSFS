@@ -27,23 +27,17 @@ on:
           - SUKI
         default: NEXT
       use_kpm:
-        description: 'Use KPM (Kernel Patches Modules)'
+        description: 'Use KPM? (Kernel Patches Modules) SUKISU-ULTRA ONLY!'
         required: false
         type: boolean
         default: false
       use_zram:
-        description: 'Enable more ZRAM algorithms'
+        description: 'Enable more ZRAM algorithms?'
         required: false
         type: boolean
         default: false
         
 jobs:
-  skip-rm:
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
-    with:
-      skip: true
-      
   build-kernels-a12-5-10:
     name: ${{ inputs.kernel_variant }}-Android_12-5.10
     if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a12-5.10')
@@ -54,6 +48,7 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      skip: true
 
   build-kernels-a13-5-10:
     name: ${{ inputs.kernel_variant }}-Android_13-5.10
@@ -65,6 +60,7 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      skip: true
       
   build-kernels-a13-5-15:
     name: ${{ inputs.kernel_variant }}-Android_13-5.15
@@ -76,6 +72,7 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      skip: true
       
   build-kernels-a14-5-15:
     name: ${{ inputs.kernel_variant }}-Android_14-5.15
@@ -87,6 +84,7 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      skip: true
       
   build-kernels-a14-6-1:
     name: ${{ inputs.kernel_variant }}-Android_14-6.1
@@ -98,6 +96,7 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      skip: true
       
   build-kernels-a15-6-6:
     name: ${{ inputs.kernel_variant }}-Android_15-6.6
@@ -109,6 +108,7 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      skip: true
       
   build-kernels-a16-6-12:
     name: ${{ inputs.kernel_variant }}-Android_16-6.12
@@ -120,3 +120,5 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      skip: true
+      
