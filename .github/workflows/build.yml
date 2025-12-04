@@ -42,6 +42,7 @@ jobs:
 
     steps:
       - name: Maximize Build Space
+        if: inputs.skip == 'true'
         uses: AdityaGarg8/remove-unwanted-software@v5
         with:
           remove-dotnet: 'true'          # Frees ~2 GB
