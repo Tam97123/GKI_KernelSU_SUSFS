@@ -19,9 +19,7 @@ on:
       use_zram:
         required: false
         type: string
-      skip:
-        required: false
-        type: string
+        
 jobs:
   build-kernels-a14-6-1:
     name: "6.1.${{ matrix.sub_level }}-${{ matrix.os_patch_level }}"
@@ -98,4 +96,3 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: ${{ inputs.skip }}
