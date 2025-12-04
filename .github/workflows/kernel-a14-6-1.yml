@@ -19,7 +19,7 @@ on:
       use_zram:
         required: false
         type: string
-       skip:
+      skip:
         required: false
         type: string
 jobs:
