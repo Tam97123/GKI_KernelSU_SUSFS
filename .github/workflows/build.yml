@@ -445,7 +445,7 @@ jobs:
           # Remove check_defconfig
           if [ "${{ inputs.kernel_version }}" == "6.12" ]; then
             sed -i '/name = "kernel_aarch64",/a\check_defconfig = "disabled",' common/BUILD.bazel
-            awk '/name = "kernel_aarch64"/,/^\)/ common/BUILD.bazel
+            awk '/name = "kernel_aarch64"/,/^\)/' common/BUILD.bazel
           else
             sed -i 's/check_defconfig//' ./common/build.config.gki
           fi
@@ -478,7 +478,7 @@ jobs:
               fi
             
               if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
-                sed -i 's|"drivers/block/zram/zram.ko",||g; s|"mm/zsmalloc.ko",||g' ./common/modules.bzl
+                sed -i 's/"drivers/block/zram/zram.ko",//g; s/"mm/zsmalloc.ko",//g' ./common/modules.bzl
                 echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
               fi
             
