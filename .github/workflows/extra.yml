@@ -36,6 +36,10 @@ on:
         required: false
         type: boolean
         default: false
+      skip:
+        required: false
+        type: string
+        default: "unknown"
         
 jobs:
   build-kernels-a12-5-10:
