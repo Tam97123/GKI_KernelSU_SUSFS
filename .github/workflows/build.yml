@@ -262,7 +262,7 @@ jobs:
               BASE_VERSION=10200
               ;;
             "SUKI")
-              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git -b main SukiSU-Ultra
+              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
               cd SukiSU-Ultra
               BASE_VERSION=37185
               ;;
@@ -292,7 +292,6 @@ jobs:
                  [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
                  [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 75 ]]; then
                 sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
-            sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
           fi
             
           # Apply additional SUSFS patches for Android 13 5.15 compatibility
@@ -444,7 +443,13 @@ jobs:
           cd "$CONFIG"
           defconfig="./common/arch/arm64/configs/gki_defconfig"
           # Remove check_defconfig
-          sed -i 's/check_defconfig//' ./common/build.config.gki
+          if [ "${{ inputs.kernel_version }}" == "6.12" ]; then
+            sed -i '/name = "kernel_aarch64",/a\
+            check_defconfig = "disabled",' common/BUILD.bazel
+            awk '/name = "kernel_aarch64"/,/^\)/ common/BUILD.bazel
+          else
+            sed -i 's/check_defconfig//' ./common/build.config.gki
+          fi
           
           echo "Applying kernel configurations one by one..."
 
