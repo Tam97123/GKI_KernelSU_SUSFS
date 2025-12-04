@@ -36,11 +36,6 @@ on:
         required: false
         type: boolean
         default: false
-      skip:
-        description: 'Skip remove file on runners (more 10+ mins)'
-        required: false
-        type: boolean
-        default: true
         
 jobs:
   build-kernels-a12-5-10:
@@ -53,7 +48,6 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: ${{ inputs.skip }}
 
   build-kernels-a13-5-10:
     name: ${{ inputs.kernel_variant }}-Android_13-5.10
@@ -65,7 +59,6 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: ${{ inputs.skip }}
       
   build-kernels-a13-5-15:
     name: ${{ inputs.kernel_variant }}-Android_13-5.15
@@ -77,7 +70,6 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: ${{ inputs.skip }}
       
   build-kernels-a14-5-15:
     name: ${{ inputs.kernel_variant }}-Android_14-5.15
@@ -89,7 +81,6 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: ${{ inputs.skip }}
       
   build-kernels-a14-6-1:
     name: ${{ inputs.kernel_variant }}-Android_14-6.1
@@ -101,7 +92,6 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: ${{ inputs.skip }}
       
   build-kernels-a15-6-6:
     name: ${{ inputs.kernel_variant }}-Android_15-6.6
@@ -113,7 +103,6 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: ${{ inputs.skip }}
       
   build-kernels-a16-6-12:
     name: ${{ inputs.kernel_variant }}-Android_16-6.12
@@ -125,5 +114,4 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: ${{ inputs.skip }}
       
