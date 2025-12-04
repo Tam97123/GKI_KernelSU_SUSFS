@@ -61,7 +61,7 @@ jobs:
     uses: ./.github/workflows/kernel-a13-5-10.yml
     secrets: inherit
     with:
-    true  kernel_variant: ${{ inputs.kernel_variant }}
+      kernel_variant: ${{ inputs.kernel_variant }}
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
