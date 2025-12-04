@@ -53,7 +53,7 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
-      skip: true
+      skip: ${{ inputs.skip }}
 
   build-kernels-a13-5-10:
     name: ${{ inputs.kernel_variant }}-Android_13-5.10
