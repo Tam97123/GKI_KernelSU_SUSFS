@@ -19,6 +19,7 @@ on:
       use_zram:
         required: false
         type: string
+        
 jobs:
   build-kernels-a14-6-1:
     name: "6.1.${{ matrix.sub_level }}-${{ matrix.os_patch_level }}"

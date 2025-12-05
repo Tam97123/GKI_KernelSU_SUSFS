@@ -27,12 +27,12 @@ on:
           - SUKI
         default: NEXT
       use_kpm:
-        description: 'Use KPM (Kernel Patches Modules)'
+        description: 'Use KPM? (Kernel Patches Modules) SUKISU-ULTRA ONLY!'
         required: false
         type: boolean
         default: false
       use_zram:
-        description: 'Enable more ZRAM algorithms'
+        description: 'Enable more ZRAM algorithms?'
         required: false
         type: boolean
         default: false
@@ -114,3 +114,4 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      
