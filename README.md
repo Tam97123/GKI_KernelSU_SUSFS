@@ -109,7 +109,7 @@ Due to my current financial situation when I have to study at school and earn fo
 If you would like to contribute, here are some available network that acppect crypto currency:
 
 - **Bitcoin (bech32)**: bc1qghwe7ry5jvw9ehg652y8gj2zhrgv2l64zrc4ra
-- **Ethereum: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
+- **Ethereum**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
 - **BNB Smart Chain**:
 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
 - **Base**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
