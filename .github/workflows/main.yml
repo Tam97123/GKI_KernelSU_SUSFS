@@ -74,9 +74,6 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
-      kernel_uname: ${{ inputs.kernel_uname }}
-      use_kpm: ${{ inputs.use_kpm }}
-      use_zram: ${{ inputs.use_zram }}
 
   release:
     runs-on: ubuntu-latest
@@ -164,7 +161,7 @@ jobs:
             git push origin $NEW_TAG
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: ./downloaded-artifacts
 

@@ -92,51 +92,49 @@ jobs:
       - name: Clone AnyKernel3 and Other Dependencies
         run: |
           ANYKERNEL_BRANCH="gki-2.0"
-          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
 
           git clone --depth=1 https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://github.com/Tam97123/kernel_patches.git
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
-
-          echo "SUSFS_BRANCH=$SUSFS_BRANCH" >> $GITHUB_ENV
       
       - name: Determine SUSFS version
         run: |
+          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           cd susfs4ksu
-            
+          
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ] || [ "${{ inputs.kernel_variant }}" == "KSU" ]; then
             COMMIT=$(git log --all --grep="Bump version to" --format="%H" | head -n1)
             LOGS=$(git log -1 --format=%s "$COMMIT")
             SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v?[0-9]+(\.[0-9]+){2}')
-            echo "SUSFS version: $SUSFS_VERSION"
           else
             case "$SUSFS_BRANCH" in
-              "android12-5.10")
+              "gki-android12-5.10")
                 git checkout 8a76ba240d1f7315352b49d97d854a4b166e5b47
                 ;;
-              "android13-5.10")
+              "gki-android13-5.10")
                 git checkout e5c9eabfc6dcfc677d11f46ce1d5ff786de60a92
                 ;;
-              "android13-5.15")
+              "gki-android13-5.15")
                 git checkout babf6be195576f09aae79650d47abf6a76e8a21b
                 ;;
-              "android14-5.15")
+              "gki-android14-5.15")
                 git checkout 19f339e804ba9aebd9c6d735b965e2b9396c73ae
                 ;;
-              "android14-6.1")
+              "gki-android14-6.1")
                 git checkout a162e2469d0b472545e5e46457eee171c0975fb0
                 ;;
-              "android15-6.6")
+              "gki-android15-6.6")
                 git checkout f450ec00bf592d080f59b01ff6f9242456c9a427
                 ;;
-              "android16-6.12")
+              "gki-android16-6.12")
                 git checkout f450ec00bf592d080f59b01ff6f9242456c9a427
                 ;;
             esac
             SUSFS_VERSION=v1.5.12
           fi
-          
+
+          echo "SUSFS version: $SUSFS_VERSION"
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
 
       - name: Initialize and Sync Kernel Source
@@ -258,7 +256,7 @@ jobs:
               BASE_VERSION=10200
               ;;
             "SUKI")
-              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git -b main SukiSU-Ultra
+              git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git
               cd SukiSU-Ultra
               BASE_VERSION=37185
               ;;
@@ -283,11 +281,10 @@ jobs:
 
           # Remove and fix go to show_pad
           if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 209 ]] ||
-                 [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 209 ]] ||
-                 [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
-                 [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
-                 [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 75 ]]; then
-                sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
+            [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 209 ]] ||
+            [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
+            [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
+            [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 75 ]]; then
             sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
           fi
             
@@ -304,8 +301,8 @@ jobs:
 
           # Use ACTUAL_SUBLEVEL for LTS or actual kernel sublevel if available
           if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 43 ]] ||
-                 [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && $ACTUAL_SUBLEVEL -ge 145 ]] ||
-                 [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" && $ACTUAL_SUBLEVEL -ge 98 ]]; then
+            [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && $ACTUAL_SUBLEVEL -ge 145 ]] ||
+            [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" && $ACTUAL_SUBLEVEL -ge 98 ]]; then
             cp ../../kernel_patches/experimental/susfs/1_fix_base.c.patch ./
             patch -p1 < 1_fix_base.c.patch || true
           fi
@@ -328,20 +325,14 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_core_hook.c.patch ./
-              patch -p1 --fuzz=3 < fix_core_hook.c.patch || true
+              cp ../../kernel_patches/wild/susfs_fix_patches/${SUSFS_VERSION}/fix_core_hook.c.patch ./
+              patch -p1 --fuzz=3 < fix_core_hook.c.patch
               
-              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_sucompat.c.patch ./
-              patch -p1 < fix_sucompat.c.patch || true
-
-              cp ../../kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION/fix_kernel_compat.c.patch ./
-              patch -p1 < fix_kernel_compat.c.patch || true
-              ;;
-            "KSU")
-              echo "Applying SUSFS patches for Official KernelSU..."
-              cd ../KernelSU
-              cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
-              patch -p1 < 10_enable_susfs_for_ksu.patch || true
+              cp ../../kernel_patches/wild/susfs_fix_patches/${SUSFS_VERSION}/fix_sucompat.c.patch ./
+              patch -p1 < fix_sucompat.c.patch
+              
+              cp ../../kernel_patches/wild/susfs_fix_patches/${SUSFS_VERSION}/fix_kernel_compat.c.patch ./
+              patch -p1 < fix_kernel_compat.c.patch
               ;;
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
@@ -349,17 +340,17 @@ jobs:
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
 
-              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_apk_sign.c.patch ./
-              patch -p1 < fix_apk_sign.c.patch || true
+              cp ../../kernel_patches/next/susfs_fix_patches/${SUSFS_VERSION}/fix_apk_sign.c.patch ./
+              patch -p1 < fix_apk_sign.c.patch
               
-              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_core_hook.c.patch ./
-              patch -p1 --fuzz=3 < fix_core_hook.c.patch || true
+              cp ../../kernel_patches/next/susfs_fix_patches/${SUSFS_VERSION}/fix_core_hook.c.patch ./
+              patch -p1 --fuzz=3 < fix_core_hook.c.patch
+              
+              cp ../../kernel_patches/next/susfs_fix_patches/${SUSFS_VERSION}/fix_sucompat.c.patch ./
+              patch -p1 < fix_sucompat.c.patch
 
-              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_sucompat.c.patch ./
-              patch -p1 < fix_sucompat.c.patch || true
-
-              cp ../../kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION/fix_kernel_compat.c.patch ./
-              patch -p1 < fix_kernel_compat.c.patch || true
+              cp ../../kernel_patches/next/susfs_fix_patches/${SUSFS_VERSION}/fix_kernel_compat.c.patch ./
+              patch -p1 < fix_kernel_compat.c.patch
               ;;
               "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
@@ -440,7 +431,12 @@ jobs:
           cd "$CONFIG"
           defconfig="./common/arch/arm64/configs/gki_defconfig"
           # Remove check_defconfig
-          sed -i 's/check_defconfig//' ./common/build.config.gki
+          if [ "${{ inputs.kernel_version }}" == "6.12" ]; then
+            sed -i '/name = "kernel_aarch64",/a\check_defconfig = "disabled",' common/BUILD.bazel
+            awk '/name = "kernel_aarch64"/,/^\)/' common/BUILD.bazel
+          else
+            sed -i 's/check_defconfig//' ./common/build.config.gki
+          fi
           
           echo "Applying kernel configurations one by one..."
 
@@ -470,7 +466,7 @@ jobs:
               fi
             
               if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
-                sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' ./common/modules.bzl
+                sed -i 's/"drivers/block/zram/zram.ko",//g; s/"mm/zsmalloc.ko",//g' ./common/modules.bzl
                 echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
               fi
             
@@ -563,7 +559,7 @@ jobs:
             sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${KSUVER}-Tam\"|" ./common/scripts/setlocalversion
           else
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-            sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.kernel_uname }}\"|" ./common/scripts/setlocalversion
+            sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${{ inputs.kernel_uname }}\"|" ./common/scripts/setlocalversion
           fi
           # Set Kernel Timestamp
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 Mon Jul 07 10:23:31 UTC 2025"}' ./common/scripts/mkcompile_h
@@ -596,7 +592,7 @@ jobs:
           elif [ -f "build/build.sh" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           else
-            tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
+            tools/bazel build --config=fast --verbose_failures --lto=thin //common:kernel_aarch64_dist || exit 1
           fi
 
       - name: Patch KPM for SukiSU-Ultra
@@ -698,7 +694,7 @@ jobs:
           fi
         
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ inputs.kernel_variant }}-${{ env.KSUVER }}-kernel-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}
           path: |

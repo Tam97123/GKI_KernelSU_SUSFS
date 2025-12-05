@@ -19,7 +19,6 @@ on:
       use_zram:
         required: false
         type: string
-
 jobs:
   build-kernels-a13-5-10:
     name: "5.10.${{ matrix.sub_level }}-${{ matrix.os_patch_level }}"
@@ -113,3 +112,4 @@ jobs:
       kernel_uname: ${{ inputs.kernel_uname }}
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
+      
