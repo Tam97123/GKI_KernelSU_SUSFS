@@ -327,7 +327,7 @@ jobs:
             "WILD")
               echo "Applying SUSFS patches for Wild KSU..."
               cd ../Wild_KSU
-              ls -la
+              pwd && ls -a
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
               
@@ -343,7 +343,7 @@ jobs:
             "NEXT")
               echo "Applying SUSFS patches for KernelSU Next..."
               cd ../KernelSU-Next
-              ls -la
+              pwd && ls -a
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
 
