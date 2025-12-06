@@ -105,15 +105,20 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 
 ## 💖 Donations
 
-Due to my current financial situation, any form of support is deeply appreciated.
-If you would like to contribute, here are some available network that acppect USDT and so on:
+Due to my current financial situation when I have to study at school and earn for livings, any form of support is deeply appreciated.
+If you would like to contribute, here are some available network that acppect crypto currency:
 
 - **Bitcoin (bech32)**: bc1qghwe7ry5jvw9ehg652y8gj2zhrgv2l64zrc4ra
-- **Bitcoin (Taproot)**: bc1phxf3u78zc02pgdfczcgfncdy3j2c8x0pa2w0qvtfr3ajymdhca5ss93gf3
-- **Solana**: 2m1ispb6hrRZySDKEyLBTchZByyMMK9qUWwC7NCJw65k
 - **Ethereum**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
+- **BNB Smart Chain**:
+0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
 - **Base**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
 - **Sui**: 0xaf60dff268c2068c6ff2efbb0fd11fc30d9f730db1bea075d109f5a9382620c2
+- **Solana**: CdbW7U4vpEt6LP9PSY9UegnX2XMJpm5TiaV1wdfPNMto
+- **Litecoin**:
+ltc1qqcug3yskcxvazyhjmcznhyyw6x2zx3qlje88r6
+- **Tron**:
+TJN4y3KMsW6rkbGm3ThG3JTzBSPZQMqccf
 - **Polygon**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
 
 **Thank you so much for your kindness and generosity. Your support means a lot during this time.** 🫶

@@ -235,7 +235,7 @@ jobs:
               ;;
             "SUKI")
               echo "Adding SukiSU-Ultra..."
-              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
               ;;
           esac
 
@@ -245,11 +245,11 @@ jobs:
           case "${{ inputs.kernel_variant }}" in
             "WILD")
               cd Wild_KSU
-              BASE_VERSION=20000
+              BASE_VERSION=10200
               ;;
             "KSU")
               cd KernelSU
-              BASE_VERSION=10200
+              BASE_VERSION=30000
               ;;
             "NEXT")
               cd KernelSU-Next
@@ -275,10 +275,16 @@ jobs:
           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux
           
           # Apply core SUSFS patches
-          cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
-          cd common
-          patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
-
+          if [ "${{ inputs.android_version }}" == "android16" ]; then
+            cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-android15-6.6.patch ./common/
+            cd common
+            patch -p1 < 50_add_susfs_in_gki-android15-6.6.patch || true
+          else
+            cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
+            cd common
+            patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
+          fi
+          
           # Remove and fix go to show_pad
           if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 209 ]] ||
             [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 209 ]] ||
@@ -381,7 +387,7 @@ jobs:
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
 
       - name: Apply LZ4KD & ZSTDN patches
-        if: inputs.android_version != 'android16' && inputs.kernel_variant == 'SUKI' && inputs.use_zram == 'true'
+        if: inputs.kernel_variant == 'SUKI' && inputs.use_zram == 'true'
         run: |
           cd "$CONFIG/common"
           cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
@@ -409,7 +415,7 @@ jobs:
           fi
 
       - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
-        if: inputs.kernel_version == '6.6'
+        if: inputs.android_version == 'android15'
         run: |
           SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_galaxy
           echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
@@ -431,7 +437,7 @@ jobs:
           cd "$CONFIG"
           defconfig="./common/arch/arm64/configs/gki_defconfig"
           # Remove check_defconfig
-          if [ "${{ inputs.kernel_version }}" == "6.12" ]; then
+          if [ "${{ inputs.android_version }}" == "android16" ]; then
             sed -i '/name = "kernel_aarch64",/a\check_defconfig = "disabled",' common/BUILD.bazel
             awk '/name = "kernel_aarch64"/,/^\)/' common/BUILD.bazel
           else
@@ -466,7 +472,7 @@ jobs:
               fi
             
               if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
-                sed -i 's/"drivers/block/zram/zram.ko",//g; s/"mm/zsmalloc.ko",//g' ./common/modules.bzl
+                sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' ./common/modules.bzl
                 echo "CONFIG_MODULE_SIG_FORCE=n" >> "$defconfig"
               fi
             
