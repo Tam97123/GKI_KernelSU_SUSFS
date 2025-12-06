@@ -235,7 +235,7 @@ jobs:
               ;;
             "SUKI")
               echo "Adding SukiSU-Ultra..."
-              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
               ;;
           esac
 
