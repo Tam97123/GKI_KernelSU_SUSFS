@@ -264,7 +264,7 @@ jobs:
           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux
           
           # Apply core SUSFS patches
-          if [ "${{ inputs.android_version }}" == "android16" ] && [ "${{ env.SUSFS_VERSION }}" == "v1.5.2 ]; then
+          if [ "${{ inputs.android_version }}" == "android16" ] && [ "${{ env.SUSFS_VERSION }}" == "v1.5.2" ]; then
             cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-android15-6.6.patch ./common/
             cd common
             patch -p1 < 50_add_susfs_in_gki-android15-6.6.patch || true
