@@ -101,7 +101,7 @@ jobs:
       - name: Determine SUSFS version
         run: |
           SUSFS_KERNEL="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "gki-${SUSFS_BRANCH}"
+          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "gki-${SUSFS_KERNEL}"
           cd susfs4ksu
           
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ] || [ "${{ inputs.kernel_variant }}" == "KSU" ]; then
