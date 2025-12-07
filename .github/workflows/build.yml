@@ -41,18 +41,19 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      - name: Maximize Build Space
-        uses: AdityaGarg8/remove-unwanted-software@v5
-        with:
-          remove-dotnet: 'true'          # Frees ~2 GB
-          remove-android: 'true'         # Frees ~9 GB
-          remove-haskell: 'true'         # Frees ~5.2 GB
-          remove-codeql: 'true'          # Frees ~5.4 GB
-          remove-docker-images: 'true'   # Frees ~3.2 GB
-          remove-large-packages: 'true'  # Frees ~3.1 GB
-          remove-swapfile: 'true'        # Frees ~4 GB
-          remove-cached-tools: 'false'   # Avoid unless confirmed safe
-          verbose: 'false'               # Disable detailed logging
+      - name: Check Initial Disk Space
+        run: |
+          echo "===== Initial Total Disk Space in GB ====="
+          df -BG
+          
+      - name: Download Apache Arrow's util_free_space.sh
+        run: |
+          curl -Ls https://raw.githubusercontent.com/apache/arrow/main/ci/scripts/util_free_space.sh | bash
+          
+      - name: Check Disk Space After Cleanup
+        run: |
+          echo "===== Total Disk Space After Cleanup in GB ====="
+          df -BG
           
       - name: Set CONFIG Environment Variable
         run: |
@@ -99,8 +100,8 @@ jobs:
       
       - name: Determine SUSFS version
         run: |
-          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
+          SUSFS_KERNEL="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "gki-${SUSFS_BRANCH}"
           cd susfs4ksu
           
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ] || [ "${{ inputs.kernel_variant }}" == "KSU" ]; then
@@ -108,26 +109,26 @@ jobs:
             LOGS=$(git log -1 --format=%s "$COMMIT")
             SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v?[0-9]+(\.[0-9]+){2}')
           else
-            case "$SUSFS_BRANCH" in
-              "gki-android12-5.10")
+            case "$SUSFS_KERNEL" in
+              "android12-5.10")
                 git checkout 8a76ba240d1f7315352b49d97d854a4b166e5b47
                 ;;
-              "gki-android13-5.10")
+              "android13-5.10")
                 git checkout e5c9eabfc6dcfc677d11f46ce1d5ff786de60a92
                 ;;
-              "gki-android13-5.15")
+              "android13-5.15")
                 git checkout babf6be195576f09aae79650d47abf6a76e8a21b
                 ;;
-              "gki-android14-5.15")
+              "android14-5.15")
                 git checkout 19f339e804ba9aebd9c6d735b965e2b9396c73ae
                 ;;
-              "gki-android14-6.1")
+              "android14-6.1")
                 git checkout a162e2469d0b472545e5e46457eee171c0975fb0
                 ;;
-              "gki-android15-6.6")
+              "android15-6.6")
                 git checkout f450ec00bf592d080f59b01ff6f9242456c9a427
                 ;;
-              "gki-android16-6.12")
+              "android16-6.12")
                 git checkout f450ec00bf592d080f59b01ff6f9242456c9a427
                 ;;
             esac
@@ -154,18 +155,6 @@ jobs:
           
           $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
           
-      - name: Check Directory Space Usage
-        run: |
-          echo "===== Total Disk Space After Kernel Download in GB ====="
-          df -BG
-          
-          echo "===== Directory Space Usage in GB ====="
-          du -BG -d 1 | sort -nr
-          
-          echo "===== $CONFIG Directory Space Usage in GB ====="
-          cd "$CONFIG"
-          du -BG -d 2 | sort -nr
-
       - name: Extract Actual Sublevel
         run: |
           cd "$CONFIG/common"
@@ -275,7 +264,7 @@ jobs:
           cp ../susfs4ksu/kernel_patches/include/linux/* ./common/include/linux
           
           # Apply core SUSFS patches
-          if [ "${{ inputs.android_version }}" == "android16" ]; then
+          if [ "${{ inputs.android_version }}" == "android16" ] && [ "${{ env.SUSFS_VERSION }}" == "v1.5.2 ]; then
             cp ../susfs4ksu/kernel_patches/50_add_susfs_in_gki-android15-6.6.patch ./common/
             cd common
             patch -p1 < 50_add_susfs_in_gki-android15-6.6.patch || true
@@ -387,7 +376,7 @@ jobs:
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
 
       - name: Apply LZ4KD & ZSTDN patches
-        if: inputs.kernel_variant == 'SUKI' && inputs.use_zram == 'true'
+        if: inputs.kernel_variant == 'SUKI' && inputs.use_zram == 'true' && inputs.android_version != 'android16'
         run: |
           cd "$CONFIG/common"
           cp -r ../../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
@@ -486,7 +475,7 @@ jobs:
               fi
             fi
             
-            if [ "${{ inputs.use_kpm }}" == "true" ]; then
+            if [ "${{ inputs.use_kpm }}" == "true" ] && [ "${{ inputs.android_version }}" != "android15" ]; then
               echo "CONFIG_KPM=y" >> "$defconfig"
             fi
           fi  
