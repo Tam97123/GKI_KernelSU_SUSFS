@@ -294,7 +294,7 @@ jobs:
             sed -i 's/i_uid_into_mnt(i_user_ns(inode), inode)/i_uid_into_mnt(inode->i_sb->s_user_ns, inode)/g' fs/susfs.c
           fi
 
-          # Apply additional SUSFS patches for Android 13 5.15 compatibility
+          # Apply additional SUSFS patches for Android 16 6.12 compatibility
           if [[ "${{ inputs.android_version }}" == "android16" ]]; then
             cp ../../kernel_patches/experimental/susfs/fix_namespace.c.patch ./
             patch -p1 < fix_namespace.c.patch || true
@@ -352,6 +352,12 @@ jobs:
 
               cp ../../kernel_patches/next/susfs_fix_patches/${SUSFS_VERSION}/fix_kernel_compat.c.patch ./
               patch -p1 < fix_kernel_compat.c.patch
+              ;;
+              "KSU")
+              echo "Applying SUSFS patches for Official KernelSU..."
+              cd ../KernelSU
+              cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
+              patch -p1 < 10_enable_susfs_for_ksu.patch || true
               ;;
               "SUKI")
               echo "Applying SUSFS patches for SukiSU-Ultra..."
