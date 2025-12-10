@@ -145,7 +145,7 @@ jobs:
           
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
           
-          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest \ 
+          repo init --depth=1 --u https://android.googlesource.com/kernel/manifest \ 
             -b common-${FORMATTED_BRANCH} --repo-rev=v2.16 --no-clone-bundle
           
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
@@ -154,7 +154,7 @@ jobs:
             sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
           fi
           
-          $REPO --trace sync -c -j$(nproc --all) --no-tags --no-clone-bundle --fail-fast
+          repo --trace sync -c -j$(nproc --all) --no-tags --no-clone-bundle --fail-fast
           
       - name: Extract Actual Sublevel
         run: |
@@ -292,7 +292,7 @@ jobs:
             patch -p1 < fix_namespace.c.patch || true
             cp ../../kernel_patches/experimental/susfs/fix_open.c.patch ./
             patch -p1 < fix_open.c.patch || true
-            sed -i '/#include <linux\/syscalls.h>/a #include <linux/susfs.h>' /fs/open.c
+            sed -i '/#include <linux\/syscalls.h>/a #include <linux/susfs.h>' fs/open.c
             sed -i 's/i_uid_into_mnt(i_user_ns(inode), inode)/i_uid_into_mnt(inode->i_sb->s_user_ns, inode)/g' fs/susfs.c
           fi
 
