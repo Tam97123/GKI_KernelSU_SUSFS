@@ -145,8 +145,7 @@ jobs:
           
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
 
-          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest \ 
-            -b common-${FORMATTED_BRANCH} --repo-rev=v2.16 --no-clone-bundle
+          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16 --no-clone-bundle
           
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
           DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
