@@ -145,11 +145,7 @@ jobs:
           
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
 
-          # Download the 'repo' utility from Google Source
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          
-          repo init --depth=1 --u https://android.googlesource.com/kernel/manifest \ 
+          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest \ 
             -b common-${FORMATTED_BRANCH} --repo-rev=v2.16 --no-clone-bundle
           
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
@@ -158,7 +154,7 @@ jobs:
             sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
           fi
           
-          repo --trace sync -c -j$(nproc --all) --no-tags --no-clone-bundle --fail-fast
+          $REPO --trace sync -c -j$(nproc --all) --no-tags --no-clone-bundle --fail-fast
           
       - name: Extract Actual Sublevel
         run: |
