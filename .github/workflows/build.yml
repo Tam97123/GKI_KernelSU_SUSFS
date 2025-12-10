@@ -145,7 +145,8 @@ jobs:
           
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
           
-          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
+          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest \ 
+            -b common-${FORMATTED_BRANCH} --repo-rev=v2.16 --no-clone-bundle
           
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
           DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
@@ -153,7 +154,7 @@ jobs:
             sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
           fi
           
-          $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
+          $REPO --trace sync -c -j$(nproc --all) --no-tags --no-clone-bundle --fail-fast
           
       - name: Extract Actual Sublevel
         run: |
@@ -384,7 +385,7 @@ jobs:
         run: |
           cd "$CONFIG"
           echo "Adding BBG..."
-          wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          curl -LSs https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
           echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
 
