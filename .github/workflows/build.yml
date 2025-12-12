@@ -286,6 +286,7 @@ jobs:
               cd ../Wild_KSU
               cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
+              ;;
             "NEXT")
               echo "Applying SUSFS for KernelSU Next..."
               cd ../KernelSU-Next
