@@ -600,17 +600,19 @@ jobs:
         run: |
           set -ex
           export KBUILD_BUILD_TIMESTAMP="$(date -u)"
-          if [ -f "build/build.sh" ]; then
+          if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || true
-          if [ ! -f "./out/android13-5.15/dist/Image" ]; then
-            if [ ! -f "./out/android13-5.15/common/modules.order" ]; then
-              exit 1
-            else
-              cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
-              echo "Building the kernel again..."
-              LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
+            if [ ! -f "./out/android13-5.15/dist/Image" ]; then
+              if [ ! -f "./out/android13-5.15/common/modules.order" ]; then
+                exit 1
+              else
+                cp out/android13-5.15/common/modules.order common/android/gki_aarch64_modules
+                echo "Building the kernel again..."
+                LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
+              fi
             fi
-          fi
+          elif [ -f "build/build.sh" ]; then
+            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           else
             tools/bazel build --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist || exit 1
           fi
