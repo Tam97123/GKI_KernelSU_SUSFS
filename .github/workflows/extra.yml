@@ -7,11 +7,36 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      kernel_build:
-        description: 'Type list of kernels to build: a12-5.10, a13-5.10, a13-5.15, a14-5.15, a14-6.1, a15-6.6, a16-6.12 or "all" to build every kernel.'
-        required: true
-        type: string
-        default: a
+      # Build Selection
+      build_a12_5_10:
+        description: "Android 12 - 5.10"
+        type: boolean
+        default: true
+      build_a13_5_10:
+        description: "Android 13 - 5.10"
+        type: boolean
+        default: true
+      build_a13_5_15:
+        description: "Android 13 - 5.15"
+        type: boolean
+        default: true
+      build_a14_5_15:
+        description: "Android 14 - 5.15"
+        type: boolean
+        default: true
+      build_a14_6_1:
+        description: "Android 14 - 6.1"
+        type: boolean
+        default: true
+      build_a15_6_6:
+        description: "Android 15 - 6.6"
+        type: boolean
+        default: true
+      build_a16_6_12:
+        description: "Android 16 - 6.12"
+        type: boolean
+        default: false
+
       kernel_uname:
         description: 'Custom kernel version name (Ex: Characters after 5.10.198 or leave blank to use default kernel version uname)'
         required: false
@@ -20,14 +45,10 @@ on:
         description: 'Choose KernelSU Variant'
         required: true
         type: choice
-        options:
-          - WILD
-          - KSU
-          - NEXT
-          - SUKI
+        options: [ WILD, NEXT, KSU, SUKI ]
         default: NEXT
       use_kpm:
-        description: 'Use KPM? (Kernel Patches Modules) SUKISU-ULTRA ONLY!'
+        description: 'Use KPM? (SUKISU-ULTRA ONLY!)'
         required: false
         type: boolean
         default: false
@@ -38,9 +59,9 @@ on:
         default: false
         
 jobs:
-  build-kernels-a12-5-10:
+  build-a12-5-10:
     name: ${{ inputs.kernel_variant }}-Android_12-5.10
-    if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a12-5.10')
+    if: inputs.build_a12_5_10
     uses: ./.github/workflows/kernel-a12-5-10.yml
     secrets: inherit
     with:
@@ -49,9 +70,9 @@ jobs:
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
 
-  build-kernels-a13-5-10:
+  build-a13-5-10:
     name: ${{ inputs.kernel_variant }}-Android_13-5.10
-    if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a13-5.10')
+    if: inputs.build_a13_5_10
     uses: ./.github/workflows/kernel-a13-5-10.yml
     secrets: inherit
     with:
@@ -60,9 +81,9 @@ jobs:
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
       
-  build-kernels-a13-5-15:
+  build-a13-5-15:
     name: ${{ inputs.kernel_variant }}-Android_13-5.15
-    if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a13-5.15')
+    if: inputs.build_a13_5_15
     uses: ./.github/workflows/kernel-a13-5-15.yml
     secrets: inherit
     with:
@@ -71,9 +92,9 @@ jobs:
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
       
-  build-kernels-a14-5-15:
+  build-a14-5-15:
     name: ${{ inputs.kernel_variant }}-Android_14-5.15
-    if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a14-5.15')
+    if: inputs.build_a14_5_15
     uses: ./.github/workflows/kernel-a14-5-15.yml
     secrets: inherit
     with:
@@ -82,9 +103,9 @@ jobs:
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
       
-  build-kernels-a14-6-1:
+  build-a14-6-1:
     name: ${{ inputs.kernel_variant }}-Android_14-6.1
-    if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a14-6.1')
+    if: inputs.build_a14_6_1
     uses: ./.github/workflows/kernel-a14-6-1.yml
     secrets: inherit
     with:
@@ -93,9 +114,9 @@ jobs:
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
       
-  build-kernels-a15-6-6:
+  build-a15-6-6:
     name: ${{ inputs.kernel_variant }}-Android_15-6.6
-    if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a15-6.6')
+    if: inputs.build_a15_6_6
     uses: ./.github/workflows/kernel-a15-6-6.yml
     secrets: inherit
     with:
@@ -104,9 +125,9 @@ jobs:
       use_kpm: ${{ inputs.use_kpm }}
       use_zram: ${{ inputs.use_zram }}
       
-  build-kernels-a16-6-12:
+  build-a16-6-12:
     name: ${{ inputs.kernel_variant }}-Android_16-6.12
-    if: contains(github.event.inputs.kernel_build, 'all') || contains(github.event.inputs.kernel_build, 'a16-6.12')
+    if: inputs.build_a16_6_12
     uses: ./.github/workflows/kernel-a16-6-12.yml
     secrets: inherit
     with:

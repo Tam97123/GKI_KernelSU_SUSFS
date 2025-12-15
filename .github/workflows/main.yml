@@ -1,4 +1,4 @@
-name: Build GKI Kernels
+name: Build Kernels
 
 permissions:
   contents: write
@@ -8,69 +8,54 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'Choose Release Type'
-        required: true
+        description: "Release Type"
         type: choice
-        options:
-          - Pre-Release
-          - Release
+        options: [ Pre-Release, Release ]
         default: Release
       kernel_variant:
-        description: 'Choose Kernel Variant'
-        required: true
+        description: "Choose KernelSU Variant"
         type: choice
-        options:
-          - WILD
-          - KSU
-          - NEXT
-          - SUKI
+        options: [ WILD, NEXT, KSU, SUKI ]
         default: NEXT
+
 jobs:
-  build-kernels-a12-5-10:
-    name: ${{ inputs.kernel_variant }}-Android_12-5.10
+  build-a12-5-10:
     uses: ./.github/workflows/kernel-a12-5-10.yml
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
-
-  build-kernels-a13-5-10:
-    name: ${{ inputs.kernel_variant }}-Android_13-5.10
+  build-a13-5-10:
     uses: ./.github/workflows/kernel-a13-5-10.yml
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
 
-  build-kernels-a13-5-15:
-    name: ${{ inputs.kernel_variant }}-Android_13-5.15
+  build-a13-5-15:
     uses: ./.github/workflows/kernel-a13-5-15.yml
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
 
-  build-kernels-a14-5-15:
-    name: ${{ inputs.kernel_variant }}-Android_14-5.15
+  build-a14-5-15:
     uses: ./.github/workflows/kernel-a14-5-15.yml
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
 
-  build-kernels-a14-6-1:
-    name: ${{ inputs.kernel_variant }}-Android_14-6.1
+  build-a14-6-1:
     uses: ./.github/workflows/kernel-a14-6-1.yml
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
 
-  build-kernels-a15-6-6:
-    name: ${{ inputs.kernel_variant }}-Android_15-6.6
+  build-a15-6-6:
     uses: ./.github/workflows/kernel-a15-6-6.yml
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
-      
-  build-kernels-a16-6-12:
-    name: ${{ inputs.kernel_variant }}-Android_16-6.12
-    uses: ./.github/workflows/kernel-a16-6-12.yml
+
+  build-a16-6-12:
+    uses: ./.github/workflows/kernel-a16-612.yml
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
@@ -78,187 +63,129 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs:
-      - build-kernels-a12-5-10
-      - build-kernels-a13-5-10
-      - build-kernels-a13-5-15
-      - build-kernels-a14-5-15
-      - build-kernels-a14-6-1
-      - build-kernels-a15-6-6
-      - build-kernels-a16-6-12
+    - build-a12-5-10
+    - build-a13-5-10
+    - build-a13-5-15
+    - build-a14-5-15
+    - build-a14-6-1
+    - build-a15-6-6
+    - build-a16-6-12
     env:
-      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
       RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${SUSFS_VERSION}"
+      RELEASE_BODY: ""
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Get commit hashes and generate commit URLs
-        run: |
-          GITLAB_OWNER="simonpunk"
-          GITLAB_REPO="susfs4ksu"
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate New Tag
+      if: inputs.release_type != 'Actions'
+      run: |
+        LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name' 2>/dev/null || echo "")
+        NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')
+
+        echo "New tag: $NEW_TAG"
+        echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
+
+    - name: Set release body
+      run: |
+        cat << 'EOF' > release_body.md
+
+        **IMPORTANT DISCLAIMER**
+        This software is provided for testing and educational purposes only. Use at your own risk.
+        The developers are not responsible for any damage, data loss, or issues that may occur.
+        Please ensure you have proper backups before installation.
+
+        🔹 Bypass 
+        - Includes module check bypass modifications 
+        - What are kernel modules? Kernel modules are pieces of code that can be loaded into the kernel at runtime to extend functionality (like device drivers, filesystem support, etc.). These are different from KernelSU/Magisk modules. 
+        - The Problem: Sometimes when installing a custom kernel, the device tries to load a kernel module that fails due to version mismatches, missing dependencies, or signature verification issues. This can cause boot failures or device instability. 
+        - The Solution: This version changes one line from false to true to force load the kernel module, bypassing the failure check that would normally prevent loading.
+
+        Features:
+        -> ${{ inputs.kernel_variant }}
+        -> Multi Manager Support for WILD, KernelSU-Next! Needs Testing: KSU, MKSU RKSU, xxKSU, KowSU and SukiSU (Best compatibility with WILD, no support will be provided for other managers)
+        -> SUSFS ඞ  ${SUSFS_VERSION}
+        -> Scope-Minimized Manual hooks v1.4 for Wild
+        -> Ptrace Patch Support for Older Kernels (<5.16)
+        -> IPSet Support for Advanced Network Filtering
+        -> Wireguard Support
+        -> BBR v1 Support
+        -> Added BBG support to prevent unauthorised writes to certain partitions: https://github.com/vc-teahouse/Baseband-guard
+
+        🔹 BBG (Baseband-guard)
+        - A lightweight LSM (Linux Security Module) for Android kernel
+        - Blocks unauthorized writes to critical partitions/device nodes
+        - Prevents malicious tampering with baseband and boot chain
+        - Kernel-level protection via LSM hooks
+        - Reduces risk of soft-brick/hard-brick issues
+
+        🔹 KPM (KernelPatch Modules):
+        - Support for modules that allow you to inject any code into the kernel
+        - Provides kernel function inline-hook and syscall-table-hook
           
-          declare -A BRANCH_MAP=(
-            ["gki_android12_5_10"]="gki-android12-5.10"
-            ["gki_android13_5_10"]="gki-android13-5.10"
-            ["gki_android13_5_15"]="gki-android13-5.15"
-            ["gki_android14_5_15"]="gki-android14-5.15"
-            ["gki_android14_6_1"]="gki-android14-6.1"
-            ["gki_android15_6_6"]="gki-android15-6.6"
-            ["gki_android16_6_12"]="gki-android16-6.12"
-          )
-          
-          for var_name in "${!BRANCH_MAP[@]}"; do
-            branch_name="${BRANCH_MAP[$var_name]}"
-            COMMIT_HASH=$(git ls-remote https://gitlab.com/$GITLAB_OWNER/$GITLAB_REPO.git refs/heads/$branch_name | awk '{ print $1 }')
-            
-            if [[ -n "$COMMIT_HASH" ]]; then
-              COMMIT_URL="https://gitlab.com/$GITLAB_OWNER/$GITLAB_REPO/-/commit/$COMMIT_HASH"
-              echo "$branch_name Commit: $COMMIT_HASH"
-              echo "$branch_name Commit URL: $COMMIT_URL"
-              
-              echo "COMMIT_HASH_${var_name}=$COMMIT_HASH" >> "$GITHUB_ENV"
-              echo "COMMIT_URL_${var_name}=$COMMIT_URL" >> "$GITHUB_ENV"
-            fi
-          done
+        🔹 ZRAM (Compcache):
+        - ZRAM is a Linux kernel module that creates a compressed block device in RAM
+        - Instead of swapping data to slow storage (like SSD or eMMC), the kernel compresses data and keeps it in RAM.
+        - Because compressed data is smaller, it can fit more “virtual RAM” into the same physical RAM.
+        - By add more ZRAM algorithms, kernel has more choice to compress memory data (faster or better)
 
-      - name: Get KernelSU variant refs and links
-        run: |
-          BRANCH="${{ inputs.kernelsu_branch }}"
-      
-          get_ref() {
-            local name="$1" repo="$2" path="$3" mode="$4"
-            if [[ "$mode" == "tag" ]]; then
-              ref=$(git ls-remote --tags --sort=-v:refname "$repo" | grep -o 'refs/tags/.*' | cut -d/ -f3 | head -n1)
-              url="https://github.com/$path/releases/tag/$ref"
-            else
-              ref=$(git ls-remote "$repo" HEAD | awk '{print $1}')
-              url="https://github.com/$path/commit/$ref"
-            fi
-            echo "${name}_REF=$ref" >> $GITHUB_ENV
-            echo "${name}_URL=$url" >> $GITHUB_ENV
-          }
-          [[ "$BRANCH" == "Dev" ]] && MODE="tag" || MODE="commit"
-          get_ref "WILD" "https://github.com/WildKernels/Wild_KSU.git" "WildKernels/Wild_KSU" "$MODE"
-          get_ref "KSU" "https://github.com/tiann/KernelSU.git" "tiann/KernelSU" "$MODE"
-          get_ref "NEXT" "https://github.com/KernelSU-Next/KernelSU-Next.git" "KernelSU-Next/KernelSU-Next" "$MODE"
-          get_ref "SUKI" "https://github.com/SukiSU-Ultra/SukiSU-Ultra" "SukiSU-Ultra/SukiSU-Ultra" "$MODE"
+        Notes:
+        -> SUS SU Mode 2 will show as disabled or not compatible due to non-kprobe hooks and is not needed anymore!
+        -> Official Kernel Flasher is broken with latest susfs, try https://github.com/fatalcoder524/KernelFlasher/
+        -> **boot.img files**: Available as CI artifacts only - download from the Actions tab in the "Misc" Artifact
+        -> **Warning**: boot.img files may not boot on some devices
+        -> **Note:** For detailed commit information and component versions, please check the build summary in the "Misc" Artifact
 
-      - name: Generate and Create New Tag
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-            LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name')
-            if [ -z "$LATEST_TAG" ]; then
-              LATEST_TAG="{$SUSFS_VERSION}-r0"
-            fi
-            
-            NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')
-    
-            echo "New tag: $NEW_TAG"
-            echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
+        Module: 
+        -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
 
-            git tag $NEW_TAG
-            git push origin $NEW_TAG
+        Managers:
+        -> Wild KSU: [Github](https://github.com/WildKernels/Wild_KSU) [Telegram](https://t.me/WildKernels)
+        -> KernelSU: [Github](https://github.com/tiann/KernelSU) [Telegram](https://t.me/KernelSU_group)
+        -> KernelSU Next: [Github](https://github.com/KernelSU-Next/KernelSU-Next) [Telegram](https://t.me/ksunext_ci)
+        -> SukiSU-Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
+        EOF
 
-      - name: Download Artifacts
-        uses: actions/download-artifact@v5
-        with:
-          path: ./downloaded-artifacts
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ env.NEW_TAG }}
+        prerelease: ${{ inputs.release_type == 'Pre-Release' }}
+        files: ""
+        name: ${{ env.RELEASE_NAME }}
+        body_path: release_body.md
 
-      - name: Set release body
-        run: |
-          cat << EOF > release_body.md
-          
-          **IMPORTANT DISCLAIMER**
-          This software is under development and may be unstable. It is provided for testing and educational purposes only.
-          **Use at your own risk!**
-          The developers are not responsible for any damage, data loss, or issues that may occur.
-          Please ensure you have proper backups before installation.
-      
-          Bypass Modules:
-          - Includes module check bypass modifications 
-          - What are kernel modules? Kernel modules are pieces of code that can be loaded into the kernel at runtime to extend functionality (like device drivers, filesystem support, etc.). These are different from KernelSU/Magisk modules. 
-          - The Problem: Sometimes when installing a custom kernel, the device tries to load a kernel module that fails due to version mismatches, missing dependencies, or signature verification issues. This can cause boot failures or device instability. 
-          - The Solution: This version changes one line from false to true to force load the kernel module, bypassing the failure check that would normally prevent loading.
+    - name: Download Artifacts
+      uses: actions/download-artifact@v5
+      with:
+        path: ./downloaded-artifacts
+        pattern: '*-AnyKernel3'
 
-          BBG (Baseband-guard):
-          - A lightweight LSM (Linux Security Module) for Android kernel
-          - Blocks unauthorized writes to critical partitions/device nodes
-          - Prevents malicious tampering with baseband and boot chain
-          - Kernel-level protection via LSM hooks
-          - Reduces risk of soft-brick/hard-brick issues
-          
-          KPM (KernelPatch Modules):
-          - Support for modules that allow you to inject any code into the kernel
-          - Provides kernel function inline-hook and syscall-table-hook
-          
-          ZRAM (Compcache):
-          - ZRAM is a Linux kernel module that creates a compressed block device in RAM
-          - Instead of swapping data to slow storage (like SSD or eMMC), the kernel compresses data and keeps it in RAM.
-          - Because compressed data is smaller, it can fit more “virtual RAM” into the same physical RAM.
-          - By add more ZRAM algorithms, kernel has more choice to compress memory data (faster or better)
-          
-          Features:
-          -> ${{ inputs.kernel_variant }} managers version ${KSUVER}
-          -> SUSFS ඞ version: ${SUSFS_VERSION}
-          -> Multi Manager Support for KernelSU-Next, Wild KSU, KernelSU, MKSU! Needs Testing: RKSU, xxKSU, KowSU and SukiSU
-          -> Scope-Minimized Manual hooks v1.4
-          -> Magic Mount Support
-          -> Ptrace Patch Support for Older Kernels (<5.16)
-          -> IPSet Support for Advanced Network Filtering
-          -> Wireguard Support
-          -> BBR v1 Support
+    - name: Upload Release Assets
+      run: |+
+        shopt -s nullglob
+        anykernel_dirs=(./downloaded-artifacts/*-AnyKernel3/)
 
-          Notes:
-          -> KernelSU Next & Wild KSU, SUS SU Mode 2 will show as disabled or not compatble due to non-kprobe hooks and is not needed anymore!
-          -> Official Kernel Flasher is broken with latest susfs, try [Kernel Flasher by fatalcoder524](https://github.com/fatalcoder524/KernelFlasher/) better than [Kernel Flasher by libxzr](https://github.com/libxzr/HorizonKernelFlasher/)!
-          -> **boot.img files**: Available as CI artifacts only (not included in releases) - download from the Actions tab
-          -> **Warning**: boot.img files may not boot on some android 16 devices
-          
-          Module: 
-          -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
-      
-          Managers:
-          -> Wild KSU: [Github](https://github.com/WildKernels/Wild_KSU) [Telegram](https://t.me/WildKernels)
-          -> KernelSU: [Github](https://github.com/tiann/KernelSU) [Telegram](https://t.me/KernelSU_group)
-          -> KernelSU Next: [Github](https://github.com/KernelSU-Next/KernelSU-Next) [Telegram](https://t.me/ksunext_ci)
-          -> SukiSU-Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
-      
-          Commit Hashes (at the time of release):
-          -> Wild KSU: [${{ env.WILD_REF }}](${{ env.WILD_URL }})
-          -> KernelSU: [${{ env.KSU_REF }}](${{ env.KSU_URL }})
-          -> KernelSU Next: [${{ env.NEXT_REF }}](${{ env.NEXT_URL }})
-          -> SukiSU-Ultra: [${{ env.SUKI_REF }}](${{ env.SUKI_URL }})
-          -> SUSFS4KSU: 
-            -> gki-android12-5.10: [${{ env.COMMIT_HASH_gki_android12_5_10 }}](${{ env.COMMIT_URL_gki_android12_5_10 }})
-            -> gki-android13-5.10: [${{ env.COMMIT_HASH_gki_android13_5_10 }}](${{ env.COMMIT_URL_gki_android13_5_10 }})
-            -> gki-android13-5.15: [${{ env.COMMIT_HASH_gki_android13_5_15 }}](${{ env.COMMIT_URL_gki_android13_5_15 }})
-            -> gki-android14-5.15: [${{ env.COMMIT_HASH_gki_android14_5_15 }}](${{ env.COMMIT_URL_gki_android14_5_15 }})
-            -> gki-android14-6.1: [${{ env.COMMIT_HASH_gki_android14_6_1 }}](${{ env.COMMIT_URL_gki_android14_6_1 }})
-            -> gki-android15-6.6: [${{ env.COMMIT_HASH_gki_android15_6_6 }}](${{ env.COMMIT_URL_gki_android15_6_6 }})
-            -> gki-android16-6.12: [${{ env.COMMIT_HASH_gki_android15_6_12 }}](${{ env.COMMIT_URL_gki_android15_6_12 }})
-          EOF
+        if [ ${#anykernel_dirs[@]} -eq 0 ]; then
+          echo "No AnyKernel3 artifact directories found; skipping upload."
+          exit 0
+        fi
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.NEW_TAG }}
-          prerelease: ${{ inputs.release_type == 'Pre-Release' }}
-          files: ""
-          name: ${{ env.RELEASE_NAME }}
-          body_path: release_body.md
+        echo "Found ${#anykernel_dirs[@]} artifacts to process"
 
-      - name: Upload Release Assets
-        run: |
-          for file in ./downloaded-artifacts/*-kernel-*/*; do
-            if [ -d "$file" ]; then
-              continue
-            fi
-            echo "Uploading $file..."
-            gh release upload ${{ env.NEW_TAG }} "$file"
-          done
+        # Create all ZIPs in parallel
+        for dir in "${anykernel_dirs[@]}"; do
+          artifact_name=$(basename "$dir")
+          echo "Creating ZIP for $artifact_name..."
+          (cd "$dir" && zip -r -q -9 "$GITHUB_WORKSPACE/${artifact_name}.zip" ./*) &
+        done
+        wait
 
-      - name: Display Files Uploaded
-        run: |
-          echo "GitHub release created with the following files:"
-          ls ./downloaded-artifacts/**/*
+        # Upload all ZIPs
+        for dir in "${anykernel_dirs[@]}"; do
+          artifact_name=$(basename "$dir")
+          echo "Uploading ${artifact_name}.zip..."
+          gh release upload "${{ env.NEW_TAG }}" "${artifact_name}.zip" --clobber
+        done
