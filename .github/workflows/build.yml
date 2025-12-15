@@ -97,9 +97,7 @@ jobs:
 
           git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://github.com/Tam97123/kernel_patches.git
-          if [ "${{ inputs.kernel_variant }}" = "SUKI" ]; then
-            git clone https://github.com/ShirkNeko/SukiSU_patch.git
-          fi
+          git clone https://github.com/ShirkNeko/SukiSU_patch.git
 
       - name: Determine SUSFS version
         run: |
@@ -116,12 +114,13 @@ jobs:
               android14-6.1) git checkout a162e2469d0b472545e5e46457eee171c0975fb0" ;;
               android15-6.6) git checkout f450ec00bf592d080f59b01ff6f9242456c9a427" ;;
             esac
-          SUSFS_VERSION = v1.5.12
+            SUSFS_VERSION=v1.5.12
           else
             COMMIT=$(git log --all --grep="Bump version to" --format="%H" | head -n1)
             LOGS=$(git log -1 --format=%s "$COMMIT")
-            SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v?[0-9]+(\.[0-9]+){2}')
-            echo "Newest susfs version: $SUSFS_VERSION"
+            VERSION=$(echo "$LOGS" | grep -oE '[0-9]+(\.[0-9]+){2}')
+            echo "Newest susfs version: v$VERSION"
+            SUSFS_VERSION="v${VERSION}"
           fi
 
           echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
