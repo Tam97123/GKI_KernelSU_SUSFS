@@ -33,7 +33,7 @@ on:
 
 jobs:
   build-gki:
-    name: "${{ inputs.kernel_variant }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}x"
+    name: "${{ inputs.kernel_variant }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
     runs-on: ubuntu-latest
 
     steps:
