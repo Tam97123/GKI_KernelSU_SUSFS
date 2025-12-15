@@ -37,538 +37,537 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Maximize Build Space
-      run: |
-        curl -Ls https://raw.githubusercontent.com/apache/arrow/main/ci/scripts/util_free_space.sh | bash
-
-    - name: Set Environment Variables
-      run: |
-        CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}"
-        KERNEL_ROOT="$GITHUB_WORKSPACE/$CONFIG"
-
-        cat >> $GITHUB_ENV << EOF
-        DEFCONFIG=$KERNEL_ROOT/common/arch/arm64/configs/gki_defconfig
-        CONFIG=$CONFIG
-        KERNEL_ROOT=$KERNEL_ROOT
-        SUSFS4KSU=$GITHUB_WORKSPACE/susfs4ksu
-        KERNEL_PATCHES=$GITHUB_WORKSPACE/kernel_patches
-        SUKI_KERNEL_PATCHES=$GITHUB_WORKSPACE/SukiSU_patches
-        ANYKERNEL3=$GITHUB_WORKSPACE/AnyKernel3
-        AVBTOOL=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin/avbtool
-        MKBOOTIMG=$GITHUB_WORKSPACE/mkbootimg/mkbootimg.py
-        UNPACK_BOOTIMG=$GITHUB_WORKSPACE/mkbootimg/unpack_bootimg.py
-        BOOT_SIGN_KEY_PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
-        REPO=$GITHUB_WORKSPACE/git-repo/repo
-        EOF
-
-        echo "PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin:$PATH" >> $GITHUB_ENV
-        mkdir -p "$KERNEL_ROOT"
-
-    - name: Setup Build Environment
-      run: |
-        AOSP_MIRROR=https://android.googlesource.com
-        BRANCH=main-kernel-2025
-        git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools &
-        git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg &
-        wait
-
-        echo "AVBTOOL=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin/avbtool" >> $GITHUB_ENV
-        echo "MKBOOTIMG=$GITHUB_WORKSPACE/mkbootimg/mkbootimg.py" >> $GITHUB_ENV
-        echo "UNPACK_BOOTIMG=$GITHUB_WORKSPACE/mkbootimg/unpack_bootimg.py" >> $GITHUB_ENV
-        echo "BOOT_SIGN_KEY_PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem" >> $GITHUB_ENV
-        echo "PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin:$PATH" >> $GITHUB_ENV
-
-        mkdir -p ./git-repo
-        curl https://storage.googleapis.com/git-repo-downloads/repo > ./git-repo/repo
-        chmod a+rx ./git-repo/repo
-        echo "REPO=$GITHUB_WORKSPACE/./git-repo/repo" >> $GITHUB_ENV
-
-    - name: Set boot sign key
-      env:
-        BOOT_SIGN_KEY: ${{ secrets.BOOT_SIGN_KEY }}
-      run: |
-        if [ ! -z "$BOOT_SIGN_KEY" ]; then
-          echo "$BOOT_SIGN_KEY" > ./kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
-        fi
-
-    - name: Clone AnyKernel3 and Kernel Patches
-      run: |
-        ANYKERNEL_BRANCH="gki-2.0"
-
-        git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-        git clone https://github.com/Tam97123/kernel_patches.git
-        if [ "${{ inputs.kernel_variant }}" = "SUKI" ]; then
-          git clone https://github.com/ShirkNeko/SukiSU_patch.git
-        fi
-
-     - name: Determine SUSFS version
+      - name: Maximize Build Space
         run: |
-        git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-        cd susfs4ksu
+          curl -Ls https://raw.githubusercontent.com/apache/arrow/main/ci/scripts/util_free_space.sh | bash
 
-        TARGET="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-        if [ "${{ inputs.kernel_variant }}" = "WILD" ]; then
-          case "$TARGET" in
-            android12-5.10) git checkout 8a76ba240d1f7315352b49d97d854a4b166e5b47" ;;
-            android13-5.10) git checkout e5c9eabfc6dcfc677d11f46ce1d5ff786de60a92" ;;
-            android13-5.15) git checkout babf6be195576f09aae79650d47abf6a76e8a21b" ;;
-            android14-5.15) git checkout 19f339e804ba9aebd9c6d735b965e2b9396c73ae" ;;
-            android14-6.1) git checkout a162e2469d0b472545e5e46457eee171c0975fb0" ;;
-            android15-6.6) git checkout f450ec00bf592d080f59b01ff6f9242456c9a427" ;;
-          esac
-        SUSFS_VERSION = v1.5.12
-        else
-          COMMIT=$(git log --all --grep="Bump version to" --format="%H" | head -n1)
-          LOGS=$(git log -1 --format=%s "$COMMIT")
-          SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v?[0-9]+(\.[0-9]+){2}')
-          echo "Newest susfs version: $SUSFS_VERSION"
-        fi
+      - name: Set Environment Variables
+        run: |
+          CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}"
+          KERNEL_ROOT="$GITHUB_WORKSPACE/$CONFIG"
 
-        echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
-            
-    - name: Initialize and Sync Kernel Source
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
+          cat >> $GITHUB_ENV << EOF
+          DEFCONFIG=$KERNEL_ROOT/common/arch/arm64/configs/gki_defconfig
+          CONFIG=$CONFIG
+          KERNEL_ROOT=$KERNEL_ROOT
+          SUSFS4KSU=$GITHUB_WORKSPACE/susfs4ksu
+          KERNEL_PATCHES=$GITHUB_WORKSPACE/kernel_patches
+          SUKI_KERNEL_PATCHES=$GITHUB_WORKSPACE/SukiSU_patches
+          ANYKERNEL3=$GITHUB_WORKSPACE/AnyKernel3
+          AVBTOOL=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin/avbtool
+          MKBOOTIMG=$GITHUB_WORKSPACE/mkbootimg/mkbootimg.py
+          UNPACK_BOOTIMG=$GITHUB_WORKSPACE/mkbootimg/unpack_bootimg.py
+          BOOT_SIGN_KEY_PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
+          REPO=$GITHUB_WORKSPACE/git-repo/repo
+          EOF
 
-        $REPO init --depth=1 -u https://android.googlesource.com/kernel/manifest \
-          -b common-${FORMATTED_BRANCH} --repo-rev=v2.16 --no-clone-bundle
+          echo "PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin:$PATH" >> $GITHUB_ENV
+          mkdir -p "$KERNEL_ROOT"
 
-        REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
-        DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
-        if grep -q deprecated <<< $REMOTE_BRANCH; then
-          sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
-        fi
+      - name: Setup Build Environment
+        run: |
+          AOSP_MIRROR=https://android.googlesource.com
+          BRANCH=main-kernel-2025
+          git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools &
+          git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg &
+          wait
 
-        $REPO --trace sync -c -j$(nproc --all) --no-tags --no-clone-bundle --fail-fast
+          echo "AVBTOOL=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin/avbtool" >> $GITHUB_ENV
+          echo "MKBOOTIMG=$GITHUB_WORKSPACE/mkbootimg/mkbootimg.py" >> $GITHUB_ENV
+          echo "UNPACK_BOOTIMG=$GITHUB_WORKSPACE/mkbootimg/unpack_bootimg.py" >> $GITHUB_ENV
+          echo "BOOT_SIGN_KEY_PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem" >> $GITHUB_ENV
+          echo "PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Extract Sublevel and Set File Name
-      run: |
-        ACTUAL_SUBLEVEL="${{ inputs.sub_level }}"
-        if [ -f "$KERNEL_ROOT/common/Makefile" ]; then
-          EXTRACTED=$(grep '^SUBLEVEL = ' "$KERNEL_ROOT/common/Makefile" | awk '{print $3}')
-          [ -n "$EXTRACTED" ] && ACTUAL_SUBLEVEL="$EXTRACTED"
-        fi
+          mkdir -p ./git-repo
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ./git-repo/repo
+          chmod a+rx ./git-repo/repo
+          echo "REPO=$GITHUB_WORKSPACE/./git-repo/repo" >> $GITHUB_ENV
 
-        ARTIFACT_BASE="${{ inputs.kernel_variant }}-${{ inputs.kernel_version }}.$ACTUAL_SUBLEVEL-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
-        echo "ACTUAL_SUBLEVEL=$ACTUAL_SUBLEVEL" >> $GITHUB_ENV
-        echo "ARTIFACT_BASE=$ARTIFACT_BASE" >> $GITHUB_ENV
-        echo "FILE_NAME=$ARTIFACT_BASE" >> $GITHUB_ENV
-
-    - name: Apply glibc 2.38 Compatibility Fix
-      run: |
-        # Use ACTUAL_SUBLEVEL for LTS builds, otherwise use the input sub_level
-        if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 186 ]] || 
-           [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" && $ACTUAL_SUBLEVEL -le 119 ]] || 
-           [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && $ACTUAL_SUBLEVEL -le 110 ]] || 
-           [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && $ACTUAL_SUBLEVEL -le 43 ]]; then
-          GLIBC_VERSION=$(ldd --version 2>/dev/null | head -n 1 | awk '{print $NF}') 
-          if [ "$(printf '%s\n' "2.38" "$GLIBC_VERSION" | sort -V | head -n1)" = "2.38" ]; then 
-            cd "$KERNEL_ROOT/common"
-            sed -i '/\$(Q)\$(MAKE) -C \$(SUBCMD_SRC) OUTPUT=\$(abspath \$(dir \$@))\/ \$(abspath \$@)/s//$(Q)$(MAKE) -C $(SUBCMD_SRC) EXTRA_CFLAGS="$(CFLAGS)" OUTPUT=$(abspath $(dir $@))\/ $(abspath $@)/' tools/bpf/resolve_btfids/Makefile 2>/dev/null || true
-            if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 186 ]] || 
-               [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" && $ACTUAL_SUBLEVEL -le 119 ]] || 
-               [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && $ACTUAL_SUBLEVEL -le 110 ]]; then
-              sed -i '/char \*buf = NULL;/a int i;' tools/lib/subcmd/parse-options.c 2>/dev/null || true
-              sed -i 's/for (int i = 0; subcommands\[i\]; i++) {/for (i = 0; subcommands[i]; i++) {/' tools/lib/subcmd/parse-options.c 2>/dev/null || true
-              sed -i '/if (subcommands) {/a int i;' tools/lib/subcmd/parse-options.c 2>/dev/null || true
-              sed -i 's/for (int i = 0; subcommands\[i\]; i++)/for (i = 0; subcommands[i]; i++)/' tools/lib/subcmd/parse-options.c 2>/dev/null || true
-            fi
+      - name: Set boot sign key
+        env:
+          BOOT_SIGN_KEY: ${{ secrets.BOOT_SIGN_KEY }}
+        run: |
+          if [ ! -z "$BOOT_SIGN_KEY" ]; then
+            echo "$BOOT_SIGN_KEY" > ./kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
           fi
-        fi 
 
-    - name: Fix Less Then 6.6.50 Builds
-      if: inputs.android_version == 'android15' && inputs.kernel_version == '6.6'
-      working-directory: ${{ env.KERNEL_ROOT }}/common
-      run: |
-        if ! grep -qxF '#include <trace/hooks/fs.h>' ./fs/namespace.c; then
-            sed -i '/#include <trace\/hooks\/blk.h>/a #include <trace\/hooks\/fs.h>' ./fs/namespace.c
-        fi
+      - name: Clone AnyKernel3 and Kernel Patches
+        run: |
+          ANYKERNEL_BRANCH="gki-2.0"
 
-    - name: Apply ptrace patch for older kernels
-      if: fromJSON(inputs.kernel_version) < 5.16
-      working-directory: ${{ env.KERNEL_ROOT }}/common
-      run: |
-        patch -p1 -F 3 < "$KERNEL_PATCHES/gki_ptrace.patch"
+          git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
+          git clone https://github.com/Tam97123/kernel_patches.git
+          if [ "${{ inputs.kernel_variant }}" = "SUKI" ]; then
+            git clone https://github.com/ShirkNeko/SukiSU_patch.git
+          fi
 
-    - name: Add KernelSU
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        case "${{ inputs.kernel_variant }}" in
-          WILD)
-            curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s wild
-            ;;
-          NEXT)
-            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
-            ;;
-          KSU)
-            curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
-            ;;
-          SUKI)
-            curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
-            ;;
-        esac
+      - name: Determine SUSFS version
+        run: |
+          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          cd susfs4ksu
 
-    - name: Getting KernelSU Version
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        
-        case "${{ inputs.kernel_variant }}" in
-          WILD)
-            # OLD scheme
-            BASE_VERSION=10200
-            COMMIT_COUNT=$(git -C "$KERNEL_ROOT/Wild_KSU" rev-list --count HEAD)
-            KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
-            ;;
-          NEXT)
-            # NEW scheme
-            BASE_VERSION=30000
-            COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU-Next" rev-list --count HEAD)
-            KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
-            ;;
-          KSU)
-            # NEW scheme
-            BASE_VERSION=30000
-            COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU" rev-list --count HEAD)
-            KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
-            ;;
-          SUKI)
-            # NEW scheme
-            BASE_VERSION=37185
-            COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU" rev-list --count HEAD)
-            KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
-            ;;
-        esac
-        echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          TARGET="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          if [ "${{ inputs.kernel_variant }}" = "WILD" ]; then
+            case "$TARGET" in
+              android12-5.10) git checkout 8a76ba240d1f7315352b49d97d854a4b166e5b47" ;;
+              android13-5.10) git checkout e5c9eabfc6dcfc677d11f46ce1d5ff786de60a92" ;;
+              android13-5.15) git checkout babf6be195576f09aae79650d47abf6a76e8a21b" ;;
+              android14-5.15) git checkout 19f339e804ba9aebd9c6d735b965e2b9396c73ae" ;;
+              android14-6.1) git checkout a162e2469d0b472545e5e46457eee171c0975fb0" ;;
+              android15-6.6) git checkout f450ec00bf592d080f59b01ff6f9242456c9a427" ;;
+            esac
+          SUSFS_VERSION = v1.5.12
+          else
+            COMMIT=$(git log --all --grep="Bump version to" --format="%H" | head -n1)
+            LOGS=$(git log -1 --format=%s "$COMMIT")
+            SUSFS_VERSION=$(echo "$LOGS" | grep -oE 'v?[0-9]+(\.[0-9]+){2}')
+            echo "Newest susfs version: $SUSFS_VERSION"
+          fi
 
-    - name: Apply SUSFS Patches for KernelSU Variants
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        cp "$SUSFS4KSU/kernel_patches/fs/"* "$KERNEL_ROOT/common/fs/"
-        cp "$SUSFS4KSU/kernel_patches/include/linux/"* "$KERNEL_ROOT/common/include/linux/"
+          echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
+              
+      - name: Initialize and Sync Kernel Source
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
 
-        # Apply core SUSFS patches
-        cd "$KERNEL_ROOT/common"
-        cp "$SUSFS4KSU/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch" ./
-        patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
+          $REPO init --depth=1 -u https://android.googlesource.com/kernel/manifest \
+            -b common-${FORMATTED_BRANCH} --repo-rev=v2.16 --no-clone-bundle
 
-        case "${{ inputs.kernel_variant }}" in
-          WILD)
-            cd "$KERNEL_ROOT/Wild_KSU"
-            cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
-            patch -p1 < 10_enable_susfs_for_ksu.patch || true
+          REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
+          DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
+          if grep -q deprecated <<< $REMOTE_BRANCH; then
+            sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
+          fi
 
-            cp "$KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_core_hook.c.patch" ./
-            patch -p1 < fix_core_hook.c.patch
-            
-            cp "$KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_sucompat.c.patch" ./
-            patch -p1 < fix_sucompat.c.patch
-            
-            cp "$KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_kernel_compat.c.patch" ./
-            patch -p1 < fix_kernel_compat.c.patch
-            ;;
-          NEXT)
-            cd "$KERNEL_ROOT/KernelSU-Next"
-            cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
-            patch -p1 < 10_enable_susfs_for_ksu.patch || true
+          $REPO --trace sync -c -j$(nproc --all) --no-tags --no-clone-bundle --fail-fast
 
-            cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
-            echo "Applying Makefile.patch"
-            patch -p1 < Makefile.patch
-            echo "Applying allowlist.c.patch"
-            patch -p1 < allowlist.c.patch
-            echo "Applying apk_sign.c.patch"
-            patch -p1 < apk_sign.c.patch
-            echo "Applying kernel_umount.c.patch"
-            patch -p1 < kernel_umount.c.patch
-            echo "Applying ksu.c.patch"
-            patch -p1 < ksu.c.patch
-            echo "Applying ksud.c.patch"
-            patch -p1 < ksud.c.patch
-            echo "Applying selinux.c.patch"
-            patch -p1 < selinux.c.patch
-            echo "Applying selinux.h.patch"
-            patch -p1 < selinux.h.patch
-            echo "Applying sucompat.c.patch"
-            patch -p1 < sucompat.c.patch
-            echo "Applying sucompat.h.patch"
-            patch -p1 < sucompat.h.patch
-            echo "Applying supercalls.c.patch"
-            patch -p1 < supercalls.c.patch
-            sed -i '/if *(ksu_get_manager_appid() == new_uid % PER_USER_RANGE) {/,/^ *}/c\
-            pr_info("install fd for manager: %d\\n", new_uid);\
-            ksu_install_fd();\
-            spin_lock_irq(&current->sighand->siglock);\
-            ksu_seccomp_allow_cache(current->seccomp.filter, __NR_reboot);\
-            ksu_set_task_tracepoint_flag(current);\
-            spin_unlock_irq(&current->sighand->siglock);\
-            return 0;
-            ' kernel/setuid_hook.c
-            sed -i 's/ksu_get_manager_appid/ksu_get_manager_uid/g' kernel/manager.h
-            ;;
-          KSU)
-            cd "$KERNEL_ROOT/KernelSU"
-            cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
-            patch -p1 < 10_enable_susfs_for_ksu.patch || true
-            ;;
-        esac
+      - name: Extract Sublevel and Set File Name
+        run: |
+          ACTUAL_SUBLEVEL="${{ inputs.sub_level }}"
+          if [ -f "$KERNEL_ROOT/common/Makefile" ]; then
+            EXTRACTED=$(grep '^SUBLEVEL = ' "$KERNEL_ROOT/common/Makefile" | awk '{print $3}')
+            [ -n "$EXTRACTED" ] && ACTUAL_SUBLEVEL="$EXTRACTED"
+          fi
 
-        cd "$KERNEL_ROOT/common"
-        # Post-SUSFS sed safeguards for task_mmu.c 'goto show_pad' handling
-        if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 209 ]] ||
-           [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 209 ]] ||
-           [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
-           [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
-           [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 75 ]]; then
-          sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
-        fi
+          ARTIFACT_BASE="${{ inputs.kernel_variant }}-${{ inputs.kernel_version }}.$ACTUAL_SUBLEVEL-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
+          echo "ACTUAL_SUBLEVEL=$ACTUAL_SUBLEVEL" >> $GITHUB_ENV
+          echo "ARTIFACT_BASE=$ARTIFACT_BASE" >> $GITHUB_ENV
+          echo "FILE_NAME=$ARTIFACT_BASE" >> $GITHUB_ENV
 
-        # Apply additional SUSFS patches for Android 13 5.15 compatibility
-        if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" ]] && [[ ${{ inputs.sub_level }} -le 41 ]]; then
-          cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_fdinfo.c.patch ./
-          patch -p1 < fix_fdinfo.c.patch || true
-          cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_namespace.c.patch ./
-          patch -p1 < fix_namespace.c.patch || true
-          cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_open.c.patch ./
-          patch -p1 < fix_open.c.patch || true
-          sed -i 's/i_uid_into_mnt(i_user_ns(inode), inode)/i_uid_into_mnt(inode->i_sb->s_user_ns, inode)/g' fs/susfs.c
-        fi
+      - name: Apply glibc 2.38 Compatibility Fix
+        run: |
+          # Use ACTUAL_SUBLEVEL for LTS builds, otherwise use the input sub_level
+          if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 186 ]] || 
+             [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" && $ACTUAL_SUBLEVEL -le 119 ]] || 
+             [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && $ACTUAL_SUBLEVEL -le 110 ]] || 
+             [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && $ACTUAL_SUBLEVEL -le 43 ]]; then
+            GLIBC_VERSION=$(ldd --version 2>/dev/null | head -n 1 | awk '{print $NF}') 
+            if [ "$(printf '%s\n' "2.38" "$GLIBC_VERSION" | sort -V | head -n1)" = "2.38" ]; then 
+              cd "$KERNEL_ROOT/common"
+              sed -i '/\$(Q)\$(MAKE) -C \$(SUBCMD_SRC) OUTPUT=\$(abspath \$(dir \$@))\/ \$(abspath \$@)/s//$(Q)$(MAKE) -C $(SUBCMD_SRC) EXTRA_CFLAGS="$(CFLAGS)" OUTPUT=$(abspath $(dir $@))\/ $(abspath $@)/' tools/bpf/resolve_btfids/Makefile 2>/dev/null || true
+              if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 186 ]] || 
+                 [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" && $ACTUAL_SUBLEVEL -le 119 ]] || 
+                 [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && $ACTUAL_SUBLEVEL -le 110 ]]; then
+                sed -i '/char \*buf = NULL;/a int i;' tools/lib/subcmd/parse-options.c 2>/dev/null || true
+                sed -i 's/for (int i = 0; subcommands\[i\]; i++) {/for (i = 0; subcommands[i]; i++) {/' tools/lib/subcmd/parse-options.c 2>/dev/null || true
+                sed -i '/if (subcommands) {/a int i;' tools/lib/subcmd/parse-options.c 2>/dev/null || true
+                sed -i 's/for (int i = 0; subcommands\[i\]; i++)/for (i = 0; subcommands[i]; i++)/' tools/lib/subcmd/parse-options.c 2>/dev/null || true
+              fi
+            fi
+          fi 
 
-        # Use ACTUAL_SUBLEVEL for LTS or actual kernel sublevel if available
-        if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 43 ]] ||
-           [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && $ACTUAL_SUBLEVEL -ge 145 ]] ||
-           [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" && $ACTUAL_SUBLEVEL -ge 98 ]]; then
-          cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/1_fix_base.c.patch ./
-          patch -p1 < 1_fix_base.c.patch || true
-        fi
+      - name: Fix Less Then 6.6.50 Builds
+        if: inputs.android_version == 'android15' && inputs.kernel_version == '6.6'
+        working-directory: ${{ env.KERNEL_ROOT }}/common
+        run: |
+          if ! grep -qxF '#include <trace/hooks/fs.h>' ./fs/namespace.c; then
+              sed -i '/#include <trace\/hooks\/blk.h>/a #include <trace\/hooks\/fs.h>' ./fs/namespace.c
+          fi
 
-        if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 43 ]]; then
-          cp $KERNEL_PATCHES/wild/${SUSFS_VERSION}/2_fix_base.c.patch ./
-          patch -p1 < 2_fix_base.c.patch || true
-        fi
+      - name: Apply ptrace patch for older kernels
+        if: fromJSON(inputs.kernel_version) < 5.16
+        working-directory: ${{ env.KERNEL_ROOT }}/common
+        run: |
+          patch -p1 -F 3 < "$KERNEL_PATCHES/gki_ptrace.patch"
 
-        if [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" && $ACTUAL_SUBLEVEL -le 58 ]]; then
-          cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_task_mmu.c.patch ./
-          patch -p1 < fix_task_mmu.c.patch || true
-        fi
+      - name: Add KernelSU
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          case "${{ inputs.kernel_variant }}" in
+            WILD)
+              curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s wild
+              ;;
+            NEXT)
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+              ;;
+            KSU)
+              curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
+              ;;
+            SUKI)
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
+              ;;
+          esac
 
-    - name: Apply Hooks Patches
-      if: inputs.kernel_variant == 'WILD'
-      working-directory: ${{ env.KERNEL_ROOT }}/common
-      run: |
-        cp "$KERNEL_PATCHES/wild/hooks/scope_min_manual_hooks_v1.4.patch" ./
-        patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+      - name: Getting KernelSU Version
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          case "${{ inputs.kernel_variant }}" in
+            WILD)
+              # OLD scheme
+              BASE_VERSION=10200
+              COMMIT_COUNT=$(git -C "$KERNEL_ROOT/Wild_KSU" rev-list --count HEAD)
+              KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
+              ;;
+            NEXT)
+              # NEW scheme
+              BASE_VERSION=30000
+              COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU-Next" rev-list --count HEAD)
+              KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
+              ;;
+            KSU)
+              # NEW scheme
+              BASE_VERSION=30000
+              COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU" rev-list --count HEAD)
+              KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
+              ;;
+            SUKI)
+              # NEW scheme
+              BASE_VERSION=37185
+              COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU" rev-list --count HEAD)
+              KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
+              ;;
+          esac
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
 
-    - name: Apply Performance Patches
-      working-directory: ${{ env.KERNEL_ROOT }}/common
-      run: |
-        MIN_VERSION="5.16"
-        cp "$KERNEL_PATCHES/common/optimized_mem_operations.patch" ./
-        patch -p1 --forward < optimized_mem_operations.patch
-        cp "$KERNEL_PATCHES/common/file_struct_8bytes_align.patch" ./
-        patch -p1 --forward < file_struct_8bytes_align.patch
-        cp "$KERNEL_PATCHES/common/reduce_cache_pressure.patch" ./
-        patch -p1 --forward < reduce_cache_pressure.patch
-        if [ "$(printf '%s\n' "${{ inputs.kernel_version }}" "$MIN_VERSION" | sort -V | head -n1)" = "${{ inputs.kernel_version }}" ]; then
-          cp "$KERNEL_PATCHES/common/clear_page_16bytes_align.patch" ./
-          patch -p1 --forward < clear_page_16bytes_align.patch
-        else
-          cp "$KERNEL_PATCHES/common/clear_page_16bytes_align.patch" ./
-          sed -e 's/SYM_FUNC_START_PI(clear_page)/SYM_FUNC_START_PI(__pi_clear_page)/' clear_page_16bytes_align.patch > clear_page_16bytes_align__pi.patch
-          patch -p1 -F3 --forward < clear_page_16bytes_align__pi.patch
-        fi
+      - name: Apply SUSFS Patches for KernelSU Variants
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          cp "$SUSFS4KSU/kernel_patches/fs/"* "$KERNEL_ROOT/common/fs/"
+          cp "$SUSFS4KSU/kernel_patches/include/linux/"* "$KERNEL_ROOT/common/include/linux/"
 
-    - name: Add BBG
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        curl -LSs https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-        echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
-        sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
+          # Apply core SUSFS patches
+          cd "$KERNEL_ROOT/common"
+          cp "$SUSFS4KSU/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch" ./
+          patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
 
-    - name: Apply Module Check Bypass
-      run: |
-        if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" || "${{ inputs.kernel_version }}" == "6.12" ]]; then
-          sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$KERNEL_ROOT/common/kernel/module/version.c"
-        else
-          sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$KERNEL_ROOT/common/kernel/module.c"
-        fi
+          case "${{ inputs.kernel_variant }}" in
+            WILD)
+              cd "$KERNEL_ROOT/Wild_KSU"
+              cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
+              patch -p1 < 10_enable_susfs_for_ksu.patch || true
 
-    - name: Apply LZ4KD & ZSTDN patches
+              cp "$KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_core_hook.c.patch" ./
+              patch -p1 < fix_core_hook.c.patch
+              
+              cp "$KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_sucompat.c.patch" ./
+              patch -p1 < fix_sucompat.c.patch
+              
+              cp "$KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_kernel_compat.c.patch" ./
+              patch -p1 < fix_kernel_compat.c.patch
+              ;;
+            NEXT)
+              cd "$KERNEL_ROOT/KernelSU-Next"
+              cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
+              patch -p1 < 10_enable_susfs_for_ksu.patch || true
+
+              cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
+              echo "Applying Makefile.patch"
+              patch -p1 < Makefile.patch
+              echo "Applying allowlist.c.patch"
+              patch -p1 < allowlist.c.patch
+              echo "Applying apk_sign.c.patch"
+              patch -p1 < apk_sign.c.patch
+              echo "Applying kernel_umount.c.patch"
+              patch -p1 < kernel_umount.c.patch
+              echo "Applying ksu.c.patch"
+              patch -p1 < ksu.c.patch
+              echo "Applying ksud.c.patch"
+              patch -p1 < ksud.c.patch
+              echo "Applying selinux.c.patch"
+              patch -p1 < selinux.c.patch
+              echo "Applying selinux.h.patch"
+              patch -p1 < selinux.h.patch
+              echo "Applying sucompat.c.patch"
+              patch -p1 < sucompat.c.patch
+              echo "Applying sucompat.h.patch"
+              patch -p1 < sucompat.h.patch
+              echo "Applying supercalls.c.patch"
+              patch -p1 < supercalls.c.patch
+              sed -i '/if *(ksu_get_manager_appid() == new_uid % PER_USER_RANGE) {/,/^ *}/c\
+              pr_info("install fd for manager: %d\\n", new_uid);\
+              ksu_install_fd();\
+              spin_lock_irq(&current->sighand->siglock);\
+              ksu_seccomp_allow_cache(current->seccomp.filter, __NR_reboot);\
+              ksu_set_task_tracepoint_flag(current);\
+              spin_unlock_irq(&current->sighand->siglock);\
+              return 0;
+              ' kernel/setuid_hook.c
+              sed -i 's/ksu_get_manager_appid/ksu_get_manager_uid/g' kernel/manager.h
+              ;;
+            KSU)
+              cd "$KERNEL_ROOT/KernelSU"
+              cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
+              patch -p1 < 10_enable_susfs_for_ksu.patch || true
+              ;;
+          esac
+
+          cd "$KERNEL_ROOT/common"
+          # Post-SUSFS sed safeguards for task_mmu.c 'goto show_pad' handling
+          if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 209 ]] ||
+             [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.10" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 209 ]] ||
+             [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
+             [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 148 ]] ||
+             [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && "${{ inputs.os_patch_level }}" != "2024-05" && $ACTUAL_SUBLEVEL -le 75 ]]; then
+            sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
+          fi
+
+          # Apply additional SUSFS patches for Android 13 5.15 compatibility
+          if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" ]] && [[ ${{ inputs.sub_level }} -le 41 ]]; then
+            cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_fdinfo.c.patch ./
+            patch -p1 < fix_fdinfo.c.patch || true
+            cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_namespace.c.patch ./
+            patch -p1 < fix_namespace.c.patch || true
+            cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_open.c.patch ./
+            patch -p1 < fix_open.c.patch || true
+            sed -i 's/i_uid_into_mnt(i_user_ns(inode), inode)/i_uid_into_mnt(inode->i_sb->s_user_ns, inode)/g' fs/susfs.c
+          fi
+
+          # Use ACTUAL_SUBLEVEL for LTS or actual kernel sublevel if available
+          if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 43 ]] ||
+             [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" && $ACTUAL_SUBLEVEL -ge 145 ]] ||
+             [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" && $ACTUAL_SUBLEVEL -ge 98 ]]; then
+            cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/1_fix_base.c.patch ./
+            patch -p1 < 1_fix_base.c.patch || true
+          fi
+
+          if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" && $ACTUAL_SUBLEVEL -le 43 ]]; then
+            cp $KERNEL_PATCHES/wild/${SUSFS_VERSION}/2_fix_base.c.patch ./
+            patch -p1 < 2_fix_base.c.patch || true
+          fi
+
+          if [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" && $ACTUAL_SUBLEVEL -le 58 ]]; then
+            cp $KERNEL_PATCHES/susfs_fix_patches/wild/${SUSFS_VERSION}/fix_task_mmu.c.patch ./
+            patch -p1 < fix_task_mmu.c.patch || true
+          fi
+
+      - name: Apply Hooks Patches
+        if: inputs.kernel_variant == 'WILD'
+        working-directory: ${{ env.KERNEL_ROOT }}/common
+        run: |
+          cp "$KERNEL_PATCHES/wild/hooks/scope_min_manual_hooks_v1.4.patch" ./
+          patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+
+      - name: Apply Performance Patches
+        working-directory: ${{ env.KERNEL_ROOT }}/common
+        run: |
+          MIN_VERSION="5.16"
+          cp "$KERNEL_PATCHES/common/optimized_mem_operations.patch" ./
+          patch -p1 --forward < optimized_mem_operations.patch
+          cp "$KERNEL_PATCHES/common/file_struct_8bytes_align.patch" ./
+          patch -p1 --forward < file_struct_8bytes_align.patch
+          cp "$KERNEL_PATCHES/common/reduce_cache_pressure.patch" ./
+          patch -p1 --forward < reduce_cache_pressure.patch
+          if [ "$(printf '%s\n' "${{ inputs.kernel_version }}" "$MIN_VERSION" | sort -V | head -n1)" = "${{ inputs.kernel_version }}" ]; then
+            cp "$KERNEL_PATCHES/common/clear_page_16bytes_align.patch" ./
+            patch -p1 --forward < clear_page_16bytes_align.patch
+          else
+            cp "$KERNEL_PATCHES/common/clear_page_16bytes_align.patch" ./
+            sed -e 's/SYM_FUNC_START_PI(clear_page)/SYM_FUNC_START_PI(__pi_clear_page)/' clear_page_16bytes_align.patch > clear_page_16bytes_align__pi.patch
+            patch -p1 -F3 --forward < clear_page_16bytes_align__pi.patch
+          fi
+
+      - name: Add BBG
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          curl -LSs https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
+          echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
+
+      - name: Apply Module Check Bypass
+        run: |
+          if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" || "${{ inputs.kernel_version }}" == "6.12" ]]; then
+            sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$KERNEL_ROOT/common/kernel/module/version.c"
+          else
+            sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$KERNEL_ROOT/common/kernel/module.c"
+          fi
+
+      - name: Apply LZ4KD & ZSTDN patches
         if: inputs.use_zram == 'true'
         run: |
-          cd "$CONFIG/common"
-          cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/include/linux/* ./include/linux/
-          cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/lib/* ./lib/
-          cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/crypto/* ./crypto/
-          cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k_oplus ./lib/
+            cd "$CONFIG/common"
+            cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/include/linux/* ./include/linux/
+            cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/lib/* ./lib/
+            cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/crypto/* ./crypto/
+            cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k_oplus ./lib/
 
-          cp $SUKI_KERNEL_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
-          echo "Applying lz4kd patch"
-          patch -p1 -F 3 < lz4kd.patch || true
+            cp $SUKI_KERNEL_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
+            echo "Applying lz4kd patch"
+            patch -p1 -F 3 < lz4kd.patch || true
 
-          cp $SUKI_KERNEL_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
-          echo "Applying lz4k_oplus patch"
-          patch -p1 -F 3 < lz4k_oplus.patch || true
+            cp $SUKI_KERNEL_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
+            echo "Applying lz4k_oplus patch"
+            patch -p1 -F 3 < lz4k_oplus.patch || true
 
-    - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
-      if: nputs.kernel_version == '6.6'
-      working-directory: ${{ env.KERNEL_ROOT }}/common
-      run: |
-        SYMBOL_LIST=android/abi_gki_aarch64_galaxy
-        echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
-        echo "kdp_usecount_dec_and_test" >> $SYMBOL_LIST
-        echo "kdp_usecount_inc" >> $SYMBOL_LIST
+      - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
+        if: nputs.kernel_version == '6.6'
+        working-directory: ${{ env.KERNEL_ROOT }}/common
+        run: |
+          SYMBOL_LIST=android/abi_gki_aarch64_galaxy
+          echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
+          echo "kdp_usecount_dec_and_test" >> $SYMBOL_LIST
+          echo "kdp_usecount_inc" >> $SYMBOL_LIST
 
-        PATCH="$KERNEL_PATCHES/samsung/min_kdp/add-min_kdp-symbols.patch"
-        if patch -p1 --dry-run < "$PATCH"; then
-          patch -p1 --no-backup-if-mismatch < $PATCH
-        fi
+          PATCH="$KERNEL_PATCHES/samsung/min_kdp/add-min_kdp-symbols.patch"
+          if patch -p1 --dry-run < "$PATCH"; then
+            patch -p1 --no-backup-if-mismatch < $PATCH
+          fi
 
-        cp "$KERNEL_PATCHES/samsung/min_kdp/min_kdp.c" drivers/min_kdp.c
-        echo "obj-y += min_kdp.o" >> drivers/Makefile
+          cp "$KERNEL_PATCHES/samsung/min_kdp/min_kdp.c" drivers/min_kdp.c
+          echo "obj-y += min_kdp.o" >> drivers/Makefile
 
-    - name: Configure Kernel Options
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        # Suki ZRAM and KPM
-        if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" != "android16"  ]; then
-          if [ "${{ inputs.use_zram }}" == "true" ]; then
-            if [ "${{ inputs.kernel_version }}" = "5.10" ]; then
-              echo "CONFIG_ZSMALLOC=y" >> "$DEFCONFIG"
-              echo "CONFIG_ZRAM=y" >> "$DEFCONFIG"
-              echo "CONFIG_MODULE_SIG=n" >> "$DEFCONFIG"
-              echo "CONFIG_CRYPTO_LZO=y" >> "$DEFCONFIG"
-              echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$DEFCONFIG"
-            fi
-
-            if [ "${{ inputs.kernel_version }}" != "6.6" ] && [ "${{ inputs.kernel_version }}" != "5.10" ]; then
-              if grep -q "CONFIG_ZSMALLOC" -- "$DEFCONFIG"; then
-                sed -i 's/CONFIG_ZSMALLOC=m/CONFIG_ZSMALLOC=y/g' "$DEFCONFIG"
-              else
+      - name: Configure Kernel Options
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          # Suki ZRAM and KPM
+          if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" != "android16"  ]; then
+            if [ "${{ inputs.use_zram }}" == "true" ]; then
+              if [ "${{ inputs.kernel_version }}" = "5.10" ]; then
                 echo "CONFIG_ZSMALLOC=y" >> "$DEFCONFIG"
+                echo "CONFIG_ZRAM=y" >> "$DEFCONFIG"
+                echo "CONFIG_MODULE_SIG=n" >> "$DEFCONFIG"
+                echo "CONFIG_CRYPTO_LZO=y" >> "$DEFCONFIG"
+                echo "CONFIG_ZRAM_DEF_COMP_LZ4KD=y" >> "$DEFCONFIG"
               fi
-              sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$DEFCONFIG"
+
+              if [ "${{ inputs.kernel_version }}" != "6.6" ] && [ "${{ inputs.kernel_version }}" != "5.10" ]; then
+                if grep -q "CONFIG_ZSMALLOC" -- "$DEFCONFIG"; then
+                    sed -i 's/CONFIG_ZSMALLOC=m/CONFIG_ZSMALLOC=y/g' "$DEFCONFIG"
+                else
+                    echo "CONFIG_ZSMALLOC=y" >> "$DEFCONFIG"
+                fi
+                sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$DEFCONFIG"
+              fi
+
+              if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
+                echo "CONFIG_ZSMALLOC=y" >> "$DEFCONFIG"
+                sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$DEFCONFIG"
+              fi
+
+              if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
+                sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' ./common/modules.bzl
+                echo "CONFIG_MODULE_SIG_FORCE=n" >> "$DEFCONFIG"
+              fi
+
+              if grep -q "CONFIG_ZSMALLOC=y" "$DEFCONFIG" && grep -q "CONFIG_ZRAM=y" "$DEFCONFIG"; then
+                echo "CONFIG_CRYPTO_LZ4HC=y" >> "$DEFCONFIG"
+                echo "CONFIG_CRYPTO_LZ4K=y" >> "$DEFCONFIG"
+                echo "CONFIG_CRYPTO_LZ4KD=y" >> "$DEFCONFIG"
+                echo "CONFIG_CRYPTO_842=y" >> "$DEFCONFIG"
+                echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$DEFCONFIG"
+                echo "CONFIG_ZRAM_WRITEBACK=y" >> "$DEFCONFIG"
+              fi
             fi
 
-            if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              echo "CONFIG_ZSMALLOC=y" >> "$DEFCONFIG"
-              sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$DEFCONFIG"
-            fi
-
-            if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
-              sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' ./common/modules.bzl
-              echo "CONFIG_MODULE_SIG_FORCE=n" >> "$DEFCONFIG"
-            fi
-
-            if grep -q "CONFIG_ZSMALLOC=y" "$DEFCONFIG" && grep -q "CONFIG_ZRAM=y" "$DEFCONFIG"; then
-              echo "CONFIG_CRYPTO_LZ4HC=y" >> "$DEFCONFIG"
-              echo "CONFIG_CRYPTO_LZ4K=y" >> "$DEFCONFIG"
-              echo "CONFIG_CRYPTO_LZ4KD=y" >> "$DEFCONFIG"
-              echo "CONFIG_CRYPTO_842=y" >> "$DEFCONFIG"
-              echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> "$DEFCONFIG"
-              echo "CONFIG_ZRAM_WRITEBACK=y" >> "$DEFCONFIG"
+            if [ "${{ inputs.use_kpm }}" == "true" ] && [ "${{ inputs.android_version }}" != "android15" ]; then
+              echo "CONFIG_KPM=y" >> "$DEFCONFIG"
             fi
           fi
 
-          if [ "${{ inputs.use_kpm }}" == "true" ] && [ "${{ inputs.android_version }}" != "android15" ]; then
-            echo "CONFIG_KPM=y" >> "$DEFCONFIG"
+          cat >> "${{ env.DEFCONFIG }}" << 'EOF'
+          # KernelSU Configuration
+          CONFIG_KSU=y
+          CONFIG_KSU_KPROBES_HOOK=n
+
+          # Mountify Support
+          CONFIG_TMPFS_XATTR=y
+          CONFIG_TMPFS_POSIX_ACL=y
+
+          # Networking Configuration
+          CONFIG_IP_NF_TARGET_TTL=y
+          CONFIG_IP6_NF_TARGET_HL=y
+          CONFIG_IP6_NF_MATCH_HL=y
+
+          # BBR TCP Congestion Control
+          CONFIG_TCP_CONG_ADVANCED=y
+          CONFIG_TCP_CONG_BBR=y
+          CONFIG_NET_SCH_FQ=y
+          CONFIG_TCP_CONG_BIC=n
+          CONFIG_TCP_CONG_WESTWOOD=n
+          CONFIG_TCP_CONG_HTCP=n
+
+          # IPSet Support
+          CONFIG_IP_SET=y
+          CONFIG_IP_SET_MAX=65534
+          CONFIG_IP_SET_BITMAP_IP=y
+          CONFIG_IP_SET_BITMAP_IPMAC=y
+          CONFIG_IP_SET_BITMAP_PORT=y
+          CONFIG_IP_SET_HASH_IP=y
+          CONFIG_IP_SET_HASH_IPMARK=y
+          CONFIG_IP_SET_HASH_IPPORT=y
+          CONFIG_IP_SET_HASH_IPPORTIP=y
+          CONFIG_IP_SET_HASH_IPPORTNET=y
+          CONFIG_IP_SET_HASH_IPMAC=y
+          CONFIG_IP_SET_HASH_MAC=y
+          CONFIG_IP_SET_HASH_NETPORTNET=y
+          CONFIG_IP_SET_HASH_NET=y
+          CONFIG_IP_SET_HASH_NETNET=y
+          CONFIG_IP_SET_HASH_NETPORT=y
+          CONFIG_IP_SET_HASH_NETIFACE=y
+          CONFIG_IP_SET_LIST_SET=y
+
+          CONFIG_KSU_SUSFS=y
+          CONFIG_KSU_SUSFS_SUS_SU=n
+          EOF
+
+          # Remove check_defconfig
+          if [[ "${{ inputs.android_version }}" == "android16" && "${{ inputs.kernel_version }}" == "6.12" ]]; then
+            sed -i '/name = "kernel_aarch64",/a\    check_defconfig = "disabled",' common/BUILD.bazel
+            awk '/name = "kernel_aarch64"/,/^\)/ {if(/check_defconfig = "disabled"/) found=1} END{if(found) print "SUCCESS: check_defconfig = \"disabled\" is in the kernel_aarch64 block"; else print "FAILED: NOT in the kernel_aarch64 block"}' common/BUILD.bazel
+          else
+            sed -i 's/check_defconfig//' ./common/build.config.gki
           fi
-        fi
 
-        cat >> "${{ env.DEFCONFIG }}" << 'EOF'
-        # KernelSU Configuration
-        CONFIG_KSU=y
-        CONFIG_KSU_KPROBES_HOOK=n
+      - name: Append ashmem exports if missing
+        if: inputs.android_version == 'android16'
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          FILE=common/drivers/staging/android/ashmem.c
+          if [[ -f "$FILE" ]] && ! grep -q 'is_ashmem_file' "$FILE"; then
+          cat >>"$FILE" <<'EOF'
+          bool is_ashmem_file(struct file *file) { return false; }
+          int ashmem_area_name(struct file *file, char *name) { return 0; }
+          long ashmem_area_size(struct file *file) { return 0; }
+          struct file *ashmem_area_vmfile(struct file *file) { return NULL; }
+          EXPORT_SYMBOL_GPL(is_ashmem_file);
+          EXPORT_SYMBOL_GPL(ashmem_area_name);
+          EXPORT_SYMBOL_GPL(ashmem_area_size);
+          EXPORT_SYMBOL_GPL(ashmem_area_vmfile);
+          EOF
+          fi
 
-        # Mountify Support
-        CONFIG_TMPFS_XATTR=y
-        CONFIG_TMPFS_POSIX_ACL=y
+          if [ -f common/drivers/android/binder/Makefile ]; then
+            perl -i -0777 -pe 's/\$\(\s*CONFIG_ANDROID_BINDER_IPC_RUST\s*\)/m/' common/drivers/android/binder/Makefile
+            #perl -i -ne 'print unless /CONFIG_ANDROID_BINDER_IPC_RUST_DUMMY/' common/drivers/android/binder/Makefile
+            perl -i -pe 's/^rust_binder-\$\([^)]+\)\s*:=/rust_binder-y :=/' common/drivers/android/binder/Makefile
+            cat common/drivers/android/Makefile
+            cat common/drivers/android/binder/Makefile
+            #perl -ni -e 'print unless /rust_toolchain\s*=\s*"\/\/build\/rust:linux_kernel_toolchain",/' common/BUILD.bazel
+            #cat common/BUILD.bazel
+            rustup set profile minimal
+            rustup update nightly
+            rustup default nightly
+            rustup target add aarch64-unknown-none
+          else
+            perl -i -0777 -pe 's/\$\(\s*CONFIG_ANDROID_BINDER_IPC_RUST\s*\)/m/' common/drivers/android/Makefile
+            cat common/drivers/android/Makefile
+          fi
 
-        # Networking Configuration
-        CONFIG_IP_NF_TARGET_TTL=y
-        CONFIG_IP6_NF_TARGET_HL=y
-        CONFIG_IP6_NF_MATCH_HL=y
-
-        # BBR TCP Congestion Control
-        CONFIG_TCP_CONG_ADVANCED=y
-        CONFIG_TCP_CONG_BBR=y
-        CONFIG_NET_SCH_FQ=y
-        CONFIG_TCP_CONG_BIC=n
-        CONFIG_TCP_CONG_WESTWOOD=n
-        CONFIG_TCP_CONG_HTCP=n
-
-        # IPSet Support
-        CONFIG_IP_SET=y
-        CONFIG_IP_SET_MAX=65534
-        CONFIG_IP_SET_BITMAP_IP=y
-        CONFIG_IP_SET_BITMAP_IPMAC=y
-        CONFIG_IP_SET_BITMAP_PORT=y
-        CONFIG_IP_SET_HASH_IP=y
-        CONFIG_IP_SET_HASH_IPMARK=y
-        CONFIG_IP_SET_HASH_IPPORT=y
-        CONFIG_IP_SET_HASH_IPPORTIP=y
-        CONFIG_IP_SET_HASH_IPPORTNET=y
-        CONFIG_IP_SET_HASH_IPMAC=y
-        CONFIG_IP_SET_HASH_MAC=y
-        CONFIG_IP_SET_HASH_NETPORTNET=y
-        CONFIG_IP_SET_HASH_NET=y
-        CONFIG_IP_SET_HASH_NETNET=y
-        CONFIG_IP_SET_HASH_NETPORT=y
-        CONFIG_IP_SET_HASH_NETIFACE=y
-        CONFIG_IP_SET_LIST_SET=y
-
-        CONFIG_KSU_SUSFS=y
-        CONFIG_KSU_SUSFS_SUS_SU=n
-        EOF
-
-        # Remove check_defconfig
-        if [[ "${{ inputs.android_version }}" == "android16" && "${{ inputs.kernel_version }}" == "6.12" ]]; then
-          sed -i '/name = "kernel_aarch64",/a\    check_defconfig = "disabled",' common/BUILD.bazel
-          awk '/name = "kernel_aarch64"/,/^\)/ {if(/check_defconfig = "disabled"/) found=1} END{if(found) print "SUCCESS: check_defconfig = \"disabled\" is in the kernel_aarch64 block"; else print "FAILED: NOT in the kernel_aarch64 block"}' common/BUILD.bazel
-        else
-          sed -i 's/check_defconfig//' ./common/build.config.gki
-        fi
-
-    - name: Append ashmem exports if missing
-      if: inputs.android_version == 'android16'
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        FILE=common/drivers/staging/android/ashmem.c
-        if [[ -f "$FILE" ]] && ! grep -q 'is_ashmem_file' "$FILE"; then
-        cat >>"$FILE" <<'EOF'
-        bool is_ashmem_file(struct file *file) { return false; }
-        int ashmem_area_name(struct file *file, char *name) { return 0; }
-        long ashmem_area_size(struct file *file) { return 0; }
-        struct file *ashmem_area_vmfile(struct file *file) { return NULL; }
-        EXPORT_SYMBOL_GPL(is_ashmem_file);
-        EXPORT_SYMBOL_GPL(ashmem_area_name);
-        EXPORT_SYMBOL_GPL(ashmem_area_size);
-        EXPORT_SYMBOL_GPL(ashmem_area_vmfile);
-        EOF
-        fi
-
-        if [ -f common/drivers/android/binder/Makefile ]; then
-          perl -i -0777 -pe 's/\$\(\s*CONFIG_ANDROID_BINDER_IPC_RUST\s*\)/m/' common/drivers/android/binder/Makefile
-          #perl -i -ne 'print unless /CONFIG_ANDROID_BINDER_IPC_RUST_DUMMY/' common/drivers/android/binder/Makefile
-          perl -i -pe 's/^rust_binder-\$\([^)]+\)\s*:=/rust_binder-y :=/' common/drivers/android/binder/Makefile
-          cat common/drivers/android/Makefile
-          cat common/drivers/android/binder/Makefile
-          #perl -ni -e 'print unless /rust_toolchain\s*=\s*"\/\/build\/rust:linux_kernel_toolchain",/' common/BUILD.bazel
-          #cat common/BUILD.bazel
-          rustup set profile minimal
-          rustup update nightly
-          rustup default nightly
-          rustup target add aarch64-unknown-none
-        else
-          perl -i -0777 -pe 's/\$\(\s*CONFIG_ANDROID_BINDER_IPC_RUST\s*\)/m/' common/drivers/android/Makefile
-          cat common/drivers/android/Makefile
-        fi
-
-    - name: Change Kernel Name
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        #Wild to Kernel Version (replace last instance only)
-        if [[ "${{ inputs.kernel_version }}" == "5."* ]] || [[ "${{ inputs.kernel_version }}" == "6.1" ]]; then
+      - name: Change Kernel Name
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          #Wild to Kernel Version (replace last instance only)
+          if [[ "${{ inputs.kernel_version }}" == "5."* ]] || [[ "${{ inputs.kernel_version }}" == "6.1" ]]; then
           if [ -z "${{ inputs.kernel_uname }}" ]; then
             echo "Didn't set kernel uname! Set to default value."
             sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${KSUVER}-Tam\"|" ./common/scripts/setlocalversion
@@ -576,34 +575,34 @@ jobs:
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
             sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${{ inputs.kernel_uname }}\"|" ./common/scripts/setlocalversion
           fi
-        else
-          if [ -z "${{ inputs.kernel_uname }}" ]; then
-            echo "Didn't set kernel uname! Set to default value."
-            perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\${KERNELVERSION}\${KSUVER}-Tam"/s' ./common/scripts/setlocalversion
           else
-            echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-            perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\${KERNELVERSION}\${kernel_uname}"/s' ./common/scripts/setlocalversion
+            if [ -z "${{ inputs.kernel_uname }}" ]; then
+              echo "Didn't set kernel uname! Set to default value."
+              perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\${KERNELVERSION}\${KSUVER}-Tam"/s' ./common/scripts/setlocalversion
+            else
+              echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
+              perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\${KERNELVERSION}\${kernel_uname}"/s' ./common/scripts/setlocalversion
+            fi
           fi
-        fi
 
-        if [ -f "build/build.sh" ]; then
-          #Remove Dirty Flag
-          sed -i 's/-dirty//' ./common/scripts/setlocalversion
-        else
-          #Remove Dirty Flag
-          sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
-          #Remove Abi Exports and Error
-          rm -rf ./common/android/abi_gki_protected_exports_*
-          perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
-        fi
+          if [ -f "build/build.sh" ]; then
+            #Remove Dirty Flag
+            sed -i 's/-dirty//' ./common/scripts/setlocalversion
+          else
+            #Remove Dirty Flag
+            sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
+            #Remove Abi Exports and Error
+            rm -rf ./common/android/abi_gki_protected_exports_*
+            perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
+          fi
 
-    - name: Build Kernel
-      working-directory: ${{ env.KERNEL_ROOT }}
-      run: |
-        set -ex
-        export KBUILD_BUILD_TIMESTAMP="$(date -u)"
-        if [ -f "build/build.sh" ]; then
-          LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || true
+      - name: Build Kernel
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          set -ex
+          export KBUILD_BUILD_TIMESTAMP="$(date -u)"
+          if [ -f "build/build.sh" ]; then
+            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || true
           if [ ! -f "./out/android13-5.15/dist/Image" ]; then
             if [ ! -f "./out/android13-5.15/common/modules.order" ]; then
               exit 1
@@ -613,9 +612,9 @@ jobs:
               LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
             fi
           fi
-        else
-          tools/bazel build --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist || exit 1
-        fi
+          else
+            tools/bazel build --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist || exit 1
+          fi
 
       - name: Patch KPM for SukiSU-Ultra
         if: inputs.kernel_variant == 'SUKI' && inputs.android_version != 'android15' && inputs.android_version != 'android16' && inputs.use_kpm == 'true'
@@ -635,159 +634,156 @@ jobs:
           rm -f Image
           mv oImage Image
 
-    - name: Prepare AnyKernel3
-      run: |
-        # Copy Image from normal build locations
-        if [ -f "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
-          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" "$ANYKERNEL3/Image"
-        elif [ -f "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" ]; then
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" "$ANYKERNEL3/Image"
-        else
-          echo "Error: Image file not found in any expected location"
-          exit 1
-        fi
-
-    - name: Create Bootimgs Folder and Copy Images
-      run: |
-        mkdir bootimgs
-
-        # Determine source directory based on Android version
-        if [[ "${{ inputs.android_version }}" == "android12" || "${{ inputs.android_version }}" == "android13" ]]; then
-          SRC_DIR="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-        else
-          SRC_DIR="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64"
-        fi
-
-        cp "$SRC_DIR/Image" ./bootimgs/
-        cp "$SRC_DIR/Image.lz4" ./bootimgs/
-        cp "$SRC_DIR/Image" "./${{ env.FILE_NAME }}-Image"
-        cp "$SRC_DIR/Image.lz4" "./${{ env.FILE_NAME }}-Image.lz4"
-
-        # Create gzip of the Image files
-        gzip -n -k -f -9 "./${{ env.FILE_NAME }}-Image"
-        gzip -n -k -f -9 ./bootimgs/Image
-
-    - name: Build Boot Images
-      working-directory: bootimgs
-      run: |
-        RAMDISK_ARGS=""
-
-        # Android 12 needs ramdisk from GKI certified boot
-        if [[ "${{ inputs.android_version }}" == "android12" ]]; then
-          GKI_URL="https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-${{ inputs.os_patch_level }}_r1.zip"
-          FALLBACK_URL="https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-2023-01_r1.zip"
-          
-          if curl -sL -w "%{http_code}" "$GKI_URL" -o /dev/null | grep -q 200; then
-            curl -Lo gki-kernel.zip "$GKI_URL"
+      - name: Prepare AnyKernel3
+        run: |
+          # Copy Image from normal build locations
+          if [ -f "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
+            cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" "$ANYKERNEL3/Image"
+          elif [ -f "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" ]; then
+            cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" "$ANYKERNEL3/Image"
           else
-            curl -Lo gki-kernel.zip "$FALLBACK_URL"
+            echo "Error: Image file not found in any expected location"
+            exit 1
           fi
-          
-          unzip -q gki-kernel.zip && rm gki-kernel.zip
-          $UNPACK_BOOTIMG --boot_img="$(pwd)/boot-5.10.img"
-          RAMDISK_ARGS="--ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level ${{ inputs.os_patch_level }}"
-        fi
 
-        # Build all three boot image variants
-        for suffix in "" ".gz" ".lz4"; do
-          kernel="Image${suffix}"
-          output="boot${suffix//./-}.img"
-          [ -z "$suffix" ] && output="boot.img"
-          
-          $MKBOOTIMG --header_version 4 --kernel "$kernel" --output "$output" $RAMDISK_ARGS
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) \
-            --image "$output" --algorithm SHA256_RSA2048 --key "$BOOT_SIGN_KEY_PATH"
-          cp "./$output" "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-$output"
-        done
+      - name: Create Bootimgs Folder and Copy Images
+        run: |
+          mkdir bootimgs
 
-    - name: Scan and collect patch rejects
-      if: ${{ always() }}
-      run: |
-        set -e
-        CONFIG_DIR="$KERNEL_ROOT"
-        REJECTS_DIR="$GITHUB_WORKSPACE/patch-rejects"
-        mkdir -p "$REJECTS_DIR"
-        # Find all .rej files under the configuration directory
-        mapfile -t REJS < <(find "$CONFIG_DIR" -type f -name '*.rej')
-        REJ_COUNT=${#REJS[@]}
-        echo "Found $REJ_COUNT .rej files under $CONFIG_DIR"
-        echo "REJ_COUNT=$REJ_COUNT" >> $GITHUB_ENV
-        if [ "$REJ_COUNT" -gt 0 ]; then
-          for REJ in "${REJS[@]}"; do
-            # Relative path from $CONFIG
-            REL="${REJ#"$CONFIG_DIR"/}"
-            DEST="$REJECTS_DIR/$REL"
-            mkdir -p "$(dirname "$DEST")"
-            cp "$REJ" "$DEST"
-            # Copy the associated original file alongside the .rej
-            ORIG="${REJ%.rej}"
-            if [ -f "$ORIG" ]; then
-              ORIG_DEST="$REJECTS_DIR/${REL%.rej}"
-              mkdir -p "$(dirname "$ORIG_DEST")"
-              cp "$ORIG" "$ORIG_DEST"
+          # Determine source directory based on Android version
+          if [[ "${{ inputs.android_version }}" == "android12" || "${{ inputs.android_version }}" == "android13" ]]; then
+            SRC_DIR="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
+          else
+            SRC_DIR="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64"
+          fi
+
+          cp "$SRC_DIR/Image" ./bootimgs/
+          cp "$SRC_DIR/Image.lz4" ./bootimgs/
+          cp "$SRC_DIR/Image" "./${{ env.FILE_NAME }}-Image"
+          cp "$SRC_DIR/Image.lz4" "./${{ env.FILE_NAME }}-Image.lz4"
+
+          # Create gzip of the Image files
+          gzip -n -k -f -9 "./${{ env.FILE_NAME }}-Image"
+          gzip -n -k -f -9 ./bootimgs/Image
+
+      - name: Build Boot Images
+        working-directory: bootimgs
+        run: |
+          RAMDISK_ARGS=""
+
+          # Android 12 needs ramdisk from GKI certified boot
+          if [[ "${{ inputs.android_version }}" == "android12" ]]; then
+            GKI_URL="https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-${{ inputs.os_patch_level }}_r1.zip"
+            FALLBACK_URL="https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-2023-01_r1.zip"
+            
+            if curl -sL -w "%{http_code}" "$GKI_URL" -o /dev/null | grep -q 200; then
+              curl -Lo gki-kernel.zip "$GKI_URL"
+            else
+              curl -Lo gki-kernel.zip "$FALLBACK_URL"
             fi
-            echo "$REL" >> "$REJECTS_DIR/index.txt"
+            
+            unzip -q gki-kernel.zip && rm gki-kernel.zip
+            $UNPACK_BOOTIMG --boot_img="$(pwd)/boot-5.10.img"
+            RAMDISK_ARGS="--ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level ${{ inputs.os_patch_level }}"
+          fi
+
+          # Build all three boot image variants
+          for suffix in "" ".gz" ".lz4"; do
+            kernel="Image${suffix}"
+            output="boot${suffix//./-}.img"
+            [ -z "$suffix" ] && output="boot.img"
+            
+            $MKBOOTIMG --header_version 4 --kernel "$kernel" --output "$output" $RAMDISK_ARGS
+            $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) \
+              --image "$output" --algorithm SHA256_RSA2048 --key "$BOOT_SIGN_KEY_PATH"
+            cp "./$output" "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-$output"
           done
-        fi
 
-    - name: Generate Build Summary
-      if: ${{ always() }}
-      run: |
-        cat > build_summary.md << EOF
-        # Kernel Build Summary
-        ## ${{ env.FILE_NAME }}
+      - name: Scan and collect patch rejects
+        if: ${{ always() }}
+        run: |
+          set -e
+          CONFIG_DIR="$KERNEL_ROOT"
+          REJECTS_DIR="$GITHUB_WORKSPACE/patch-rejects"
+          mkdir -p "$REJECTS_DIR"
+          # Find all .rej files under the configuration directory
+          mapfile -t REJS < <(find "$CONFIG_DIR" -type f -name '*.rej')
+          REJ_COUNT=${#REJS[@]}
+          echo "Found $REJ_COUNT .rej files under $CONFIG_DIR"
+          echo "REJ_COUNT=$REJ_COUNT" >> $GITHUB_ENV
+          if [ "$REJ_COUNT" -gt 0 ]; then
+            for REJ in "${REJS[@]}"; do
+              # Relative path from $CONFIG
+              REL="${REJ#"$CONFIG_DIR"/}"
+              DEST="$REJECTS_DIR/$REL"
+              mkdir -p "$(dirname "$DEST")"
+              cp "$REJ" "$DEST"
+              # Copy the associated original file alongside the .rej
+              ORIG="${REJ%.rej}"
+              if [ -f "$ORIG" ]; then
+                ORIG_DEST="$REJECTS_DIR/${REL%.rej}"
+                mkdir -p "$(dirname "$ORIG_DEST")"
+                cp "$ORIG" "$ORIG_DEST"
+              fi
+              echo "$REL" >> "$REJECTS_DIR/index.txt"
+            done
+          fi
 
-        ## Build Information
-        - **Android Version**: ${{ inputs.android_version }}
-        - **Kernel Version**: ${{ inputs.kernel_version }}.$ACTUAL_SUBLEVEL
-        - **Build Type**: ${{ matrix.build_type }}
-        - **BBG**: Installed
-        EOF
+      - name: Generate Build Summary
+        if: ${{ always() }}
+        run: |
+          cat > build_summary.md << EOF
+          ## Build Information
+          - **Android Version**: ${{ inputs.android_version }}
+          - **Kernel Version**: ${{ inputs.kernel_version }}.$ACTUAL_SUBLEVEL
+          - **Build Type**: ${{ matrix.build_type }}
+          - **BBG**: Installed
+          EOF
 
-        # Add component commits
-        for repo in "$KERNEL_ROOT/Wild_KSU:Wild_KSU:github.com/WildKernels/Wild_KSU" \
-                    "$KERNEL_ROOT/KernelSU:KernelSU:github.com/tiann/KernelSU" \
-                    "$KERNEL_ROOT/Baseband-guard:Baseband-guard:github.com/vc-teahouse/Baseband-guard" \
-                    "$SUSFS4KSU:SUSFS4KSU:gitlab.com/simonpunk/susfs4ksu/-"; do
+          # Add component commits
+          for repo in "$KERNEL_ROOT/Wild_KSU:Wild_KSU:github.com/WildKernels/Wild_KSU" \
+                        "$KERNEL_ROOT/KernelSU:KernelSU:github.com/tiann/KernelSU" \
+                        "$KERNEL_ROOT/Baseband-guard:Baseband-guard:github.com/vc-teahouse/Baseband-guard" \
+                        "$SUSFS4KSU:SUSFS4KSU:gitlab.com/simonpunk/susfs4ksu/-"; do
           IFS=: read -r path name url <<< "$repo"
           if [ -d "$path" ]; then
             commit=$(git -C "$path" rev-parse --short HEAD 2>/dev/null || echo "unknown")
             echo "- **$name**: [$commit](https://$url/commit/$commit)" >> build_summary.md
           fi
-        done
+          done
 
-        # Artifact status
-        echo -e "\n## Build Artifacts" >> build_summary.md
-        [ -f "AnyKernel3/Image" ] && echo "- ✅ AnyKernel3" >> build_summary.md || echo "- ❌ AnyKernel3" >> build_summary.md
+          # Artifact status
+          echo -e "\n## Build Artifacts" >> build_summary.md
+          [ -f "AnyKernel3/Image" ] && echo "- ✅ AnyKernel3" >> build_summary.md || echo "- ❌ AnyKernel3" >> build_summary.md
 
-        # Count artifacts
-        artifacts=$(ls -1 "${{ env.FILE_NAME }}-"* 2>/dev/null | wc -l)
-        [ "$artifacts" -gt 0 ] && echo "- ✅ Misc ($artifacts files)" >> build_summary.md || echo "- ❌ Misc" >> build_summary.md
+          # Count artifacts
+          artifacts=$(ls -1 "${{ env.FILE_NAME }}-"* 2>/dev/null | wc -l)
+          [ "$artifacts" -gt 0 ] && echo "- ✅ Misc ($artifacts files)" >> build_summary.md || echo "- ❌ Misc" >> build_summary.md
 
-        # Rejected patches
-        if [ -s patch-rejects/index.txt ]; then
-          echo -e "\n## ⚠️ Rejected Patches" >> build_summary.md
-          cat patch-rejects/index.txt >> build_summary.md
-        fi
+          # Rejected patches
+          if [ -s patch-rejects/index.txt ]; then
+            echo -e "\n## ⚠️ Rejected Patches" >> build_summary.md
+            cat patch-rejects/index.txt >> build_summary.md
+          fi
 
-    - name: Upload Artifacts
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.FILE_NAME }}-AnyKernel3
-        path: ./AnyKernel3/**
-        if-no-files-found: ignore
-        compression-level: 9
+      - name: Upload Artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE_NAME }}-AnyKernel3
+          path: ./AnyKernel3/**
+          if-no-files-found: ignore
+          compression-level: 9
 
-    - name: Upload Misc Files
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.FILE_NAME }}-Misc
-        path: |
-          ${{ env.FILE_NAME }}-*
-          patch-rejects/**
-          build_summary.md
-          ${{ env.KERNEL_ROOT }}/KernelSU-Next/**
-        if-no-files-found: ignore
-        compression-level: 9
+      - name: Upload Misc Files
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE_NAME }}-Misc
+          path: |
+            ${{ env.FILE_NAME }}-*
+            patch-rejects/**
+            build_summary.md
+            ${{ env.KERNEL_ROOT }}/KernelSU-Next/**
+          if-no-files-found: ignore
+          compression-level: 9
