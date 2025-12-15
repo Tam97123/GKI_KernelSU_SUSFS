@@ -54,11 +54,11 @@ jobs:
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
 
-  build-a16-6-12:
-    uses: ./.github/workflows/kernel-a16-612.yml
-    secrets: inherit
-    with:
-      kernel_variant: ${{ inputs.kernel_variant }}
+  # build-a16-6-12:
+  #  uses: ./.github/workflows/kernel-a16-612.yml
+  #  secrets: inherit
+  #  with:
+  #    kernel_variant: ${{ inputs.kernel_variant }}
 
   release:
     runs-on: ubuntu-latest
@@ -69,7 +69,7 @@ jobs:
     - build-a14-5-15
     - build-a14-6-1
     - build-a15-6-6
-    - build-a16-6-12
+    # - build-a16-6-12
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${SUSFS_VERSION}"
