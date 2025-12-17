@@ -323,7 +323,7 @@ jobs:
 
           # Apply additional SUSFS patches for Android 13 5.15 compatibility
           if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" ]] && [[ ${{ inputs.sub_level }} -le 41 ]]; then
-            cp $KERNEL_PATCHES/ksu/susfs_fix_patches/v2.0.0/fix_fdinfo.c.patch ./
+            cp $KERNEL_PATCHES/ksu/susfs_fix_patches/v2.0.0/fix_fdinfo_5.15.c.patch ./
             patch -p1 < fix_fdinfo.c.patch || true
             cp $KERNEL_PATCHES/ksu/susfs_fix_patches/v2.0.0/fix_namespace.c.patch ./
             patch -p1 < fix_namespace.c.patch || true
