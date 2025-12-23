@@ -35,6 +35,7 @@ jobs:
   build-gki:
     name: "${{ inputs.kernel_variant }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Maximize Build Space
@@ -95,7 +96,7 @@ jobs:
         run: |
           ANYKERNEL_BRANCH="gki-2.0"
 
-          git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
+          git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH" && rm -rf AnyKernel3/.git
           git clone https://github.com/Tam97123/kernel_patches.git
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
 
@@ -131,7 +132,7 @@ jobs:
           FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
 
           $REPO init --depth=1 -u https://android.googlesource.com/kernel/manifest \
-            -b common-${FORMATTED_BRANCH} --repo-rev=v2.16 --no-clone-bundle
+            -b common-${FORMATTED_BRANCH} --no-clone-bundle
 
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
           DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
@@ -232,7 +233,7 @@ jobs:
               ;;
             SUKI)
               # NEW scheme
-              BASE_VERSION=37185
+              BASE_VERSION=40000
               COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU" rev-list --count HEAD)
               KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
               ;;
@@ -255,13 +256,10 @@ jobs:
               cd "$KERNEL_ROOT/Wild_KSU"
               cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
-
               cp "$KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/fix_core_hook.c.patch" ./
               patch -p1 < fix_core_hook.c.patch
-              
               cp "$KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/fix_sucompat.c.patch" ./
               patch -p1 < fix_sucompat.c.patch
-              
               cp "$KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/fix_kernel_compat.c.patch" ./
               patch -p1 < fix_kernel_compat.c.patch
               ;;
@@ -269,40 +267,8 @@ jobs:
               cd "$KERNEL_ROOT/KernelSU-Next"
               cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
-
               cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
-              echo "Applying Makefile.patch"
-              patch -p1 < Makefile.patch
-              echo "Applying allowlist.c.patch"
-              patch -p1 < allowlist.c.patch
-              echo "Applying apk_sign.c.patch"
-              patch -p1 < apk_sign.c.patch
-              echo "Applying kernel_umount.c.patch"
-              patch -p1 < kernel_umount.c.patch
-              echo "Applying ksu.c.patch"
-              patch -p1 < ksu.c.patch
-              echo "Applying ksud.c.patch"
-              patch -p1 < ksud.c.patch
-              echo "Applying selinux.c.patch"
-              patch -p1 < selinux.c.patch
-              echo "Applying selinux.h.patch"
-              patch -p1 < selinux.h.patch
-              echo "Applying sucompat.c.patch"
-              patch -p1 < sucompat.c.patch
-              echo "Applying sucompat.h.patch"
-              patch -p1 < sucompat.h.patch
-              echo "Applying supercalls.c.patch"
-              patch -p1 < supercalls.c.patch
-              sed -i '/if *(ksu_get_manager_appid() == new_uid % PER_USER_RANGE) {/,/^ *}/c\
-              pr_info("install fd for manager: %d\\n", new_uid);\
-              ksu_install_fd();\
-              spin_lock_irq(&current->sighand->siglock);\
-              ksu_seccomp_allow_cache(current->seccomp.filter, __NR_reboot);\
-              ksu_set_task_tracepoint_flag(current);\
-              spin_unlock_irq(&current->sighand->siglock);\
-              return 0;
-              ' kernel/setuid_hook.c
-              sed -i 's/ksu_get_manager_appid/ksu_get_manager_uid/g' kernel/manager.h
+              patch -p1 < Next-3.0.0-susfs-2.0.0-AIO.patch
               ;;
             KSU)
               cd "$KERNEL_ROOT/KernelSU"
@@ -357,25 +323,6 @@ jobs:
           cp "$KERNEL_PATCHES/wild/hooks/scope_min_manual_hooks_v1.4.patch" ./
           patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
 
-      - name: Apply Performance Patches
-        working-directory: ${{ env.KERNEL_ROOT }}/common
-        run: |
-          MIN_VERSION="5.16"
-          cp "$KERNEL_PATCHES/common/optimized_mem_operations.patch" ./
-          patch -p1 --forward < optimized_mem_operations.patch
-          cp "$KERNEL_PATCHES/common/file_struct_8bytes_align.patch" ./
-          patch -p1 --forward < file_struct_8bytes_align.patch
-          cp "$KERNEL_PATCHES/common/reduce_cache_pressure.patch" ./
-          patch -p1 --forward < reduce_cache_pressure.patch
-          if [ "$(printf '%s\n' "${{ inputs.kernel_version }}" "$MIN_VERSION" | sort -V | head -n1)" = "${{ inputs.kernel_version }}" ]; then
-            cp "$KERNEL_PATCHES/common/clear_page_16bytes_align.patch" ./
-            patch -p1 --forward < clear_page_16bytes_align.patch
-          else
-            cp "$KERNEL_PATCHES/common/clear_page_16bytes_align.patch" ./
-            sed -e 's/SYM_FUNC_START_PI(clear_page)/SYM_FUNC_START_PI(__pi_clear_page)/' clear_page_16bytes_align.patch > clear_page_16bytes_align__pi.patch
-            patch -p1 -F3 --forward < clear_page_16bytes_align__pi.patch
-          fi
-
       - name: Add BBG
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
@@ -392,7 +339,7 @@ jobs:
           fi
 
       - name: Apply LZ4KD & ZSTDN patches
-        if: inputs.use_zram == 'true'
+        if: inputs.use_zram == 'true' && inputs.android_version != '6.12'
         run: |
             cd "$CONFIG/common"
             cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/include/linux/* ./include/linux/
@@ -424,6 +371,13 @@ jobs:
 
           cp "$KERNEL_PATCHES/samsung/min_kdp/min_kdp.c" drivers/min_kdp.c
           echo "obj-y += min_kdp.o" >> drivers/Makefile
+
+      - name: Fix WiFi and Bluetooth on Xiaomi 6.6 GKI devices
+        if: ${{ ( inputs.kernel_version == '6.6' ) }}
+        working-directory: ${{ env.KERNEL_ROOT }}/common
+        run: |
+          SYMBOL_LIST=android/abi_gki_aarch64_xiaomi
+          echo "device_find_any_child" >> $SYMBOL_LIST
 
       - name: Configure Kernel Options
         working-directory: ${{ env.KERNEL_ROOT }}
@@ -527,41 +481,6 @@ jobs:
             sed -i 's/check_defconfig//' ./common/build.config.gki
           fi
 
-      - name: Append ashmem exports if missing
-        if: inputs.android_version == 'android16'
-        working-directory: ${{ env.KERNEL_ROOT }}
-        run: |
-          FILE=common/drivers/staging/android/ashmem.c
-          if [[ -f "$FILE" ]] && ! grep -q 'is_ashmem_file' "$FILE"; then
-          cat >>"$FILE" <<'EOF'
-          bool is_ashmem_file(struct file *file) { return false; }
-          int ashmem_area_name(struct file *file, char *name) { return 0; }
-          long ashmem_area_size(struct file *file) { return 0; }
-          struct file *ashmem_area_vmfile(struct file *file) { return NULL; }
-          EXPORT_SYMBOL_GPL(is_ashmem_file);
-          EXPORT_SYMBOL_GPL(ashmem_area_name);
-          EXPORT_SYMBOL_GPL(ashmem_area_size);
-          EXPORT_SYMBOL_GPL(ashmem_area_vmfile);
-          EOF
-          fi
-
-          if [ -f common/drivers/android/binder/Makefile ]; then
-            perl -i -0777 -pe 's/\$\(\s*CONFIG_ANDROID_BINDER_IPC_RUST\s*\)/m/' common/drivers/android/binder/Makefile
-            #perl -i -ne 'print unless /CONFIG_ANDROID_BINDER_IPC_RUST_DUMMY/' common/drivers/android/binder/Makefile
-            perl -i -pe 's/^rust_binder-\$\([^)]+\)\s*:=/rust_binder-y :=/' common/drivers/android/binder/Makefile
-            cat common/drivers/android/Makefile
-            cat common/drivers/android/binder/Makefile
-            #perl -ni -e 'print unless /rust_toolchain\s*=\s*"\/\/build\/rust:linux_kernel_toolchain",/' common/BUILD.bazel
-            #cat common/BUILD.bazel
-            rustup set profile minimal
-            rustup update nightly
-            rustup default nightly
-            rustup target add aarch64-unknown-none
-          else
-            perl -i -0777 -pe 's/\$\(\s*CONFIG_ANDROID_BINDER_IPC_RUST\s*\)/m/' common/drivers/android/Makefile
-            cat common/drivers/android/Makefile
-          fi
-
       - name: Change Kernel Name
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
@@ -599,7 +518,6 @@ jobs:
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
           set -ex
-          export KBUILD_BUILD_TIMESTAMP="$(date -u)"
           if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || true
             if [ ! -f "./out/android13-5.15/dist/Image" ]; then
@@ -730,61 +648,99 @@ jobs:
             done
           fi
 
-      - name: Generate Build Summary
-        if: ${{ always() }}
-        run: |
-          cat > build_summary.md << EOF
-          ## Build Information
-          - **Android Version**: ${{ inputs.android_version }}
-          - **Kernel Version**: ${{ inputs.kernel_version }}.$ACTUAL_SUBLEVEL
-          - **Build Type**: ${{ matrix.build_type }}
-          - **BBG**: Installed
-          EOF
+    - name: Generate Build Summary
+      if: ${{ always() }}
+      run: |
+        set -e
 
-          # Add component commits
-          for repo in "$KERNEL_ROOT/Wild_KSU:Wild_KSU:github.com/WildKernels/Wild_KSU" \
-                        "$KERNEL_ROOT/KernelSU:KernelSU:github.com/tiann/KernelSU" \
-                        "$KERNEL_ROOT/Baseband-guard:Baseband-guard:github.com/vc-teahouse/Baseband-guard" \
-                        "$SUSFS4KSU:SUSFS4KSU:gitlab.com/simonpunk/susfs4ksu/-"; do
-          IFS=: read -r path name url <<< "$repo"
-          if [ -d "$path" ]; then
-            commit=$(git -C "$path" rev-parse --short HEAD 2>/dev/null || echo "unknown")
-            echo "- **$name**: [$commit](https://$url/commit/$commit)" >> build_summary.md
+        REJECTS_DIR="$GITHUB_WORKSPACE/patch-rejects"
+        OUT="build_summary.md"
+
+        {
+          echo "# Patch Reject Summary"
+          echo "## ${{ env.FILE_NAME }}"
+          echo ""
+          echo "- Rejects directory: \`$REJECTS_DIR\`"
+          echo "- Kernel root: \`$KERNEL_ROOT\`"
+          echo ""
+        } > "$OUT"
+
+        if [ ! -s "$REJECTS_DIR/index.txt" ]; then
+          echo "No patch rejects found." >> "$OUT"
+          # cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+
+        sort -u "$REJECTS_DIR/index.txt" > "$REJECTS_DIR/index.sorted.txt"
+
+        echo "## Reject Files" >> "$OUT"
+        while IFS= read -r rel; do
+          [ -n "$rel" ] && echo "- \`$rel\`" >> "$OUT"
+        done < "$REJECTS_DIR/index.sorted.txt"
+
+        echo "" >> "$OUT"
+        echo "## Grouped By Directory (count)" >> "$OUT"
+        awk -F/ 'NF{dir=$0; sub(/\/[^[\/]]*$/, "", dir); if(dir==$0) dir="."; c[dir]++} END{for (d in c) printf "%d\t%s\n", c[d], d}' "$REJECTS_DIR/index.sorted.txt" \
+          | sort -nr \
+          | while IFS=$'\t' read -r cnt dir; do
+              [ -n "$dir" ] && echo "- **$cnt** \`$dir\`" >> "$OUT"
+            done
+        echo "" >> "$OUT"
+        echo "## Grouped By Reject Content (sha256)" >> "$OUT"
+
+        TMP="$(mktemp)"
+        while IFS= read -r rel; do
+          [ -n "$rel" ] || continue
+          f="$REJECTS_DIR/$rel"
+          if [ -f "$f" ]; then
+            sha=$(sha256sum "$f" | awk '{print $1}')
+            printf '%s\t%s\n' "$sha" "$rel" >> "$TMP"
+          else
+            printf '%s\t%s\n' "MISSING" "$rel" >> "$TMP"
           fi
-          done
+        done < "$REJECTS_DIR/index.sorted.txt"
 
-          # Artifact status
-          echo -e "\n## Build Artifacts" >> build_summary.md
-          [ -f "AnyKernel3/Image" ] && echo "- ✅ AnyKernel3" >> build_summary.md || echo "- ❌ AnyKernel3" >> build_summary.md
+        sort "$TMP" | awk -F'\t' '
+          $1=="MISSING" { missing[++mc]=$2; next }
+          {
+            sha=$1; rel=$2
+            if (sha!=prev) {
+              if (prev!="") print ""
+              print "### " sha
+            }
+            print "- `" rel "`"
+            prev=sha
+          }
+          END {
+            if (mc>0) {
+              print ""
+              print "### Missing files"
+              for (i=1; i<=mc; i++) print "- `" missing[i] "`"
+            }
+          }
+        ' >> "$OUT"
 
-          # Count artifacts
-          artifacts=$(ls -1 "${{ env.FILE_NAME }}-"* 2>/dev/null | wc -l)
-          [ "$artifacts" -gt 0 ] && echo "- ✅ Misc ($artifacts files)" >> build_summary.md || echo "- ❌ Misc" >> build_summary.md
+        rm -f "$TMP"
 
-          # Rejected patches
-          if [ -s patch-rejects/index.txt ]; then
-            echo -e "\n## ⚠️ Rejected Patches" >> build_summary.md
-            cat patch-rejects/index.txt >> build_summary.md
-          fi
+        # cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload Artifacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.FILE_NAME }}-AnyKernel3
-          path: ./AnyKernel3/**
-          if-no-files-found: ignore
-          compression-level: 9
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.FILE_NAME }}-AnyKernel3
+        path: ./AnyKernel3/**
+        if-no-files-found: ignore
+        compression-level: 9
 
-      - name: Upload Misc Files
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.FILE_NAME }}-Misc
-          path: |
-            ${{ env.FILE_NAME }}-*
-            patch-rejects/**
-            build_summary.md
-            ${{ env.KERNEL_ROOT }}/KernelSU-Next/**
-          if-no-files-found: ignore
-          compression-level: 9
+    - name: Upload Misc Files
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.FILE_NAME }}-Misc
+        path: |
+          ${{ env.FILE_NAME }}-*
+          ${{ env.KERNEL_ROOT }}/KernelSU-Next/**
+          patch-rejects/**
+          build_summary.md
+        if-no-files-found: ignore
+        compression-level: 9

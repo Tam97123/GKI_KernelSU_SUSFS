@@ -37,16 +37,16 @@ on:
         type: boolean
         default: false
 
-      kernel_uname:
-        description: 'Custom kernel version name (Ex: Characters after 5.10.198 or leave blank to use default kernel version uname)'
-        required: false
-        type: string
       kernel_variant:
         description: 'Choose KernelSU Variant'
         required: true
         type: choice
         options: [ WILD, NEXT, KSU, SUKI ]
         default: NEXT
+      kernel_uname:
+        description: 'Custom kernel version name (Ex: Characters after 5.10.198 or leave blank to use default kernel version uname)'
+        required: false
+        type: string
       use_kpm:
         description: 'Use KPM? (SUKISU-ULTRA ONLY!)'
         required: false

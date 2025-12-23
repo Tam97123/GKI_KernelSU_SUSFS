@@ -23,7 +23,6 @@ on:
 jobs:
   build-kernels-a16-612:
     name: "6.12.${{ matrix.sub_level }}-${{ matrix.os_patch_level }}"
-    if: ${{ inputs.ksu_variant == 'KSU' || inputs.ksu_variant == 'Next' }}
     strategy:
       fail-fast: false
       matrix:
