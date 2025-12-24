@@ -616,131 +616,132 @@ jobs:
             $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) \
               --image "$output" --algorithm SHA256_RSA2048 --key "$BOOT_SIGN_KEY_PATH"
             cp "./$output" "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-$output"
-          done
-
-    - name: Scan and collect patch rejects
-      if: ${{ always() }}
-      run: |
-        set -e
-        CONFIG_DIR="$KERNEL_ROOT"
-        REJECTS_DIR="$GITHUB_WORKSPACE/patch-rejects"
-        mkdir -p "$REJECTS_DIR"
-        # Find all .rej files under the configuration directory
-        mapfile -t REJS < <(find "$CONFIG_DIR" -type f -name '*.rej')
-        REJ_COUNT=${#REJS[@]}
-        echo "Found $REJ_COUNT .rej files under $CONFIG_DIR"
-        echo "REJ_COUNT=$REJ_COUNT" >> $GITHUB_ENV
-        if [ "$REJ_COUNT" -gt 0 ]; then
-          for REJ in "${REJS[@]}"; do
-            # Relative path from $CONFIG
-            REL="${REJ#"$CONFIG_DIR"/}"
-            DEST="$REJECTS_DIR/$REL"
-            mkdir -p "$(dirname "$DEST")"
-            cp "$REJ" "$DEST"
-            # Copy the associated original file alongside the .rej
-            ORIG="${REJ%.rej}"
-            if [ -f "$ORIG" ]; then
-              ORIG_DEST="$REJECTS_DIR/${REL%.rej}"
-              mkdir -p "$(dirname "$ORIG_DEST")"
-              cp "$ORIG" "$ORIG_DEST"
-            fi
-            echo "$REL" >> "$REJECTS_DIR/index.txt"
-          done
-        fi
-
-    - name: Generate Build Summary
-      if: ${{ always() }}
-      run: |
-        set -e
-
-        REJECTS_DIR="$GITHUB_WORKSPACE/patch-rejects"
-        OUT="build_summary.md"
-
-        {
-          echo "# Patch Reject Summary"
-          echo "## ${{ env.FILE_NAME }}"
-          echo ""
-          echo "- Rejects directory: \`$REJECTS_DIR\`"
-          echo "- Kernel root: \`$KERNEL_ROOT\`"
-          echo ""
-        } > "$OUT"
-
-        if [ ! -s "$REJECTS_DIR/index.txt" ]; then
-          echo "No patch rejects found." >> "$OUT"
-          # cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
-          exit 0
-        fi
-
-        sort -u "$REJECTS_DIR/index.txt" > "$REJECTS_DIR/index.sorted.txt"
-
-        echo "## Reject Files" >> "$OUT"
-        while IFS= read -r rel; do
-          [ -n "$rel" ] && echo "- \`$rel\`" >> "$OUT"
-        done < "$REJECTS_DIR/index.sorted.txt"
-
-        echo "" >> "$OUT"
-        echo "## Grouped By Directory (count)" >> "$OUT"
-        awk -F/ 'NF{dir=$0; sub(/\/[^[\/]]*$/, "", dir); if(dir==$0) dir="."; c[dir]++} END{for (d in c) printf "%d\t%s\n", c[d], d}' "$REJECTS_DIR/index.sorted.txt" \
-          | sort -nr \
-          | while IFS=$'\t' read -r cnt dir; do
-              [ -n "$dir" ] && echo "- **$cnt** \`$dir\`" >> "$OUT"
+          done  
+          
+      - name: Scan and collect patch rejects
+        if: ${{ always() }}
+        run: |
+          set -e
+          CONFIG_DIR="$KERNEL_ROOT"
+          REJECTS_DIR="$GITHUB_WORKSPACE/patch-rejects"
+          mkdir -p "$REJECTS_DIR"
+          # Find all .rej files under the configuration directory
+          mapfile -t REJS < <(find "$CONFIG_DIR" -type f -name '*.rej')
+          REJ_COUNT=${#REJS[@]}
+          echo "Found $REJ_COUNT .rej files under $CONFIG_DIR"
+          echo "REJ_COUNT=$REJ_COUNT" >> $GITHUB_ENV
+          if [ "$REJ_COUNT" -gt 0 ]; then
+            for REJ in "${REJS[@]}"; do
+              # Relative path from $CONFIG
+              REL="${REJ#"$CONFIG_DIR"/}"
+              DEST="$REJECTS_DIR/$REL"
+              mkdir -p "$(dirname "$DEST")"
+              cp "$REJ" "$DEST"
+              # Copy the associated original file alongside the .rej
+              ORIG="${REJ%.rej}"
+              if [ -f "$ORIG" ]; then
+                ORIG_DEST="$REJECTS_DIR/${REL%.rej}"
+                mkdir -p "$(dirname "$ORIG_DEST")"
+                cp "$ORIG" "$ORIG_DEST"
+              fi
+              echo "$REL" >> "$REJECTS_DIR/index.txt"
             done
-        echo "" >> "$OUT"
-        echo "## Grouped By Reject Content (sha256)" >> "$OUT"
-
-        TMP="$(mktemp)"
-        while IFS= read -r rel; do
-          [ -n "$rel" ] || continue
-          f="$REJECTS_DIR/$rel"
-          if [ -f "$f" ]; then
-            sha=$(sha256sum "$f" | awk '{print $1}')
-            printf '%s\t%s\n' "$sha" "$rel" >> "$TMP"
-          else
-            printf '%s\t%s\n' "MISSING" "$rel" >> "$TMP"
           fi
-        done < "$REJECTS_DIR/index.sorted.txt"
-
-        sort "$TMP" | awk -F'\t' '
-          $1=="MISSING" { missing[++mc]=$2; next }
+  
+      - name: Generate Build Summary
+        if: ${{ always() }}
+        run: |
+          set -e
+  
+          REJECTS_DIR="$GITHUB_WORKSPACE/patch-rejects"
+          OUT="build_summary.md"
+  
           {
-            sha=$1; rel=$2
-            if (sha!=prev) {
-              if (prev!="") print ""
-              print "### " sha
+            echo "# Patch Reject Summary"
+            echo "## ${{ env.FILE_NAME }}"
+            echo ""
+            echo "- Rejects directory: \`$REJECTS_DIR\`"
+            echo "- Kernel root: \`$KERNEL_ROOT\`"
+            echo ""
+          } > "$OUT"
+  
+          if [ ! -s "$REJECTS_DIR/index.txt" ]; then
+            echo "No patch rejects found." >> "$OUT"
+            # cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+  
+          sort -u "$REJECTS_DIR/index.txt" > "$REJECTS_DIR/index.sorted.txt"
+  
+          echo "## Reject Files" >> "$OUT"
+          while IFS= read -r rel; do
+            [ -n "$rel" ] && echo "- \`$rel\`" >> "$OUT"
+          done < "$REJECTS_DIR/index.sorted.txt"
+  
+          echo "" >> "$OUT"
+          echo "## Grouped By Directory (count)" >> "$OUT"
+          awk -F/ 'NF{dir=$0; sub(/\/[^[\/]]*$/, "", dir); if(dir==$0) dir="."; c[dir]++} END{for (d in c) printf "%d\t%s\n", c[d], d}' "$REJECTS_DIR/index.sorted.txt" \
+            | sort -nr \
+            | while IFS=$'\t' read -r cnt dir; do
+                [ -n "$dir" ] && echo "- **$cnt** \`$dir\`" >> "$OUT"
+              done
+          echo "" >> "$OUT"
+          echo "## Grouped By Reject Content (sha256)" >> "$OUT"
+  
+          TMP="$(mktemp)"
+          while IFS= read -r rel; do
+            [ -n "$rel" ] || continue
+            f="$REJECTS_DIR/$rel"
+            if [ -f "$f" ]; then
+              sha=$(sha256sum "$f" | awk '{print $1}')
+              printf '%s\t%s\n' "$sha" "$rel" >> "$TMP"
+            else
+              printf '%s\t%s\n' "MISSING" "$rel" >> "$TMP"
+            fi
+          done < "$REJECTS_DIR/index.sorted.txt"
+  
+          sort "$TMP" | awk -F'\t' '
+            $1=="MISSING" { missing[++mc]=$2; next }
+            {
+              sha=$1; rel=$2
+              if (sha!=prev) {
+                if (prev!="") print ""
+                print "### " sha
+              }
+              print "- `" rel "`"
+              prev=sha
             }
-            print "- `" rel "`"
-            prev=sha
-          }
-          END {
-            if (mc>0) {
-              print ""
-              print "### Missing files"
-              for (i=1; i<=mc; i++) print "- `" missing[i] "`"
+            END {
+              if (mc>0) {
+                print ""
+                print "### Missing files"
+                for (i=1; i<=mc; i++) print "- `" missing[i] "`"
+              }
             }
-          }
-        ' >> "$OUT"
-
-        rm -f "$TMP"
-
-        # cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.FILE_NAME }}-AnyKernel3
-        path: ./AnyKernel3/**
-        if-no-files-found: ignore
-        compression-level: 9
-
-    - name: Upload Misc Files
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.FILE_NAME }}-Misc
-        path: |
-          ${{ env.FILE_NAME }}-*
-          ${{ env.KERNEL_ROOT }}/KernelSU-Next/**
-          patch-rejects/**
-          build_summary.md
-        if-no-files-found: ignore
-        compression-level: 9
+          ' >> "$OUT"
+  
+          rm -f "$TMP"
+  
+          # cat "$OUT" >> "$GITHUB_STEP_SUMMARY"
+  
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE_NAME }}-AnyKernel3
+          path: ./AnyKernel3/**
+          if-no-files-found: ignore
+          compression-level: 9
+  
+      - name: Upload Misc Files
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE_NAME }}-Misc
+          path: |
+            ${{ env.FILE_NAME }}-*
+            ${{ env.KERNEL_ROOT }}/KernelSU-Next/**
+            patch-rejects/**
+            build_summary.md
+          if-no-files-found: ignore
+          compression-level: 9
+  
