@@ -267,8 +267,12 @@ jobs:
               cd "$KERNEL_ROOT/KernelSU-Next"
               cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
-              cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
-              patch -p1 < *.patch || true
+              cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/fix_core_hook.c.patch" ./
+              patch -p1 < fix_core_hook.c.patch
+              cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/fix_sucompat.c.patch" ./
+              patch -p1 < fix_sucompat.c.patch
+              cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/fix_kernel_compat.c.patch" ./
+              patch -p1 < fix_kernel_compat.c.patch
               ;;
             KSU)
               cd "$KERNEL_ROOT/KernelSU"
@@ -289,7 +293,7 @@ jobs:
 
           # Apply additional SUSFS patches for Android 13 5.15 compatibility
           if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" ]] && [[ ${{ inputs.sub_level }} -le 41 ]]; then
-            cp $KERNEL_PATCHES/ksu/susfs_fix_patches/v2.0.0/fix_fdinfo_5.15.c.patch ./
+            cp $KERNEL_PATCHES/ksu/susfs_fix_patches/v2.0.0/fix_fdinfo.c.patch ./
             patch -p1 < fix_fdinfo.c.patch || true
             cp $KERNEL_PATCHES/ksu/susfs_fix_patches/v2.0.0/fix_namespace.c.patch ./
             patch -p1 < fix_namespace.c.patch || true
