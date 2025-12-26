@@ -268,7 +268,7 @@ jobs:
               cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
               cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
-              patch -p1 < Next-3.0.0-susfs-2.0.0-AIO.patch
+              patch -p1 < *.patch || true
               ;;
             KSU)
               cd "$KERNEL_ROOT/KernelSU"
