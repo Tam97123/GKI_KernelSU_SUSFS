@@ -267,8 +267,6 @@ jobs:
               cd "$KERNEL_ROOT/KernelSU-Next"
               cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" .
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
-              cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.c.patch ./
-              patch -p1 < *.c.patch
               ;;
             KSU)
               cd "$KERNEL_ROOT/KernelSU"
