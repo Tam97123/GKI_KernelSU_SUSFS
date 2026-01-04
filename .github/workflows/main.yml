@@ -15,7 +15,7 @@ on:
       kernel_variant:
         description: "Choose KernelSU Variant"
         type: choice
-        options: [ WILD, NEXT, KSU, SUKI ]
+        options: [ WILD, NEXT, KSU, RKSU, SUKI ]
         default: NEXT
 
 jobs:
@@ -54,14 +54,13 @@ jobs:
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
 
-  # build-a16-6-12:
-  #  uses: ./.github/workflows/kernel-a16-612.yml
-  #  secrets: inherit
-  #  with:
-  #    kernel_variant: ${{ inputs.kernel_variant }}
+  build-a16-6-12:
+    uses: ./.github/workflows/kernel-a16-612.yml
+    secrets: inherit
+    with:
+      kernel_variant: ${{ inputs.kernel_variant }}
 
-  combined-reject-summary:
-    name: Combined Reject Summary
+  rej:
     runs-on: ubuntu-latest
     needs:
     - build-a12-5-10
@@ -70,69 +69,60 @@ jobs:
     - build-a14-5-15
     - build-a14-6-1
     - build-a15-6-6
-    # - build-a16-6-12
-    if: ${{ always() }}
+    - build-a16-6-12
     steps:
-      
-    - name: Download Apache Arrow's util_free_space.sh
-      run: |
-        curl -Ls https://raw.githubusercontent.com/apache/arrow/main/ci/scripts/util_free_space.sh | bash
-
-    - name: Download all Misc artifacts
-      uses: actions/download-artifact@v4
+    - name: Download Misc Artifacts
+      uses: actions/download-artifact@v5
       with:
-        path: ./downloaded-rejects
+        path: ./downloaded-artifacts
         pattern: '*-Normal-Misc'
 
-    - name: Generate combined reject summary
+    - name: Process Reject Artifacts
       run: |
-        set -e
+        mkdir -p aio-rejects
         
-        ROOT="./downloaded-rejects"
-        OUTPUT_DIR="Combined-Rejects"
-        mkdir -p "$OUTPUT_DIR"
-        
-        shopt -s nullglob
-        misc_dirs=("$ROOT"/*)
-        
-        if [ ${#misc_dirs[@]} -eq 0 ]; then
-          echo "No artifacts matched '*-Misc'."
-          exit 0
-        fi
-        
-        echo "Processing ${#misc_dirs[@]} artifacts..."
-        
-        for d in "${misc_dirs[@]}"; do
-          [ -d "$d" ] || continue
-          
-          # Artifact name is the directory name
-          artifact_name=$(basename "$d")
-          
-          # Remove "-Misc" suffix for cleaner folder name
-          kernel_name="${artifact_name%-Misc}"
-          
-          target_dir="$OUTPUT_DIR/$kernel_name"
-          
-          # Copy Rejects if they exist
-          if [ -d "$d/patch-rejects" ]; then
-             mkdir -p "$target_dir"
-            # Copy contents of patch-rejects (preserving directory structure) to target_dir
-            # We want: filename-folder/path/path/file.rej
-            cp -r "$d/patch-rejects/." "$target_dir/" 2>/dev/null || true
-          fi
-          
+        # Iterate over Misc artifacts in downloaded-artifacts
+        for dir in ./downloaded-artifacts/*-Normal-Misc; do
+            # Ensure it is a directory
+            [ -d "$dir" ] || continue
+            
+            dirname=$(basename "$dir")
+            echo "Processing $dirname..."
+            
+            # Check for patch-rejects folder
+            if [ -d "$dir/patch-rejects" ]; then
+                echo "Found patch-rejects in $dirname"
+                
+                # Get original name (remove -Misc suffix)
+                original_name=${dirname%-Misc}
+                
+                # Move and rename patch-rejects to aio-rejects/original_name
+                mv "$dir/patch-rejects" "aio-rejects/$original_name"
+            else
+                echo "No patch-rejects found in $dirname"
+            fi
         done
+        
+        # Zip and upload if we found anything
+        if [ "$(ls -A aio-rejects)" ]; then
+            echo "Creating AIO-REJ.zip..."
+            cd aio-rejects
+            zip -r -q -9 ../AIO-REJ.zip .
+            cd ..
+        else
+            echo "No rejects found to upload."
+        fi
 
-    - name: Upload combined reject summary
+    - name: Upload AIO-REJ Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Rejects-AIO
-        path: Combined-Rejects/
+        name: AIO-REJ
+        path: AIO-REJ.zip
         if-no-files-found: ignore
-        compression-level: 9
 
   release:
     runs-on: ubuntu-latest
+    if: inputs.release_type != 'Actions'
     needs:
     - build-a12-5-10
     - build-a13-5-10
@@ -140,16 +130,13 @@ jobs:
     - build-a14-5-15
     - build-a14-6-1
     - build-a15-6-6
-    # - build-a16-6-12
+    - build-a16-6-12
+
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${SUSFS_VERSION}"
+      RELEASE_NAME: "!!TESTING!! GKI Kernels With KernelSU-Next & SUSFS v2.0.0 !!TESTING!!"
       RELEASE_BODY: ""
     steps:
-    - name: Download Apache Arrow's util_free_space.sh
-      run: |
-        curl -Ls https://raw.githubusercontent.com/apache/arrow/main/ci/scripts/util_free_space.sh | bash
-
     - name: Checkout code
       uses: actions/checkout@v4
 
@@ -164,37 +151,22 @@ jobs:
 
     - name: Set release body
       run: |
-        cat << 'EOF' > release_body.md
-
+        cat << EOF > release_body.md
         **IMPORTANT DISCLAIMER**
         This software is provided for testing and educational purposes only. Use at your own risk.
         The developers are not responsible for any damage, data loss, or issues that may occur.
         Please ensure you have proper backups before installation.
+
+        🔹 Normal 
+        - Default kernel configuration 
+        - Standard kernel module loading behavior 
+        - Recommended for most users 
 
         🔹 Bypass 
         - Includes module check bypass modifications 
         - What are kernel modules? Kernel modules are pieces of code that can be loaded into the kernel at runtime to extend functionality (like device drivers, filesystem support, etc.). These are different from KernelSU/Magisk modules. 
         - The Problem: Sometimes when installing a custom kernel, the device tries to load a kernel module that fails due to version mismatches, missing dependencies, or signature verification issues. This can cause boot failures or device instability. 
         - The Solution: This version changes one line from false to true to force load the kernel module, bypassing the failure check that would normally prevent loading.
-
-        Features:
-        -> ${{ inputs.kernel_variant }}
-        -> Multi Manager Support for WILD, KernelSU-Next and SukiSU-Ultra! Needs Testing: KSU, MKSU RKSU, xxKSU, KowSU (Best compatibility with WILD, no support will be provided for other managers)
-        -> SUSFS ඞ  ${SUSFS_VERSION}
-        -> Scope-Minimized Manual hooks v1.4 (Wild-KSU only)
-        -> Ptrace Patch Support for Older Kernels (<5.16)
-        -> IPSet Support for Advanced Network Filtering
-        -> Wireguard Support
-        -> BBR v1 Support
-        -> Added BBG support to prevent unauthorised writes to certain partitions: https://github.com/vc-teahouse/Baseband-guard
-
-        🔹 BBG (Baseband-guard)
-        - A lightweight LSM (Linux Security Module) for Android kernel
-        - Blocks unauthorized writes to critical partitions/device nodes
-        - Prevents malicious tampering with baseband and boot chain
-        - Kernel-level protection via LSM hooks
-        - Reduces risk of soft-brick/hard-brick issues
-
         🔹 KPM (KernelPatch Modules):
         - Support for modules that allow you to inject any code into the kernel
         - Provides kernel function inline-hook and syscall-table-hook
@@ -204,21 +176,36 @@ jobs:
         - Instead of swapping data to slow storage (like SSD or eMMC), the kernel compresses data and keeps it in RAM.
         - Because compressed data is smaller, it can fit more “virtual RAM” into the same physical RAM.
         - By add more ZRAM algorithms, kernel has more choice to compress memory data (faster or better)
+        
+        Features:
+        -> KernelSU-Next dev-susfs patched by pershoot (Warning from pershoot: This version is not recommended for production use. It is only intended for testing and development purposes.)
+        -> ${KERNEL_VARIANT} Manager
+        -> SUSFS ඞ ${SUSFS_VERSION}
+        -> Hybrid Root Hooks
+        -> Ptrace Patch Support for Older Kernels (<5.16)
+        -> IPSet Support for Advanced Network Filtering
+        -> Wireguard Support
+        -> BBR v1 Support
+        -> BBG: https://github.com/vc-teahouse/Baseband-guard
 
-        Notes:
-        -> SUS SU Mode 2 will show as disabled or not compatible due to non-kprobe hooks and is not needed anymore!
-        -> Official Kernel Flasher is broken with latest susfs, try https://github.com/fatalcoder524/KernelFlasher/
-        -> **boot.img files**: Available as CI artifacts only - download from the Actions tab in the "Misc" Artifact
-        -> **Warning**: boot.img files may not boot on some devices
-        -> **Note:** For detailed commit information and component versions, please check the build summary in the "Misc" Artifact
+        🔹 BBG (Baseband-guard)
+        - A lightweight LSM (Linux Security Module) for Android kernel
+        - Blocks unauthorized writes to critical partitions/device nodes
+        - Prevents malicious tampering with baseband and boot chain
+        - Kernel-level protection via LSM hooks
+        - Reduces risk of soft-brick/hard-brick issues
+
+        Kernel Flasher:
+        -> https://github.com/fatalcoder524/KernelFlasher/
 
         Module: 
         -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
 
         Managers:
         -> Wild KSU: [Github](https://github.com/WildKernels/Wild_KSU) [Telegram](https://t.me/WildKernels)
-        -> KernelSU: [Github](https://github.com/tiann/KernelSU) [Telegram](https://t.me/KernelSU_group)
         -> KernelSU Next: [Github](https://github.com/KernelSU-Next/KernelSU-Next) [Telegram](https://t.me/ksunext_ci)
+        -> KernelSU: [Github](https://github.com/tiann/KernelSU) [Telegram](https://t.me/KernelSU_group)
+        -> RissKSU: [Github](https://github.com/rsuntk/KernelSU) [Telegram](https://t.me/rsukrnlsu)
         -> SukiSU-Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
         EOF
 
@@ -263,3 +250,4 @@ jobs:
           echo "Uploading ${artifact_name}.zip..."
           gh release upload "${{ env.NEW_TAG }}" "${artifact_name}.zip" --clobber
         done
+          
