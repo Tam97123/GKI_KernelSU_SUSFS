@@ -190,6 +190,7 @@ jobs:
             curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
             ;;
         esac
+        echo "KERNEL_VARIANT=${{ inputs.kernel_variant }}" >> GITHUB_ENV
   
     - name: Getting KernelSU Version
       working-directory: ${{ env.KERNEL_ROOT }}
