@@ -108,18 +108,13 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 Due to my current financial situation when I have to study at school and earn for livings, any form of support is deeply appreciated.
 If you would like to contribute, here are some available network that acppect crypto currency:
 
-- **Bitcoin (bech32)**: bc1qghwe7ry5jvw9ehg652y8gj2zhrgv2l64zrc4ra
-- **Ethereum**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
-- **BNB Smart Chain**:
-0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
-- **Base**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
-- **Sui**: 0xaf60dff268c2068c6ff2efbb0fd11fc30d9f730db1bea075d109f5a9382620c2
-- **Solana**: CdbW7U4vpEt6LP9PSY9UegnX2XMJpm5TiaV1wdfPNMto
-- **Litecoin**:
-ltc1qqcug3yskcxvazyhjmcznhyyw6x2zx3qlje88r6
-- **Tron**:
-TJN4y3KMsW6rkbGm3ThG3JTzBSPZQMqccf
-- **Polygon**: 0x2E106713E6d0761872f96668f0dE8b1D6d437fD5
+- **Bitcoin (SegWit)**: bc1qz57zdqcjaxuer4p4w50a8txda97vknzxsfrwg77jsue2wx8dm8tsrwufr2
+- **Ethereum**: 0xd9d09d6c6ff751985838eb9e4da222ff5326f248
+- **BNB Smart Chain**: 0xd9d09d6c6ff751985838eb9e4da222ff5326f248 
+- **Tron**: TFPkiA8zZEs1cPaa1UD7yeG9J1kT29kkfR
+- **Polygon**: 0xd9d09d6c6ff751985838eb9e4da222ff5326f248
+- **OKX (ID)**: 789454333766505587  
+- **Binance (ID)**: 1194756336
 
 **Thank you so much for your kindness and generosity. Your support means a lot during this time.** 🫶
 
