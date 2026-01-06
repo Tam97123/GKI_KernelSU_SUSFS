@@ -24,6 +24,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      
   build-a13-5-10:
     uses: ./.github/workflows/kernel-a13-5-10.yml
     secrets: inherit
@@ -134,7 +135,7 @@ jobs:
 
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "!!TESTING!! GKI Kernels With KernelSU-Next & SUSFS v2.0.0 !!TESTING!!"
+      RELEASE_NAME: "!!TESTING!! GKI Kernels With ${KERNEL_VARIANT} & SUSFS ${SUSFS_VERSION} !!TESTING!!"
       RELEASE_BODY: ""
     steps:
     - name: Checkout code
@@ -167,6 +168,7 @@ jobs:
         - What are kernel modules? Kernel modules are pieces of code that can be loaded into the kernel at runtime to extend functionality (like device drivers, filesystem support, etc.). These are different from KernelSU/Magisk modules. 
         - The Problem: Sometimes when installing a custom kernel, the device tries to load a kernel module that fails due to version mismatches, missing dependencies, or signature verification issues. This can cause boot failures or device instability. 
         - The Solution: This version changes one line from false to true to force load the kernel module, bypassing the failure check that would normally prevent loading.
+        
         🔹 KPM (KernelPatch Modules):
         - Support for modules that allow you to inject any code into the kernel
         - Provides kernel function inline-hook and syscall-table-hook
@@ -206,7 +208,7 @@ jobs:
         -> KernelSU Next: [Github](https://github.com/KernelSU-Next/KernelSU-Next) [Telegram](https://t.me/ksunext_ci)
         -> KernelSU: [Github](https://github.com/tiann/KernelSU) [Telegram](https://t.me/KernelSU_group)
         -> RissKSU: [Github](https://github.com/rsuntk/KernelSU) [Telegram](https://t.me/rsukrnlsu)
-        -> SukiSU-Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
+        -> SukiSU Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
         EOF
 
     - name: Create GitHub Release
