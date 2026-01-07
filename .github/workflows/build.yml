@@ -30,6 +30,9 @@ on:
       use_zram:
         required: false
         type: string
+    outputs:
+      susfs_version:
+        value: ${{ jobs.build.outputs.susfs_version }}
 
 jobs:
   build-gki:
