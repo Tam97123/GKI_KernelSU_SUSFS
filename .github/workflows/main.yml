@@ -72,12 +72,6 @@ jobs:
     - build-a15-6-6
     - build-a16-6-12
     steps:
-    - name: Prepare release notes
-      shell: bash
-      env:
-        KERNEL_VARIANT: ${{ inputs.kernel_variant }}
-        SUSFS_VERSION: ${{ needs.build.outputs.susfs_version }}
-    
     - name: Download Misc Artifacts
       uses: actions/download-artifact@v5
       with:
