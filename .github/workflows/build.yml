@@ -36,6 +36,8 @@ jobs:
     name: "${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      susfs_version: ${{ steps.vars.outputs.susfs_version }}
 
     steps:
     - name: Build Summary
@@ -47,7 +49,7 @@ jobs:
         echo "Kernel Version  : ${{ inputs.kernel_version }}"
         echo "Sub Level       : ${{ inputs.sub_level }}"
         echo "Patch Level     : ${{ inputs.os_patch_level }}"
-        echo "KernelSU Variant: ${{ inputs.kernel_variant }}"
+        echo "KernelSU Manager: ${{ inputs.kernel_variant }}"
         echo "========================================"
 
     - name: Free Disk Space
@@ -105,6 +107,7 @@ jobs:
         echo "Newest susfs version: v$VERSION"
         SUSFS_VERSION="v${VERSION}"
         echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
+        echo "susfs_version=$SUSFS_VERSION" >> $GITHUB_OUTPUT
                 
     - name: Initialize and Sync Kernel Source
       working-directory: ${{ env.KERNEL_ROOT }}
@@ -190,7 +193,6 @@ jobs:
             curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
             ;;
         esac
-        echo "KERNEL_VARIANT=${{ inputs.kernel_variant }}" >> GITHUB_ENV
   
     - name: Getting KernelSU Version
       working-directory: ${{ env.KERNEL_ROOT }}
