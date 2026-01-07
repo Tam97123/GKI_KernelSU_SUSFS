@@ -72,12 +72,12 @@ jobs:
     - build-a15-6-6
     - build-a16-6-12
     steps:
-    - name: Set Variable
-      run: |
-        echo SUSFS_VERSION=${{ needs.build.outputs.susfs_version }}
-        echo SUSFS_VERSION=${SUSFS_VERSION >> $GITHUB_ENV
-        echo KERNEL_VARIANT=${{ inputs.kernel_variant }}
-        echo KERNEL_VARIANT=${KERNEL_VARIANT} >> GITHUB_ENV
+    - name: Prepare release notes
+      shell: bash
+      env:
+        KERNEL_VARIANT: ${{ inputs.kernel_variant }}
+        SUSFS_VERSION: ${{ needs.build.outputs.susfs_version }}
+    
     - name: Download Misc Artifacts
       uses: actions/download-artifact@v5
       with:
@@ -141,7 +141,7 @@ jobs:
 
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "(TEST) GKI Kernels With ${KERNEL_VARIANT} & SUSFS ${SUSFS_VERSION}"
+      RELEASE_NAME: "(TEST) GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${{ needs.build.outputs.susfs_version }}"
       RELEASE_BODY: ""
     steps:
     - name: Checkout code
@@ -157,6 +157,9 @@ jobs:
         echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
 
     - name: Set release body
+      env:
+        KERNEL_VARIANT: ${{ inputs.kernel_variant }}
+        SUSFS_VERSION: ${{ needs.build.outputs.susfs_version }}
       run: |
         cat << EOF > release_body.md
         **IMPORTANT DISCLAIMER**
@@ -187,8 +190,8 @@ jobs:
         
         Features:
         -> KernelSU-Next dev-susfs patched by pershoot (Warning from pershoot: This version is not recommended for production use. It is only intended for testing and development purposes.)
-        -> ${KERNEL_VARIANT} Manager
-        -> SUSFS ඞ ${SUSFS_VERSION}
+        -> $KERNEL_VARIANT Manager
+        -> SUSFS ඞ $SUSFS_VERSION
         -> Hybrid Root Hooks
         -> Ptrace Patch Support for Older Kernels (<5.16)
         -> IPSet Support for Advanced Network Filtering
@@ -203,11 +206,8 @@ jobs:
         - Kernel-level protection via LSM hooks
         - Reduces risk of soft-brick/hard-brick issues
 
-        Kernel Flasher:
-        -> [Kernel Flasher]https://github.com/fatalcoder524/KernelFlasher/
-
-        Module: 
-        -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
+        Kernel Flasher: [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher)
+        Module: [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
 
         Managers:
         -> Wild KSU: [Github](https://github.com/WildKernels/Wild_KSU) [Telegram](https://t.me/WildKernels)
