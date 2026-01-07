@@ -105,6 +105,7 @@ jobs:
         echo "Newest susfs version: v$VERSION"
         SUSFS_VERSION="v${VERSION}"
         echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
+        echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_OUTPUT
                 
     - name: Initialize and Sync Kernel Source
       working-directory: ${{ env.KERNEL_ROOT }}
