@@ -72,6 +72,12 @@ jobs:
     - build-a15-6-6
     - build-a16-6-12
     steps:
+    - name: Set Variable
+      run: |
+        echo SUSFS_VERSION=${{ needs.build.outputs.susfs_version }}
+        echo SUSFS_VERSION=${SUSFS_VERSION >> $GITHUB_ENV
+        echo KERNEL_VARIANT=${{ inputs.kernel_variant }}
+        echo KERNEL_VARIANT=${KERNEL_VARIANT} >> GITHUB_ENV
     - name: Download Misc Artifacts
       uses: actions/download-artifact@v5
       with:
@@ -135,7 +141,7 @@ jobs:
 
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "!!TESTING!! GKI Kernels With ${KERNEL_VARIANT} & SUSFS ${SUSFS_VERSION} !!TESTING!!"
+      RELEASE_NAME: "(TEST) GKI Kernels With ${KERNEL_VARIANT} & SUSFS ${SUSFS_VERSION}"
       RELEASE_BODY: ""
     steps:
     - name: Checkout code
@@ -198,7 +204,7 @@ jobs:
         - Reduces risk of soft-brick/hard-brick issues
 
         Kernel Flasher:
-        -> https://github.com/fatalcoder524/KernelFlasher/
+        -> [Kernel Flasher]https://github.com/fatalcoder524/KernelFlasher/
 
         Module: 
         -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
