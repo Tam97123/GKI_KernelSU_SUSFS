@@ -138,7 +138,7 @@ jobs:
         ARTIFACT_BASE="${{ inputs.kernel_version }}.$ACTUAL_SUBLEVEL-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
         echo "ACTUAL_SUBLEVEL=$ACTUAL_SUBLEVEL" >> $GITHUB_ENV
         echo "ARTIFACT_BASE=$ARTIFACT_BASE" >> $GITHUB_ENV
-        echo "FILE_NAME=$ARTIFACT_BASE" >> $GITHUB_ENV
+        echo "FILE_NAME=${{ inputs.kernel_variant }}-$ARTIFACT_BASE" >> $GITHUB_ENV
 
     - name: Apply glibc 2.38 Compatibility Fix
       run: |
@@ -202,7 +202,7 @@ jobs:
       run: |
         case "${{ inputs.kernel_variant }}" in
           WILD)
-            BASE_VERSION=3000
+            BASE_VERSION=30000
             COMMIT_COUNT=$(git -C "$KERNEL_ROOT/Wild_KSU" rev-list --count HEAD)
             KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
             ;;
@@ -468,19 +468,19 @@ jobs:
     - name: Apply LZ4KD & ZSTDN patches
       if: inputs.use_zram == 'true' && inputs.android_version != '6.12'
       run: |
-          cd "$CONFIG/common"
-          cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/include/linux/* ./include/linux/
-          cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/lib/* ./lib/
-          cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/crypto/* ./crypto/
-          cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k_oplus ./lib/
+        cd "$CONFIG/common"
+        cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/include/linux/* ./include/linux/
+        cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/lib/* ./lib/
+        cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k/crypto/* ./crypto/
+        cp -r $SUKI_KERNEL_PATCHES/other/zram/lz4k_oplus ./lib/
   
-          cp $SUKI_KERNEL_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
-          echo "Applying lz4kd patch"
-          patch -p1 -F 3 < lz4kd.patch || true
+        cp $SUKI_KERNEL_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
+        echo "Applying lz4kd patch"
+        patch -p1 -F 3 < lz4kd.patch || true
   
-          cp $SUKI_KERNEL_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
-          echo "Applying lz4k_oplus patch"
-          patch -p1 -F 3 < lz4k_oplus.patch || true
+        cp $SUKI_KERNEL_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
+        echo "Applying lz4k_oplus patch"
+        patch -p1 -F 3 < lz4k_oplus.patch || true
   
     - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
       if: ${{ ( inputs.kernel_version == '6.6' ) }}
@@ -610,7 +610,7 @@ jobs:
 
 
     - name: Append ashmem exports if missing
-      if: ${{ inputs.android_version == 'android16' && inputs.kernel_version == '6.12' }}
+      if: inputs.android_version == 'android16'
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
         FILE=common/drivers/staging/android/ashmem.c
