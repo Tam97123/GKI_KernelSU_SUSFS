@@ -95,7 +95,7 @@ jobs:
     - name: Clone AnyKernel3 and Kernel Patches
       run: |
         ANYKERNEL_BRANCH="gki-2.0"
-        git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH" && rm -rf AnyKernel3/.git
+        git clone https://github.com/Tam97123/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
         rm -rf AnyKernel3/.git
         git clone https://github.com/Tam97123/kernel_patches.git
         git clone https://github.com/ShirkNeko/SukiSU_patch.git
