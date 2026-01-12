@@ -75,7 +75,10 @@ jobs:
         CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}"
         KERNEL_ROOT="$GITHUB_WORKSPACE/$CONFIG"
         mkdir -p "$KERNEL_ROOT"
-
+        git clone https://android.googlesource.com/kernel/prebuilts/build-tools -b main-kernel-2025 --depth 1 kernel-build-tools &
+        git clone https://android.googlesource.com/platform/system/tools/mkbootimg -b main-kernel-2025 --depth 1 mkbootimg &
+        wait
+          
         cat >> $GITHUB_ENV << EOF
         DEFCONFIG=$KERNEL_ROOT/common/arch/arm64/configs/gki_defconfig
         CONFIG=$CONFIG
@@ -168,12 +171,6 @@ jobs:
         if ! grep -qxF '#include <trace/hooks/fs.h>' ./fs/namespace.c; then
             sed -i '/#include <trace\/hooks\/blk.h>/a #include <trace\/hooks\/fs.h>' ./fs/namespace.c
         fi
-
-    - name: Apply ptrace patch for older kernels
-      if: fromJSON(inputs.kernel_version) < 5.16
-      working-directory: ${{ env.KERNEL_ROOT }}/common
-      run: |
-        patch -p1 -F 3 < "$KERNEL_PATCHES/gki_ptrace.patch"
 
     - name: Add KernelSU Variant
       working-directory: ${{ env.KERNEL_ROOT }}
@@ -318,9 +315,7 @@ jobs:
             cd "$KERNEL_ROOT/KernelSU-Next"
             cp $SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
             patch -p1 < 10_enable_susfs_for_ksu.patch || true
-            echo "patching susfs fix patches"
-            cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
-            echo "fixing Makefile/kbuild"
+            echo "Applying patches for KernelSU Next"
             patch -p1 < fix_Makefile.patch
             echo "fixing allowlist.c"
             patch -p1 < fix_allowlist.c.patch
@@ -429,25 +424,6 @@ jobs:
             patch -p1 < 10_enable_susfs_for_ksu.patch
             ;;
         esac
-
-    - name: Apply Performance Patches
-      working-directory: ${{ env.KERNEL_ROOT }}/common
-      run: |
-        MIN_VERSION="5.16"
-        cp "$KERNEL_PATCHES/common/optimized_mem_operations.patch" ./
-        patch -p1 --forward < optimized_mem_operations.patch
-        cp "$KERNEL_PATCHES/common/file_struct_8bytes_align.patch" ./
-        patch -p1 --forward < file_struct_8bytes_align.patch
-        cp "$KERNEL_PATCHES/common/reduce_cache_pressure.patch" ./
-        patch -p1 --forward < reduce_cache_pressure.patch
-        if [[ "$(printf '%s\n' "${{ inputs.kernel_version }}" "$MIN_VERSION" | sort -V | head -n1)" = "${{ inputs.kernel_version }}" ]]; then
-          cp "$KERNEL_PATCHES/common/clear_page_16bytes_align.patch" ./
-          patch -p1 --forward < clear_page_16bytes_align.patch
-        else
-          cp "$KERNEL_PATCHES/common/clear_page_16bytes_align.patch" ./
-          sed -e 's/SYM_FUNC_START_PI(clear_page)/SYM_FUNC_START_PI(__pi_clear_page)/' clear_page_16bytes_align.patch > clear_page_16bytes_align__pi.patch
-          patch -p1 -F3 --forward < clear_page_16bytes_align__pi.patch
-        fi
 
     - name: Add BBG
       working-directory: ${{ env.KERNEL_ROOT }}
@@ -720,7 +696,8 @@ jobs:
         rm -f Image
         mv oImage Image
   
-    - name: Prepare AnyKernel3 Zip
+    - name: Prepare AnyKernel3 and Boot Files
+      working-directory: ${{ env.KERNEL_ROOT }}
       run: |
         # Copy Image from normal build locations
         if [ -f "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
@@ -768,7 +745,7 @@ jobs:
           done
         fi
 
-    - name: Upload Artifacts
+    - name: Upload Artifacts (AnyKernel3)
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.FILE_NAME }}-AnyKernel3
@@ -776,13 +753,19 @@ jobs:
         if-no-files-found: ignore
         compression-level: 9
 
-    - name: Upload Misc Files
-      if: ${{ always() }}
+    - name: Upload Artifacts (Boot Images)
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.FILE_NAME }}-Misc
-        path: |
-          ${{ env.FILE_NAME }}-*
-          patch-rejects/**
+        name: ${{ env.FILE_NAME }}-Image
+        path: ./$CONFIG/**
+        if-no-files-found: ignore
+        compression-level: 9
+
+    - name: Upload Rejects
+      if: always() && env.REJ_COUNT > 0
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.FILE_NAME }}-Rejectes
+        path: patch-rejects/**
         if-no-files-found: ignore
         compression-level: 9
