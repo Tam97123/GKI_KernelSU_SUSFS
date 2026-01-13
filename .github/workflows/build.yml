@@ -48,10 +48,10 @@ jobs:
         echo "========================================"
         echo "       Kernel Build Summary"
         echo "========================================"
-        echo "Android Version : ${{ inputs.android_version }}"
-        echo "Kernel Version  : ${{ inputs.kernel_version }}"
-        echo "Sub Level       : ${{ inputs.sub_level }}"
-        echo "Patch Level     : ${{ inputs.os_patch_level }}"
+        echo "Android Version.  : ${{ inputs.android_version }}"
+        echo "Kernel Version    : ${{ inputs.kernel_version }}"
+        echo "Sub Level         : ${{ inputs.sub_level }}"
+        echo "Patch Level       : ${{ inputs.os_patch_level }}"
         echo "KernelSU Manager: ${{ inputs.kernel_variant }}"
         echo "========================================"
 
@@ -319,16 +319,15 @@ jobs:
             cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
             patch -p1 < fix_Makefile.patch
             patch -p1 < fix_allowlist.c.patch
-            patch -p1 < fix_apk_sign.c.patch
             patch -p1 < fix_kernel_umount.c.patch
             patch -p1 < fix_ksu.c.patch
             patch -p1 < fix_ksud.c.patch
             patch -p1 < fix_selinux.c.patch
-            patch -p1 < fix_setuid_hook.c.patch
             patch -p1 < fix_sucompat.c.patch
             patch -p1 < fix_supercalls.c.patch
-            patch -p1 < overwrite_hook_mode.patch
             patch -p1 < ksu_toolkit.patch
+            patch -p1 < multi_manager.patch
+            patch -p1 < overwrite_hook_mode.patch
             
             cd "$KERNEL_ROOT/common"
             cp "$SUSFS4KSU/kernel_patches/fs/"* "$KERNEL_ROOT/common/fs/"
