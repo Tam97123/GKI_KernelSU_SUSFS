@@ -317,17 +317,17 @@ jobs:
             patch -p1 < 10_enable_susfs_for_ksu.patch || true
             echo "Applying patches for KernelSU Next"
             cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
-            patch -p1 < fix_Makefile.patch
-            patch -p1 < fix_allowlist.c.patch
-            patch -p1 < fix_kernel_umount.c.patch
-            patch -p1 < fix_ksu.c.patch
-            patch -p1 < fix_ksud.c.patch
-            patch -p1 < fix_selinux.c.patch
-            patch -p1 < fix_sucompat.c.patch
-            patch -p1 < fix_supercalls.c.patch
-            patch -p1 < ksu_toolkit.patch
-            patch -p1 < multi_manager.patch
-            patch -p1 < overwrite_hook_mode.patch
+            patch -p1 < fix_Makefile.patch || true
+            patch -p1 < fix_allowlist.c.patch || true
+            patch -p1 < fix_kernel_umount.c.patch || true
+            patch -p1 < fix_ksu.c.patch || true
+            patch -p1 < fix_ksud.c.patch || true
+            patch -p1 < fix_selinux.c.patch || true
+            patch -p1 < fix_sucompat.c.patch || true
+            patch -p1 < fix_supercalls.c.patch || true
+            patch -p1 < ksu_toolkit.patch || true
+            patch -p1 < multi_manager.patch || true
+            patch -p1 < overwrite_hook_mode.patch || true
             
             cd "$KERNEL_ROOT/common"
             cp "$SUSFS4KSU/kernel_patches/fs/"* "$KERNEL_ROOT/common/fs/"
