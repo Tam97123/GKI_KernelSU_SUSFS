@@ -75,10 +75,7 @@ jobs:
         CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}"
         KERNEL_ROOT="$GITHUB_WORKSPACE/$CONFIG"
         mkdir -p "$KERNEL_ROOT"
-        git clone https://android.googlesource.com/kernel/prebuilts/build-tools -b main-kernel-2025 --depth 1 kernel-build-tools &
-        git clone https://android.googlesource.com/platform/system/tools/mkbootimg -b main-kernel-2025 --depth 1 mkbootimg &
-        wait
-          
+        
         cat >> $GITHUB_ENV << EOF
         DEFCONFIG=$KERNEL_ROOT/common/arch/arm64/configs/gki_defconfig
         CONFIG=$CONFIG
