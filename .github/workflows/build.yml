@@ -162,7 +162,7 @@ jobs:
         fi 
 
     - name: Fix Less Than 6.6.50 Builds
-      if: inputs.android_version == 'android15' && inputs.kernel_version == '6.6'
+      if: inputs.kernel_version == '6.6'
       working-directory: ${{ env.KERNEL_ROOT }}/common
       run: |
         if ! grep -qxF '#include <trace/hooks/fs.h>' ./fs/namespace.c; then
@@ -416,7 +416,7 @@ jobs:
       run: |
         curl -LSs https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
         echo "CONFIG_BBG=y" >> common/arch/arm64/configs/gki_defconfig
-        sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' common/security/Kconfig
+        sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' common/security/Kconfig
   
     - name: Apply Module Check Bypass
       run: |
@@ -444,7 +444,7 @@ jobs:
         patch -p1 -F 3 < lz4k_oplus.patch || true
   
     - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
-      if: ${{ ( inputs.kernel_version == '6.6' ) }}
+      if: inputs.kernel_version == '6.6'
       working-directory: ${{ env.KERNEL_ROOT }}/common
       run: |
         SYMBOL_LIST=android/abi_gki_aarch64_galaxy
@@ -461,7 +461,7 @@ jobs:
         echo "obj-y += min_kdp.o" >> drivers/Makefile
 
     - name: Fix WiFi and Bluetooth on Xiaomi 6.6 GKI devices
-      if: ${{ ( inputs.kernel_version == '6.6' ) }}
+      if: inputs.kernel_version == '6.6'
       working-directory: ${{ env.KERNEL_ROOT }}/common
       run: |
         SYMBOL_LIST=android/abi_gki_aarch64_xiaomi
@@ -610,20 +610,20 @@ jobs:
       run: |
         #Wild to Kernel Version (replace last instance only)
         if [[ "${{ inputs.kernel_version }}" == "5."* ]] || [[ "${{ inputs.kernel_version }}" == "6.1" ]]; then
-        if [ -z "${{ inputs.kernel_uname }}" ]; then
-          echo "Didn't set kernel uname! Set to default value."
-          sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${KSUVER}-Tam\"|" ./common/scripts/setlocalversion
-        else
-          echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-          sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${{ inputs.kernel_uname }}\"|" ./common/scripts/setlocalversion
-        fi
-        else
           if [ -z "${{ inputs.kernel_uname }}" ]; then
             echo "Didn't set kernel uname! Set to default value."
             perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\${KERNELVERSION}\${KSUVER}-Tam"/s' ./common/scripts/setlocalversion
           else
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
             perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\${KERNELVERSION}\${kernel_uname}"/s' ./common/scripts/setlocalversion
+          fi
+        else
+          if [ -z "${{ inputs.kernel_uname }}" ]; then
+            echo "Didn't set kernel uname! Set to default value."
+            sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${KSUVER}-Tam\"|" ./common/scripts/setlocalversion
+          else
+            echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
+            sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${{ inputs.kernel_uname }}\"|" ./common/scripts/setlocalversion
           fi
         fi
   
