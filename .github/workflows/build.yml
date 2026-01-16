@@ -37,7 +37,7 @@ on:
 jobs:
   build-gki:
     name: "${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 45
     outputs:
       susfs_version: ${{ steps.vars.outputs.susfs_version }}
