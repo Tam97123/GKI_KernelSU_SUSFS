@@ -135,7 +135,7 @@ jobs:
 
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "(TEST) GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${{ needs.build.outputs.susfs_version }}"
+      RELEASE_NAME: "(TEST) GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${{ needs.build-a12-5-10.outputs.susfs_version }}"
       RELEASE_BODY: ""
     steps:
     - name: Checkout code
@@ -153,7 +153,7 @@ jobs:
     - name: Set release body
       env:
         KERNEL_VARIANT: ${{ inputs.kernel_variant }}
-        SUSFS_VERSION: ${{ needs.build.outputs.susfs_version }}
+        SUSFS_VERSION: ${{ needs.build-a12-5-10.outputs.susfs_version }}
       run: |
         cat << EOF > release_body.md
         **IMPORTANT DISCLAIMER**
