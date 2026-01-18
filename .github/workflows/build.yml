@@ -834,7 +834,8 @@ jobs:
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-lz4.img ../${{ env.FILE_NAME }}-boot-lz4.img
-    
+        fi
+        
     - name: Scan and collect patch rejects
       if: ${{ always() }}
       run: |
