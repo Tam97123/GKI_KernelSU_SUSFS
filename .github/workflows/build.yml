@@ -73,6 +73,12 @@ jobs:
     - name: Setup Build Environment
       run: |
         CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.sub_level }}"
+        AOSP_MIRROR=https://android.googlesource.com
+        BRANCH=main-kernel-2025
+        git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools &
+        git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg &
+        wait
+        
         KERNEL_ROOT="$GITHUB_WORKSPACE/$CONFIG"
         mkdir -p "$KERNEL_ROOT"
         
