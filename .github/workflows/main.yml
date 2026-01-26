@@ -135,7 +135,7 @@ jobs:
 
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "(TEST) GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${{ needs.build-a12-5-10.outputs.susfs_version }}"
+      RELEASE_NAME: "!!TESTING!! GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${{ needs.build-a12-5-10.outputs.susfs_version }}"
       RELEASE_BODY: ""
     steps:
     - name: Checkout code
