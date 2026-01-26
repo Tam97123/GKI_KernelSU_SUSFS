@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
-      susfs_version: ${{ jobs.build-kernels-a12.outputs.susfs_version }}
+      susfs_version: ${{ steps.determine-susfs.outputs.susfs_version }}
 
     steps:
     - name: Build Summary
@@ -110,6 +110,7 @@ jobs:
         git clone https://github.com/ShirkNeko/SukiSU_patch.git
   
     - name: Determine SUSFS version
+      id: determine-susfs
       run: |
         git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
         cd susfs4ksu
