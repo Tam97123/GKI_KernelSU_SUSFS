@@ -32,7 +32,7 @@ on:
         type: string
     outputs:
       susfs_version:
-        value: ${{ jobs.build.outputs.susfs_version }}
+        value: ${{ jobs.build-gki.outputs.susfs_version }}
 
 jobs:
   build-gki:
