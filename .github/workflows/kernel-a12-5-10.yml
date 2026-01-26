@@ -19,6 +19,9 @@ on:
       use_zram:
         required: false
         type: string
+    outputs:
+      susfs_version:
+        value: ${{ jobs['build-kernels-a12'].outputs.susfs_version }}
 
 jobs:
   build-kernels-a12:

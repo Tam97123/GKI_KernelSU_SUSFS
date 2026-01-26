@@ -24,6 +24,7 @@ jobs:
     secrets: inherit
     with:
       kernel_variant: ${{ inputs.kernel_variant }}
+      
   build-a13-5-10:
     uses: ./.github/workflows/kernel-a13-5-10.yml
     secrets: inherit
@@ -134,7 +135,7 @@ jobs:
 
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "!!TESTING!! GKI Kernels With KernelSU-Next & SUSFS v2.0.0 !!TESTING!!"
+      RELEASE_NAME: "!!TESTING!! GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS ${{ needs['build-a12-5-10'].outputs.susfs_version }}"
       RELEASE_BODY: ""
     steps:
     - name: Checkout code
@@ -150,6 +151,9 @@ jobs:
         echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
 
     - name: Set release body
+      env:
+        KERNEL_VARIANT: ${{ inputs.kernel_variant }}
+        SUSFS_VERSION: ${{ needs['build-a12-5-10'].outputs.susfs_version }}
       run: |
         cat << EOF > release_body.md
         **IMPORTANT DISCLAIMER**
@@ -167,6 +171,7 @@ jobs:
         - What are kernel modules? Kernel modules are pieces of code that can be loaded into the kernel at runtime to extend functionality (like device drivers, filesystem support, etc.). These are different from KernelSU/Magisk modules. 
         - The Problem: Sometimes when installing a custom kernel, the device tries to load a kernel module that fails due to version mismatches, missing dependencies, or signature verification issues. This can cause boot failures or device instability. 
         - The Solution: This version changes one line from false to true to force load the kernel module, bypassing the failure check that would normally prevent loading.
+        
         🔹 KPM (KernelPatch Modules):
         - Support for modules that allow you to inject any code into the kernel
         - Provides kernel function inline-hook and syscall-table-hook
@@ -179,8 +184,8 @@ jobs:
         
         Features:
         -> KernelSU-Next dev-susfs patched by pershoot (Warning from pershoot: This version is not recommended for production use. It is only intended for testing and development purposes.)
-        -> ${KERNEL_VARIANT} Manager
-        -> SUSFS ඞ ${SUSFS_VERSION}
+        -> $KERNEL_VARIANT Manager
+        -> SUSFS ඞ $SUSFS_VERSION
         -> Hybrid Root Hooks
         -> Ptrace Patch Support for Older Kernels (<5.16)
         -> IPSet Support for Advanced Network Filtering
@@ -195,18 +200,15 @@ jobs:
         - Kernel-level protection via LSM hooks
         - Reduces risk of soft-brick/hard-brick issues
 
-        Kernel Flasher:
-        -> https://github.com/fatalcoder524/KernelFlasher/
-
-        Module: 
-        -> [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
+        Kernel Flasher: [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher)
+        Module: [susfs4ksu](https://github.com/sidex15/ksu_module_susfs)
 
         Managers:
         -> Wild KSU: [Github](https://github.com/WildKernels/Wild_KSU) [Telegram](https://t.me/WildKernels)
         -> KernelSU Next: [Github](https://github.com/KernelSU-Next/KernelSU-Next) [Telegram](https://t.me/ksunext_ci)
         -> KernelSU: [Github](https://github.com/tiann/KernelSU) [Telegram](https://t.me/KernelSU_group)
         -> RissKSU: [Github](https://github.com/rsuntk/KernelSU) [Telegram](https://t.me/rsukrnlsu)
-        -> SukiSU-Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
+        -> SukiSU Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
         EOF
 
     - name: Create GitHub Release
