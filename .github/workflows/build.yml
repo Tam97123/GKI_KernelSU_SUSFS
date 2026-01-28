@@ -30,17 +30,12 @@ on:
       use_zram:
         required: false
         type: string
-    outputs:
-      susfs_version:
-        value: ${{ jobs.build-gki.outputs.susfs_version }}
 
 jobs:
   build-gki:
     name: "${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    outputs:
-      susfs_version: ${{ steps.determine-susfs.outputs.susfs_version }}
 
     steps:
     - name: Build Summary
@@ -78,7 +73,7 @@ jobs:
         git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools &
         git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg &
         wait
-        
+                
         KERNEL_ROOT="$GITHUB_WORKSPACE/$CONFIG"
         mkdir -p "$KERNEL_ROOT"
         
@@ -95,6 +90,8 @@ jobs:
         MKBOOTIMG=$GITHUB_WORKSPACE/mkbootimg/mkbootimg.py
         UNPACK_BOOTIMG=$GITHUB_WORKSPACE/mkbootimg/unpack_bootimg.py
         BOOT_SIGN_KEY_PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
+        BOOT_SIGN_KEY=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
+        PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin:$PATH
         EOF
 
         mkdir -p "$GITHUB_WORKSPACE/git-repo"
@@ -697,10 +694,10 @@ jobs:
         else
           if [ -z "${{ inputs.kernel_uname }}" ]; then
             echo "Didn't set kernel uname! Set to default value."
-            sed -i "\$s|echo \"\$res\"|echo \"\$res\-${{ inputs.android_version }}-${KSUVER}-Tam\"|" ./common/scripts/setlocalversion
+            sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${KSUVER}-Tam\"|" ./common/scripts/setlocalversion
           else
             echo "Set kernel uname: ${{ inputs.kernel_uname }}!"
-            sed -i "\$s|echo \"\$res\"|echo \"\$res\-${{ inputs.android_version }}-${{ inputs.kernel_uname }}\"|" ./common/scripts/setlocalversion
+            sed -i "\$s|echo \"\$res\"|echo \"-${{ inputs.android_version }}-${{ inputs.kernel_uname }}\"|" ./common/scripts/setlocalversion
           fi
         fi
   
@@ -759,38 +756,34 @@ jobs:
         rm -f Image
         mv oImage Image
   
-    - name: Prepare AnyKernel3 and Boot Files
+    - name: Prepare AnyKernel3
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
         # Copy Image from normal build locations
         if [ -f "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
           cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" "$ANYKERNEL3/Image"
-          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" "./${{ env.FILE_NAME }}-Image"
-          gzip -n -k -f -9 "./${{ env.FILE_NAME }}-Image"
-          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4" "././${{ env.FILE_NAME }}-Image.lz4"
         elif [ -f "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" ]; then
           cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" "$ANYKERNEL3/Image"
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" "./${{ env.FILE_NAME }}-Image"
-          gzip -n -k -f -9 "./${{ env.FILE_NAME }}-Image"
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4" "./${{ env.FILE_NAME }}-Image.lz4"
         else
           echo "Error: Image file not found in any expected location"
           exit 1
         fi
     - name: Create Boot Images
+      working-directory: ${{ env.KERNEL_ROOT }}
       run: |
         mkdir bootimgs
         if [ ${{ inputs.android_version }} == "android12" ] || [ ${{ inputs.android_version }} == "android13" ]; then
-          cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./bootimgs
-          cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4 ./bootimgs
-          cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./${{ env.FILE_NAME }}-Image
-          cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4 ./${{ env.FILE_NAME }}-Image.lz4
+          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ./bootimgs
+          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4" ./bootimgs
+          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ./${{ env.FILE_NAME }}-Image
+          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4" ./${{ env.FILE_NAME }}-Image.lz4-Image.lz4
         else
-          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./bootimgs
-          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image.lz4 ./bootimgs
-          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./${{ env.FILE_NAME }}-Image
-          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image.lz4 ./${{ env.FILE_NAME }}-Image.lz4
+          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" ./bootimgs
+          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4" ./bootimgs
+          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" ./${{ env.FILE_NAME }}-Image
+          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4" ./${{ env.FILE_NAME }}-Image.lz4
         fi
+        
         # Create gzip of the Image file
         gzip -n -k -f -9 ./${{ env.FILE_NAME }}-Image > ./${{ env.FILE_NAME }}-Image.gz
         gzip -n -k -f -9 ./bootimgs/Image > ./bootimgs/Image.gz
@@ -817,30 +810,30 @@ jobs:
           
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot.img ../${{ env.FILE_NAME }}-boot.img
+          cp ./boot.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot.img"
           
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-gz.img ../${{ env.FILE_NAME }}-boot-gz.img
+          cp ./boot-gz.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot-gz.img"
           
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-lz4.img ../${{ env.FILE_NAME }}-boot-lz4.img
+          cp ./boot-lz4.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot-lz4.img"
         else
           echo "Building boot.img"
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot.img ../${{ env.FILE_NAME }}-boot.img
+          cp ./boot.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot.img"
           
           echo "Building boot-gz.img"
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-gz.img ../${{ env.FILE_NAME }}-boot-gz.img
+          cp ./boot-gz.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot-gz.img"
           
           echo "Building boot-lz4.img"
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-lz4.img ../${{ env.FILE_NAME }}-boot-lz4.img
+          cp ./boot-lz4.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot-lz4.img"
         fi
         
     - name: Scan and collect patch rejects
