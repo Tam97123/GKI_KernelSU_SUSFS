@@ -9,11 +9,11 @@
 
 ## ⚠️ Your warranty is no longer valid!
 
-I am **not responsible** for bricked devices, damaged hardware, or any issues that from using this kernel.
+I am **not responsible** for bricked devices, damaged hardware, or any issues that arise from using this kernel.
 
 **Please** do thorough research and fully understand the features included in this kernel before flashing it!
 
-By flashing this kernel, **YOU ARE CHOOSING TO MAKE THESE MODIFICATONS**. If something goes wrong, **do not blame me**!
+By flashing this kernel, **YOU ARE CHOOSING TO MAKE THESE MODIFICATIONS**. If something goes wrong, **do not blame me**!
 
 ---
 
@@ -64,7 +64,7 @@ For GKI installation, please follow the official guide:
 
 If you encounter any issues or need help, feel free to:
 - 🐛 Open an issue in this repository
-- 💬 Reach out to me directly though Telegram
+- 💬 Reach out to me directly through Telegram
   
 ---
 
@@ -97,7 +97,7 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 | 🎁 [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git) | Created SUSFS! |
 | 📦 [sidex15](https://github.com/sidex15) | Created module! |
 | 🛡️ [vc-teahouse](https://github.com/vc-teahouse) | Created Baseband-guard (BBG)! |
-| 🤍 [TheWildJames](https://github.com/TheWildJames) | Huge thanks for him. Without him, this repository won't be create! |
+| 🤍 [TheWildJames](https://github.com/TheWildJames) | Huge thanks for him. Without him, this repository won't be created! |
 
 *If you have contributed and are not listed here, please remind me!* 🙏
 
@@ -105,8 +105,8 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 
 ## 💖 Donations
 
-Due to my current financial situation when I have to study at school and earn for livings, any form of support is deeply appreciated.
-If you would like to contribute, here are some available network that acppect crypto currency:
+Due to my current financial situation when I have to study at school and earn for living, any form of support is deeply appreciated.
+If you would like to contribute, here are some available networks that accept cryptocurrency:
 
 - **Bitcoin (SegWit)**: bc1qz57zdqcjaxuer4p4w50a8txda97vknzxsfrwg77jsue2wx8dm8tsrwufr2
 - **Ethereum**: 0xd9d09d6c6ff751985838eb9e4da222ff5326f248
@@ -117,4 +117,3 @@ If you would like to contribute, here are some available network that acppect cr
 - **Binance (ID)**: 1194756336
 
 **Thank you so much for your kindness and generosity. Your support means a lot during this time.** 🫶
-
