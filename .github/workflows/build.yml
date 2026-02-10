@@ -602,11 +602,11 @@ jobs:
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
         if [ ${{ inputs.android_version }} == "android12" ] || [ ${{ inputs.android_version }} == "android13" ]; then
-          cp $KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image $BOOTIMGS
-          cp $KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4 $BOOTIMGS
+          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" "$BOOTIMGS"
+          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4 "$BOOTIMGS"
         else
-          cp $KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image $BOOTIMGS
-          cp $KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4 $BOOTIMGS
+          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image "$BOOTIMGS"
+          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4 "$BOOTIMGS"
         fi
         
         # Create gzip of the Image file
@@ -641,27 +641,27 @@ jobs:
 
         if [ ${{ inputs.android_version }} == "android12" ]; then
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY
           cp ./boot.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot.img"
 
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY
           cp ./boot-gz.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot-gz.img"
 
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY
           cp ./boot-lz4.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot-lz4.img"
         else
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot.img
-
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY
+          cp ./boot.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot.img"
+          
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY
           cp ./boot-gz.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot-gz.img"
 
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY
           cp ./boot-lz4.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot-lz4.img"
         fi
         
