@@ -85,11 +85,11 @@ jobs:
         KERNEL_PATCHES=$GITHUB_WORKSPACE/kernel_patches
         SUKI_KERNEL_PATCHES=$GITHUB_WORKSPACE/SukiSU_patches
         ANYKERNEL3=$GITHUB_WORKSPACE/AnyKernel3
+        BOOTIMGS=$GITHUB_WORKSPACE/bootimgs
         REPO=$GITHUB_WORKSPACE/git-repo/repo
         AVBTOOL=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin/avbtool
         MKBOOTIMG=$GITHUB_WORKSPACE/mkbootimg/mkbootimg.py
         UNPACK_BOOTIMG=$GITHUB_WORKSPACE/mkbootimg/unpack_bootimg.py
-        BOOT_SIGN_KEY_PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
         BOOT_SIGN_KEY=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/share/avb/testkey_rsa2048.pem
         PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin:$PATH
         EOF
@@ -107,7 +107,6 @@ jobs:
         git clone https://github.com/ShirkNeko/SukiSU_patch.git
   
     - name: Determine SUSFS version
-      id: determine-susfs
       run: |
         git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
         cd susfs4ksu
@@ -117,7 +116,6 @@ jobs:
         echo "Newest susfs version: v$VERSION"
         SUSFS_VERSION="v${VERSION}"
         echo "SUSFS_VERSION=$SUSFS_VERSION" >> $GITHUB_ENV
-        echo "susfs_version=$SUSFS_VERSION" >> $GITHUB_OUTPUT
                 
     - name: Initialize and Sync Kernel Source
       working-directory: ${{ env.KERNEL_ROOT }}
@@ -246,7 +244,7 @@ jobs:
             ;;
           NEXT)
             cd "$KERNEL_ROOT/KernelSU-Next"
-            cp $SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
+            cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" ./
             patch -p1 < 10_enable_susfs_for_ksu.patch || true
             echo "Applying patches for KernelSU Next"
             cp "$KERNEL_PATCHES/next/susfs_fix_patches/${SUSFS_VERSION}/"*.patch ./
@@ -273,7 +271,7 @@ jobs:
             patch -p1 < 10_enable_susfs_for_ksu.patch
             ;;
         esac
-        # Fix susfs patches on kernel
+        
         if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" ]]; then
           if [[ "$ACTUAL_SUBLEVEL" -le 209 ]]; then
             sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
@@ -318,7 +316,7 @@ jobs:
             sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
           fi
         fi
-        
+
         if [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "5.15" ]]; then
           if [[ "$ACTUAL_SUBLEVEL" -le 148 && "${{ inputs.os_patch_level }}" != "2024-05" ]]; then
             sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
@@ -335,17 +333,17 @@ jobs:
           fi
         fi
 
-        if [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" ]]; then
+        if [ "${{ inputs.android_version }}" == "android15"]; then
           if [[ "$ACTUAL_SUBLEVEL" -ge 98 ]]; then
             cp $KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/a15-6.6/base.c.patch ./
             patch -p1 < base.c.patch
           fi
           if [[ "$ACTUAL_SUBLEVEL" -le 58 ]]; then
-            cp $KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/a15-6.6/task_mmu.c.patch ./
+            cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/task_mmu.c.patch ./
             patch -p1 < task_mmu.c.patch
           fi
         fi
-
+        
     - name: Add BBG
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
@@ -599,72 +597,72 @@ jobs:
           echo "Error: Image file not found in any expected location"
           exit 1
         fi
+        
     - name: Create Boot Images
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
-        mkdir bootimgs
         if [ ${{ inputs.android_version }} == "android12" ] || [ ${{ inputs.android_version }} == "android13" ]; then
-          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ./bootimgs
-          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4" ./bootimgs
-          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ./${{ env.FILE_NAME }}-Image
-          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4" ./${{ env.FILE_NAME }}-Image.lz4-Image.lz4
+          cp $KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image $BOOTIMGS
+          cp $KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4 $BOOTIMGS
         else
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" ./bootimgs
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4" ./bootimgs
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" ./${{ env.FILE_NAME }}-Image
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4" ./${{ env.FILE_NAME }}-Image.lz4
+          cp $KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image $BOOTIMGS
+          cp $KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4 $BOOTIMGS
         fi
         
         # Create gzip of the Image file
-        gzip -n -k -f -9 ./${{ env.FILE_NAME }}-Image > ./${{ env.FILE_NAME }}-Image.gz
-        gzip -n -k -f -9 ./bootimgs/Image > ./bootimgs/Image.gz
+          gzip -n -k -f -9 ./Image > ./Image.gz
         
-        cd bootimgs
+        cd "$BOOTIMGS"
+        GKI_URL=https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-"${{ inputs.os_patch_level }}"_"${{ inputs.revision }}".zip
+        FALLBACK_URL=https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-2023-01_r1.zip
+
+        # Check if the GKI URL is available
+        echo "Checking if GKI kernel URL is reachable: $GKI_URL"
+        status=$(curl -sL -w "%{http_code}" "$GKI_URL" -o /dev/null)
+
+        if [ "$status" = "200" ]; then
+          echo "[+] Downloading from GKI_URL"
+          curl -Lo gki-kernel.zip "$GKI_URL"
+        else
+          echo "[+] $GKI_URL not found, using $FALLBACK_URL"
+          curl -Lo gki-kernel.zip "$FALLBACK_URL"
+        fi
+
+        # Unzip the downloaded kernel and remove the zip
+        echo "Unzipping the downloaded kernel..."
+        unzip gki-kernel.zip && rm gki-kernel.zip
+
+        echo "Unpacking boot.img..."
+        FULL_PATH=$(pwd)/boot-5.10.img
+        echo "Unpacking using: $FULL_PATH"
+
+        echo "Running unpack_bootimg.py..."
+        $UNPACK_BOOTIMG --boot_img="$FULL_PATH"
+
         if [ ${{ inputs.android_version }} == "android12" ]; then
-          GKI_URL=https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-"${{ inputs.os_patch_level }}"_r1.zip
-          FALLBACK_URL=https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-2023-01_r1.zip
-          
-          # Check if the GKI URL is available
-          status=$(curl -sL -w "%{http_code}" "$GKI_URL" -o /dev/null)
-          
-          if [ "$status" = "200" ]; then
-              curl -Lo gki-kernel.zip "$GKI_URL"
-          else
-              curl -Lo gki-kernel.zip "$FALLBACK_URL"
-          fi
-          
-          # Unzip the downloaded kernel and remove the zip
-          unzip gki-kernel.zip && rm gki-kernel.zip
-          
-          FULL_PATH=$(pwd)/boot-5.10.img
-          $UNPACK_BOOTIMG --boot_img="$FULL_PATH"
-          
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot.img"
-          
+          cp ./boot.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot.img"
+
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-gz.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot-gz.img"
-          
+          cp ./boot-gz.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot-gz.img"
+
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-lz4.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot-lz4.img"
+          cp ./boot-lz4.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot-lz4.img"
         else
-          echo "Building boot.img"
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot.img"
-          
-          echo "Building boot-gz.img"
+          cp ./boot.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot.img
+
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-gz.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot-gz.img"
-          
-          echo "Building boot-lz4.img"
+          cp ./boot-gz.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot-gz.img"
+
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-lz4.img "$GITHUB_WORKSPACE/${{ env.FILE_NAME }}-boot-lz4.img"
+          cp ./boot-lz4.img "$BOOTIMGS/${{ env.FILE_NAME }}-boot-lz4.img"
         fi
         
     - name: Upload Artifacts (AnyKernel3)
