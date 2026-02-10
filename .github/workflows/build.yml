@@ -271,7 +271,8 @@ jobs:
             patch -p1 < 10_enable_susfs_for_ksu.patch
             ;;
         esac
-        
+
+        cd "$KERNEL_ROOT/common"
         if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" ]]; then
           if [[ "$ACTUAL_SUBLEVEL" -le 209 ]]; then
             sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
