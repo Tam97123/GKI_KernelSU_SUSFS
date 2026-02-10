@@ -546,7 +546,6 @@ jobs:
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
         set -ex
-        make -C common mrproper
         if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
           LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || true
           if [ ! -f "./out/android13-5.15/dist/Image" ]; then
