@@ -226,6 +226,7 @@ jobs:
             KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
             ;;
         esac
+        echo "KernelSU version: $KSU_VERSION"
         echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
         
     - name: Apply SUSFS Patches for KernelSU Variants
@@ -340,7 +341,7 @@ jobs:
             patch -p1 < base.c.patch
           fi
           if [[ "$ACTUAL_SUBLEVEL" -le 58 ]]; then
-            cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/task_mmu.c.patch ./
+            cp $KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/a15-6.6/task_mmu.c.patch ./
             patch -p1 < task_mmu.c.patch
           fi
         fi
