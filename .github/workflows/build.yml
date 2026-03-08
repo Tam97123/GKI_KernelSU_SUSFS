@@ -334,7 +334,7 @@ jobs:
           fi
         fi
 
-        if [ "${{ inputs.android_version }}" == "android15"]; then
+        if [ "${{ inputs.android_version }}" == "android15" ]; then
           if [[ "$ACTUAL_SUBLEVEL" -ge 98 ]]; then
             cp $KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/a15-6.6/base.c.patch ./
             patch -p1 < base.c.patch
@@ -603,10 +603,10 @@ jobs:
       run: |
         if [ ${{ inputs.android_version }} == "android12" ] || [ ${{ inputs.android_version }} == "android13" ]; then
           cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" "$BOOTIMGS"
-          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4 "$BOOTIMGS"
+          cp "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4" "$BOOTIMGS"
         else
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image "$BOOTIMGS"
-          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4 "$BOOTIMGS"
+          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image" "$BOOTIMGS"
+          cp "$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/Image.lz4" "$BOOTIMGS"
         fi
         
         # Create gzip of the Image file
