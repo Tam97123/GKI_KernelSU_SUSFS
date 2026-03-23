@@ -194,6 +194,9 @@ jobs:
           SUKI)
             curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
             ;;
+          RSUKI)
+            curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+            ;;
         esac
   
     - name: Getting KernelSU Version
@@ -225,6 +228,11 @@ jobs:
             COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU" rev-list --count HEAD)
             KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
             ;;
+          RSUKI)
+            BASE_VERSION=40000
+            COMMIT_COUNT=$(git -C "$KERNEL_ROOT/KernelSU" rev-list --count HEAD)
+            KSU_VERSION=$(expr $BASE_VERSION + $COMMIT_COUNT)
+            ;;
         esac
         echo "KernelSU version: $KSU_VERSION"
         echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
@@ -232,17 +240,13 @@ jobs:
     - name: Apply SUSFS Patches for KernelSU Variants
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
+        cd "$KERNEL_ROOT/common"
         cp "$SUSFS4KSU/kernel_patches/fs/"* "$KERNEL_ROOT/common/fs/"
         cp "$SUSFS4KSU/kernel_patches/include/linux/"* "$KERNEL_ROOT/common/include/linux/"
-  
+        cp "$SUSFS4KSU/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch" ./
+        patch -p1 < "50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch" || true
+        
         case "${{ inputs.kernel_variant }}" in
-          WILD)
-            cd "$KERNEL_ROOT/common"
-            cp "$SUSFS4KSU/kernel_patches/fs/"* "$KERNEL_ROOT/common/fs/"
-            cp "$SUSFS4KSU/kernel_patches/include/linux/"* "$KERNEL_ROOT/common/include/linux/"
-            cp $SUSFS4KSU/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./
-            patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
-            ;;
           NEXT)
             cd "$KERNEL_ROOT/KernelSU-Next"
             cp "$SUSFS4KSU/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" ./
@@ -259,12 +263,6 @@ jobs:
             patch -p1 < ksu_toolkit.patch || true
             patch -p1 < multi_manager.patch || true
             patch -p1 < overwrite_hook_mode.patch || true
-            
-            cd "$KERNEL_ROOT/common"
-            cp "$SUSFS4KSU/kernel_patches/fs/"* "$KERNEL_ROOT/common/fs/"
-            cp "$SUSFS4KSU/kernel_patches/include/linux/"* "$KERNEL_ROOT/common/include/linux/"
-            cp $SUSFS4KSU/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./
-            patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
             ;;
           KSU)
             cd "$KERNEL_ROOT/KernelSU"
@@ -405,7 +403,7 @@ jobs:
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
         # Suki ZRAM and KPM
-        if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" != "android16"  ]; then
+        if [[ "${{ inputs.kernel_variant }}" == "SUKI" || "${{ inputs.kernel_variant }}" == "RSUKI" ]] && [ "${{ inputs.android_version }}" != "android16"  ]; then
           if [ "${{ inputs.use_zram }}" == "true" ]; then
             if [ "${{ inputs.kernel_version }}" = "5.10" ]; then
               echo "CONFIG_ZSMALLOC=y" >> "$DEFCONFIG"
@@ -502,6 +500,7 @@ jobs:
         CONFIG_IP_SET_HASH_NETIFACE=y
         CONFIG_IP_SET_LIST_SET=y
         EOF
+        
         # Apply Kernel Config for 5.10
         if [ "${{ inputs.kernel_version }}" == "5.10" ]; then
           sed -i 's/CONFIG_IP_SET_MAX/65534/g' "$KERNEL_ROOT/net/netfilter/ipset/ip_set_core.c"
@@ -560,7 +559,7 @@ jobs:
       working-directory: ${{ env.KERNEL_ROOT }}
       run: |
         set -ex
-        if [ "${{ inputs.kernel_variant }}" == "SUKI" ] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
+        if [[ "${{ inputs.kernel_variant }}" == "SUKI" || "${{ inputs.kernel_variant }}" == "RSUKI" ]] && [ "${{ inputs.android_version }}" == "android13" ] && [ "${{ inputs.kernel_version }}" == "5.15" ]; then
           # Set ccache so rebuild kernel take less time
           sudo apt update && sudo apt install ccache -y
           ccache -M 10G
@@ -584,8 +583,8 @@ jobs:
           fi
         fi
   
-    - name: Patch KPM for SukiSU-Ultra
-      if: inputs.kernel_variant == 'SUKI' && inputs.android_version != 'android15' && inputs.android_version != 'android16' && inputs.use_kpm == 'true'
+    - name: Patch KPM for SukiSU-Ultra and forks
+      if: (inputs.kernel_variant == 'SUKI' || inputs.kernel_variant == 'RSUKI') && (inputs.android_version != 'android15' && inputs.android_version != 'android16') && inputs.use_kpm == 'true'
       run: |
         echo "Patching Image file..."
         if [ -f "$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
