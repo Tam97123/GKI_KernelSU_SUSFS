@@ -300,13 +300,13 @@ jobs:
 
         if [[ "${{ inputs.android_version }}" == "android13" && "${{ inputs.kernel_version }}" == "5.15" ]]; then
           if [[ "$SUBLEVEL" -le 41 ]]; then
-            cp $KERNEL_PATCHESs/wild/susfs_fix_patches/${SUSFS_VERSION}/a13-5.15/namespace.c.patch ./
+            cp $KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/a13-5.15/namespace.c.patch ./
             patch -p1 < namespace.c.patch
 
-            cp $KERNEL_PATCHESs/wild/susfs_fix_patches/${SUSFS_VERSION}/a13-5.15/fdinfo.c.patch ./
+            cp $KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/a13-5.15/fdinfo.c.patch ./
             patch -p1 < fdinfo.c.patch
 
-            cp $KERNEL_PATCHESs/wild/susfs_fix_patches/${SUSFS_VERSION}/a13-5.15/open.c.patch ./
+            cp $KERNEL_PATCHES/wild/susfs_fix_patches/${SUSFS_VERSION}/a13-5.15/open.c.patch ./
             patch -p1 < open.c.patch
 
             sed -i 's|i_uid_into_mnt(i_user_ns(&fi->inode), &fi->inode).val|fi->inode.i_uid.val|g' fs/susfs.c
