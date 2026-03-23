@@ -15,7 +15,7 @@ on:
       kernel_variant:
         description: "Choose KernelSU Variant"
         type: choice
-        options: [ WILD, NEXT, KSU, RKSU, SUKI ]
+        options: [ WILD, NEXT, KSU, RKSU, SUKI, RSUKI ]
         default: NEXT
 
 jobs:
@@ -74,7 +74,7 @@ jobs:
 
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_NAME: "!!TESTING!! GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v2.0.0"
+      RELEASE_NAME: "!!TESTING!! GKI Kernels With ${{ inputs.kernel_variant }} & SUSFS v2.1.0"
       RELEASE_BODY: ""
     steps:
     - name: Checkout code
@@ -92,7 +92,7 @@ jobs:
     - name: Set release body
       env:
         KERNEL_VARIANT: ${{ inputs.kernel_variant }}
-        SUSFS_VERSION: v2.0.0
+        SUSFS_VERSION: v2.1.0
       run: |
         cat << EOF > release_body.md
         **IMPORTANT DISCLAIMER**
@@ -111,20 +111,8 @@ jobs:
         - The Problem: Sometimes when installing a custom kernel, the device tries to load a kernel module that fails due to version mismatches, missing dependencies, or signature verification issues. This can cause boot failures or device instability. 
         - The Solution: This version changes one line from false to true to force load the kernel module, bypassing the failure check that would normally prevent loading.
         
-        🔹 KPM (KernelPatch Modules):
-        - Support for modules that allow you to inject any code into the kernel
-        - Provides kernel function inline-hook and syscall-table-hook
-          
-        🔹 ZRAM (Compcache):
-        - ZRAM is a Linux kernel module that creates a compressed block device in RAM
-        - Instead of swapping data to slow storage (like SSD or eMMC), the kernel compresses data and keeps it in RAM.
-        - Because compressed data is smaller, it can fit more “virtual RAM” into the same physical RAM.
-        - By add more ZRAM algorithms, kernel has more choice to compress memory data (faster or better)
-        
         Features:
-        -> KernelSU-Next dev-susfs patched by pershoot (Warning from pershoot: This version is not recommended for production use. It is only intended for testing and development purposes.)
-        -> $KERNEL_VARIANT Manager
-        -> SUSFS ඞ $SUSFS_VERSION
+        -> SUSFS ඞ v2.1.0
         -> Hybrid Root Hooks
         -> Ptrace Patch Support for Older Kernels (<5.16)
         -> IPSet Support for Advanced Network Filtering
@@ -148,6 +136,7 @@ jobs:
         -> KernelSU: [Github](https://github.com/tiann/KernelSU) [Telegram](https://t.me/KernelSU_group)
         -> RissKSU: [Github](https://github.com/rsuntk/KernelSU) [Telegram](https://t.me/rsukrnlsu)
         -> SukiSU Ultra: [Github](https://github.com/SukiSU-Ultra/SukiSU-Ultra) [Telegram](https://t.me/Sukiksu)
+        -> ReSukiSU: [Github](https://github.com/ReSukiSU/ReSukiSU) [Telegram](https://t.me/ReSukisu)
         EOF
 
     - name: Create GitHub Release
