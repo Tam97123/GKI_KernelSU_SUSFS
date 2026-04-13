@@ -103,7 +103,7 @@ jobs:
       run: |
         git clone https://github.com/Tam97123/AnyKernel3.git -b gki-2.0
         rm -rf AnyKernel3/.git
-        git clone https://github.com/Tam97123/kernel_patches.git
+        git clone https://github.com/WildKernels/kernel_patches.git
         git clone https://github.com/ShirkNeko/SukiSU_patch.git
   
     - name: Determine SUSFS version
