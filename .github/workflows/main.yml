@@ -61,15 +61,7 @@ on:
         type: string
         default: "Sun Dec 01 08:10:00 UTC 2024"
         required: false
-      # ==================== 功能开关 ====================
-      use_zram:
-        description: "启用 ZRAM 增强算法"
-        type: boolean
-        default: false
-      use_bbg:
-        description: "启用 BBG 防格机"
-        type: boolean
-        default: false
+      # ==================== 选项配置 ====================
       use_kpm:
         description: "KPM 功能（patched 尚不支持）"
         type: choice
@@ -78,14 +70,6 @@ on:
           - "disabled (关闭)"
           - "enabled (开启)"
           - "patched (开启并修补，尚不支持)"
-      use_rekernel:
-        description: "启用 Re-Kernel 驱动"
-        type: boolean
-        default: false
-      cancel_susfs:
-        description: "禁用 SUSFS"
-        type: boolean
-        default: false
       droidspaces:
         description: "Droidspaces 容器支持 (5.10~6.6: 槽位补丁, 6.12: 开/关)"
         type: choice
@@ -95,6 +79,24 @@ on:
           - "123"
           - "345"
         default: "off"
+
+      # ==================== 功能开关 ====================
+      use_zram:
+        description: "启用 ZRAM 增强算法"
+        type: boolean
+        default: false
+      use_bbg:
+        description: "启用 BBG 防格机"
+        type: boolean
+        default: false
+      use_rekernel:
+        description: "启用 Re-Kernel 驱动"
+        type: boolean
+        default: false
+      cancel_susfs:
+        description: "禁用 SUSFS"
+        type: boolean
+        default: false
 
       # ==================== 构建版本选择 ====================
       build_a12_5_10:

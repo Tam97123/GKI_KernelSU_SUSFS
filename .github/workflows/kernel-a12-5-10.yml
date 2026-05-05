@@ -35,16 +35,6 @@ on:
         required: false
         type: string
         default: "Sun Dec 01 08:10:00 UTC 2024"
-      use_zram:
-        description: "启用 ZRAM 增强算法"
-        required: true
-        type: boolean
-        default: false
-      use_bbg:
-        description: "启用 BBG 防格机"
-        required: true
-        type: boolean
-        default: false
       use_kpm:
         description: "KPM 功能（patched 尚不支持）"
         required: true
@@ -54,16 +44,6 @@ on:
           - "disabled (关闭)"
           - "enabled (开启)"
           - "patched (开启并修补，尚不支持)"
-      use_rekernel:
-        description: "启用 Re-Kernel 驱动"
-        required: false
-        type: boolean
-        default: false
-      cancel_susfs:
-        description: "禁用 SUSFS"
-        required: true
-        type: boolean
-        default: false
       droidspaces:
         description: "Droidspaces 容器支持"
         required: false
@@ -74,6 +54,26 @@ on:
           - "123"
           - "345"
         default: "off"
+      use_zram:
+        description: "启用 ZRAM 增强算法"
+        required: true
+        type: boolean
+        default: false
+      use_bbg:
+        description: "启用 BBG 防格机"
+        required: true
+        type: boolean
+        default: false
+      use_rekernel:
+        description: "启用 Re-Kernel 驱动"
+        required: false
+        type: boolean
+        default: false
+      cancel_susfs:
+        description: "禁用 SUSFS"
+        required: true
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       kernelsu_variant:

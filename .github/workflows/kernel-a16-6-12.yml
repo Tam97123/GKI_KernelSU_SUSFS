@@ -35,6 +35,23 @@ on:
         required: false
         type: string
         default: "Sun Dec 01 08:10:00 UTC 2024"
+      use_kpm:
+        description: "KPM 功能（patched 尚不支持）"
+        required: true
+        type: choice
+        default: "disabled (关闭)"
+        options:
+          - "disabled (关闭)"
+          - "enabled (开启)"
+          - "patched (开启并修补，尚不支持)"
+      droidspaces:
+        description: "Droidspaces 容器支持"
+        required: false
+        type: choice
+        options:
+          - "off"
+          - "on"
+        default: "off"
       use_zram:
         description: "启用 ZRAM 增强算法"
         required: true
@@ -45,15 +62,6 @@ on:
         required: true
         type: boolean
         default: false
-      use_kpm:
-        description: "KPM 功能（patched 尚不支持）"
-        required: true
-        type: choice
-        default: "disabled (关闭)"
-        options:
-          - "disabled (关闭)"
-          - "enabled (开启)"
-          - "patched (开启并修补，尚不支持)"
       use_rekernel:
         description: "启用 Re-Kernel 驱动"
         required: false
@@ -69,14 +77,6 @@ on:
         required: false
         type: boolean
         default: false
-      droidspaces:
-        description: "Droidspaces 容器支持"
-        required: false
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "off"
   workflow_call:
     inputs:
       kernelsu_variant:
