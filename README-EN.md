@@ -49,10 +49,10 @@ Wiki covers:
 ## 🧪 Droidspaces Container Support (Experimental)
 
 > **Experimental feature:** Successful build and boot is not guaranteed across all GKI versions. Always back up your boot image before flashing.
+>
+> **TIPS:** The workflow uses the [official Droidspaces patches](https://github.com/ravindu644/Droidspaces-OSS/tree/main/Documentation/resources/kernel-patches/GKI) from [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS). If you have better patches, feel free to open an issue. Since there are three patch variants, you may need to test them repeatedly to find one that fits your device. Choose based on other users' feedback or your own experience.
 
 [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) is a lightweight Linux containerization tool that lets you run full Linux environments (with systemd, OpenRC, etc.) on Android — useful for development, running servers, and more.
-
-GKI kernels enforce strict ABI compatibility, so enabling the kernel options required for containers would normally break vendor modules (GPU, camera, etc.) and cause bootloops. This feature applies special patches to solve that, enabling container support while keeping vendor module compatibility intact.
 
 **Supported versions:** 5.10 / 5.15 / 6.1 / 6.6 / 6.12
 
@@ -68,22 +68,6 @@ GKI kernels enforce strict ABI compatibility, so enabling the kernel options req
 > **Note:** Kernel 6.12 has only one patch — any non-off option will use it.
 
 **If the build fails or bootloops after flashing:** Try switching to a different slot patch (e.g. 678 → 123 or 345). Different kernel sub-levels may require different patches.
-
----
-
-## ❗ Common Build Failure Cause (SukiSU / SUSFS Out of Sync)
-
-When the following two branches update at different paces, builds may fail:
-
-- [SukiSU builtin branch](https://github.com/SukiSU-Ultra/SukiSU-Ultra/tree/builtin)
-- [SUSFS gki-android14-6.1 branch](https://gitlab.com/simonpunk/susfs4ksu/-/tree/gki-android14-6.1?ref_type=heads)
-
-For example: SUSFS just pushed a new commit, but SukiSU's `builtin` branch hasn't caught up yet — patching/compiling will likely fail.
-
-In such cases, you can only wait for SukiSU to follow up and complete adaptation with the latest SUSFS commit.
-
-<img src="assets/sukisu_eg1.png" alt="SukiSU builtin update history" width="80%">
-<img src="assets/susfs_eg1.png" alt="SUSFS gki-android14-6.1 update history" width="80%">
 
 ## 🔧 Custom Commit Pinning
 Use the [`config/config`](config/config) file to pin SUSFS and SukiSU to specific commits.

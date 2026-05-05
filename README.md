@@ -69,22 +69,6 @@ Wiki 涵盖内容：
 
 **如果构建失败或刷入后 bootloop：** 可尝试切换到其他槽位补丁（如 678 → 123 或 345），不同内核子版本可能适用不同的补丁。
 
----
-
-## ❗构建失败常见原因（SukiSU / SUSFS 更新不同步）
-
-当以下两个分支的更新节奏不一致时，构建可能失败：
-
-- [SukiSU builtin 分支](https://github.com/SukiSU-Ultra/SukiSU-Ultra/tree/builtin)
-- [SUSFS gki-android14-6.1 分支](https://gitlab.com/simonpunk/susfs4ksu/-/tree/gki-android14-6.1?ref_type=heads)
-
-例如：SUSFS 刚更新了新提交，但 SukiSU 的 `builtin` 分支还没跟进适配，这时打补丁/编译就容易失败。
-
-如以下情况，只能等待SukiSU跟进，完成与SUSFS最新提交的适配。
-
-<img src="assets/sukisu_eg1.png" alt="SukiSU builtin 更新记录" width="80%">
-<img src="assets/susfs_eg1.png" alt="SUSFS gki-android14-6.1 更新记录" width="80%">
-
 ## 🔧 自定义提交配置
 通过 [`config/config`](config/config) 文件可以指定 SUSFS 和 SukiSU 使用特定的 commit。
 
