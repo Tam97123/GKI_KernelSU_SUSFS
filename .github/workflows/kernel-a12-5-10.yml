@@ -46,10 +46,14 @@ on:
         type: boolean
         default: false
       use_kpm:
-        description: "启用 KPM 功能"
+        description: "KPM 功能（patched 尚不支持）"
         required: true
-        type: boolean
-        default: false
+        type: choice
+        default: "disabled (关闭)"
+        options:
+          - "disabled (关闭)"
+          - "enabled (开启)"
+          - "patched (开启并修补，尚不支持)"
       use_rekernel:
         description: "启用 Re-Kernel 驱动"
         required: false
@@ -93,7 +97,7 @@ on:
         type: boolean
       use_kpm:
         required: true
-        type: boolean
+        type: string
       use_rekernel:
         required: false
         type: boolean

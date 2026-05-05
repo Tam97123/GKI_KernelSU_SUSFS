@@ -71,9 +71,13 @@ on:
         type: boolean
         default: false
       use_kpm:
-        description: "启用 KPM 功能"
-        type: boolean
-        default: false
+        description: "KPM 功能（patched 尚不支持）"
+        type: choice
+        default: "disabled (关闭)"
+        options:
+          - "disabled (关闭)"
+          - "enabled (开启)"
+          - "patched (开启并修补，尚不支持)"
       use_rekernel:
         description: "启用 Re-Kernel 驱动"
         type: boolean
@@ -302,7 +306,13 @@ jobs:
           # 功能开关显示
           echo "LZ4_STATUS=${{ inputs.use_zram && '开启' || '未开启' }}" >> $GITHUB_ENV
           echo "BBG_STATUS=${{ inputs.use_bbg && '支持' || '不支持' }}" >> $GITHUB_ENV
-          echo "KPM_LINE=${{ inputs.use_kpm && '-> KPM 支持' || '' }}" >> $GITHUB_ENV
+          if [[ "${{ inputs.use_kpm }}" == enabled* ]]; then
+            echo "KPM_LINE=-> KPM 支持" >> $GITHUB_ENV
+          elif [[ "${{ inputs.use_kpm }}" == patched* ]]; then
+            echo "KPM_LINE=-> KPM 支持（补丁尚不支持）" >> $GITHUB_ENV
+          else
+            echo "KPM_LINE=" >> $GITHUB_ENV
+          fi
           echo "LZ4_SUFFIX=${{ inputs.use_zram && '、LZ4KD' || '' }}" >> $GITHUB_ENV
 
           # Hook 类型
