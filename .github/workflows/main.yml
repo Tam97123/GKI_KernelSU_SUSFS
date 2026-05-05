@@ -309,39 +309,36 @@ jobs:
           echo "LZ4_STATUS=${{ inputs.use_zram && '开启' || '未开启' }}" >> $GITHUB_ENV
           echo "BBG_STATUS=${{ inputs.use_bbg && '支持' || '不支持' }}" >> $GITHUB_ENV
           if [[ "${{ inputs.use_kpm }}" == enabled* ]]; then
-            echo "KPM_LINE=-> KPM 支持" >> $GITHUB_ENV
+            echo "KPM_STATUS=支持" >> $GITHUB_ENV
           elif [[ "${{ inputs.use_kpm }}" == patched* ]]; then
-            echo "KPM_LINE=-> KPM 支持（补丁尚不支持）" >> $GITHUB_ENV
+            echo "KPM_STATUS=支持（补丁尚不支持）" >> $GITHUB_ENV
           else
-            echo "KPM_LINE=" >> $GITHUB_ENV
+            echo "KPM_STATUS=未开启" >> $GITHUB_ENV
           fi
-          echo "LZ4_SUFFIX=${{ inputs.use_zram && '、LZ4KD' || '' }}" >> $GITHUB_ENV
 
           # Hook 类型
           if [ "${{ inputs.kernelsu_variant }}" = "SukiSU" ] || [ "${{ inputs.kernelsu_variant }}" = "ReSukiSU" ]; then
-            echo "HOOK_TYPE=-> SUSFS Inline Hooks" >> $GITHUB_ENV
+            echo "HOOK_TYPE=SUSFS Inline Hooks" >> $GITHUB_ENV
           else
-            echo "HOOK_TYPE=-> KPROBE Hooks" >> $GITHUB_ENV
+            echo "HOOK_TYPE=KPROBE Hooks" >> $GITHUB_ENV
           fi
 
           # Mount 类型
           if [ "${{ inputs.kernelsu_variant }}" = "Official" ]; then
-            echo "MOUNT_TYPE=-> OVERLAYFS 支持" >> $GITHUB_ENV
-            echo "KSU_SUFFIX=原版" >> $GITHUB_ENV
+            echo "MOUNT_TYPE=OVERLAYFS" >> $GITHUB_ENV
           else
-            echo "MOUNT_TYPE=-> Magic Mount 支持" >> $GITHUB_ENV
-            echo "KSU_SUFFIX=" >> $GITHUB_ENV
+            echo "MOUNT_TYPE=Magic Mount" >> $GITHUB_ENV
           fi
 
           # 分支显示
           if [ "${{ inputs.kernelsu_branch }}" = "Dev(开发)" ]; then
-            echo "BRANCH_INFO=($KSU_VER)" >> $GITHUB_ENV
+            echo "BRANCH_INFO=Dev" >> $GITHUB_ENV
           else
-            echo "BRANCH_INFO=稳定版" >> $GITHUB_ENV
+            echo "BRANCH_INFO=Stable" >> $GITHUB_ENV
           fi
 
           # 发布标题
-          echo "RELEASE_NAME=GKI内核: ${KSU_NAME}(${KSU_VER}) & SUSFS ${SUS_VER}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=GKI Kernel: ${KSU_NAME} ${KSU_VER} + SUSFS ${SUS_VER}" >> $GITHUB_ENV
 
       # ==================== 验证构建状态 ====================
       # 确保所有选中的构建任务都成功完成
@@ -430,98 +427,122 @@ jobs:
       # 创建包含详细信息的发布说明文档
       - name: 生成发布说明
         run: |
+          BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          if [[ "$KSU_REF" =~ ^[0-9a-f]{40}$ ]]; then
+            KSU_DISPLAY_REF="${KSU_REF:0:7}"
+          else
+            KSU_DISPLAY_REF="$KSU_REF"
+          fi
+
+          build_targets=""
+          append_target() {
+            local selected="$1" label="$2"
+            if [[ "$selected" == "true" ]]; then
+              if [[ -z "$build_targets" ]]; then
+                build_targets="$label"
+              else
+                build_targets="$build_targets, $label"
+              fi
+            fi
+          }
+          append_target "${{ inputs.build_a12_5_10 || inputs.build_all }}" "Android 12 / 5.10"
+          append_target "${{ inputs.build_a13_5_15 || inputs.build_all }}" "Android 13 / 5.15"
+          append_target "${{ inputs.build_a14_6_1 || inputs.build_all }}" "Android 14 / 6.1"
+          append_target "${{ inputs.build_a15_6_6 || inputs.build_all }}" "Android 15 / 6.6"
+          append_target "${{ inputs.build_a16_6_12 || inputs.build_all }}" "Android 16 / 6.12"
+          if [[ -z "$build_targets" ]]; then
+            build_targets="未选择"
+          fi
+
+          : > susfs_commits.md
+          append_susfs_commit() {
+            local selected="$1" label="$2" hash="$3" url="$4"
+            if [[ "$selected" == "true" && -n "$hash" && -n "$url" ]]; then
+              printf -- '- %s: [`%s`](%s)\n' "$label" "${hash:0:7}" "$url" >> susfs_commits.md
+            fi
+          }
+          append_susfs_commit "${{ inputs.build_a12_5_10 || inputs.build_all }}" "Android 12 / 5.10" "${COMMIT_HASH_gki_android12_5_10}" "${COMMIT_URL_gki_android12_5_10}"
+          append_susfs_commit "${{ inputs.build_a13_5_15 || inputs.build_all }}" "Android 13 / 5.15" "${COMMIT_HASH_gki_android13_5_15}" "${COMMIT_URL_gki_android13_5_15}"
+          append_susfs_commit "${{ inputs.build_a14_6_1 || inputs.build_all }}" "Android 14 / 6.1" "${COMMIT_HASH_gki_android14_6_1}" "${COMMIT_URL_gki_android14_6_1}"
+          append_susfs_commit "${{ inputs.build_a15_6_6 || inputs.build_all }}" "Android 15 / 6.6" "${COMMIT_HASH_gki_android15_6_6}" "${COMMIT_URL_gki_android15_6_6}"
+          append_susfs_commit "${{ inputs.build_a16_6_12 || inputs.build_all }}" "Android 16 / 6.12" "${COMMIT_HASH_gki_android16_6_12}" "${COMMIT_URL_gki_android16_6_12}"
+          if [[ ! -s susfs_commits.md ]]; then
+            echo "- 未获取到本次构建对应的 SUSFS 提交信息" > susfs_commits.md
+          fi
+
           cat > release_body.md << EOF
-          ## 📦 本次发布内容 / Release Contents
+          ## GKI Kernel Release
 
-          **${{ env.KSU_NAME }}** + **SUSFS ${{ env.SUS_VER }}**${{ env.LZ4_SUFFIX }}
+          **$KSU_NAME $KSU_VER** + **SUSFS $SUS_VER**
 
-          ### ✨ 功能特性 / Features
-
-          | 组件 / Component | 状态 / Status |
+          | 项目 | 内容 |
           |:---|:---|
-          | ${{ env.KSU_NAME }} | ${{ env.KSU_SUFFIX }}${{ env.BRANCH_INFO }} |
-          | SUSFS | ඞ ${{ env.SUS_VER }} |
-          | BBG 安全补丁 | ${{ env.BBG_STATUS }} |
-          | LZ4KD & ONEPLUS_LZ4K | ${{ env.LZ4_STATUS }} |
-          | LZ4 | v1.10.0 ${{ env.LZ4_STATUS }} |
+          | 发布类型 | ${{ inputs.release_type }} |
+          | 发布时间 | $BUILD_DATE |
+          | 构建范围 | $build_targets |
 
-          ${{ env.HOOK_TYPE }}
-          ${{ env.MOUNT_TYPE }}
-          ${{ env.KPM_LINE }} 
+          ### 构建配置
 
-          > 💡 [Unicode 零宽绕过修复](https://t.me/real5ec1cff/268) - 请使用 Xposed 模块
+          | 项目 | 内容 |
+          |:---|:---|
+          | KernelSU 变体 | $KSU_NAME |
+          | KernelSU 分支 | $BRANCH_INFO |
+          | SUSFS | $SUS_VER |
+          | Hook 类型 | $HOOK_TYPE |
+          | 挂载方式 | $MOUNT_TYPE |
+          | LTO | thin |
+          | BBG 安全补丁 | $BBG_STATUS |
+          | ZRAM / LZ4KD | $LZ4_STATUS |
+          | KPM | $KPM_STATUS |
 
-          ### 📥 推荐模块 / Recommended Module
+          ### 下载说明
 
-          - https://github.com/sidex15/ksu_module_susfs
+          请在下方 **Assets** 中下载对应文件。
 
-          ---
+          | 文件类型 | 用途 |
+          |:---|:---|
+          | \`*_kernel-*.zip\` | AnyKernel3 内核刷入包 |
+          | \`*.img\` | boot、vendor_boot 等镜像文件 |
+          | \`*.apk\` | KernelSU 管理器 |
+          | \`susfs-*.zip\` | SUSFS 配套模块 |
 
           > [!IMPORTANT]
-          > ### ⚠️ 风险声明 / Risk Disclaimer
-          >
-          > 本项目整合了多个**活跃维护的上游组件**，由于各组件更新频繁且相互依赖，**可能出现以下问题**：
-          >
-          > - 🔄 无限重启 (Bootloop)
-          > - 🐛 功能异常或系统不稳定
-          >
-          > **刷入前请务必：**
-          > 1. 备份原厂 Boot 镜像，确保可随时恢复
-          > 2. 记录当前时间，便于日志分析
-          >
-          > ---
-          >
-          > This project integrates multiple **actively maintained upstream components**. Due to frequent updates and dependencies, **the following issues may occur**:
-          >
-          > - 🔄 Bootloop
-          > - 🐛 Functional issues or system instability
-          >
-          > **Before flashing, please ensure:**
-          > 1. Backup your stock boot image for recovery
-          > 2. Note the current time for log analysis
+          > 刷入前请备份原厂 Boot 镜像。
+          > 如果设备无法启动，请先恢复原厂镜像，再提取 KernelSU 日志进行反馈。
 
           <details>
-          <summary>📋 刷入后指南 / Post-Flash Guide</summary>
+          <summary>刷入后处理</summary>
 
-          #### ✅ 如果正常启动 / If Boot Successful
+          ### 正常启动
 
-          恭喜！享受你的新内核吧 🎉
+          安装或更新 KernelSU 管理器后，检查 root、模块和 SUSFS 状态是否正常。
 
-          Congratulations! Enjoy your new kernel 🎉
-
-          #### ❌ 如果无法启动 / If Boot Failed
+          ### 无法启动
 
           1. 恢复原厂 Boot 镜像
-          2. 使用 KernelSU 管理器提取内核日志
-          3. 将日志提交到 [Issues](https://github.com/zzh20188/GKI_KernelSU_SUSFS/issues) 或咨询专业人士
-
-          1. Restore stock boot image
-          2. Extract kernel logs using KernelSU Manager
-          3. Submit logs to [Issues](https://github.com/zzh20188/GKI_KernelSU_SUSFS/issues) or consult experts
+          2. 使用 KernelSU 管理器或 recovery 提取日志
+          3. 提交到 [Issues](https://github.com/zzh20188/GKI_KernelSU_SUSFS/issues)，并附上设备型号、Android 版本、内核版本和刷入文件名
 
           </details>
-
-          ---
 
           <details>
-          <summary>🔗 提交信息 / Commit Info</summary>
+          <summary>上游提交信息</summary>
 
-          **KernelSU (${{ inputs.kernelsu_variant }})**: [${{ env.KSU_REF }}](${{ env.KSU_URL }})
+          **KernelSU**
 
-          **SUSFS4KSU**:
-          - gki-android12-5.10: [${{ env.COMMIT_HASH_gki_android12_5_10 }}](${{ env.COMMIT_URL_gki_android12_5_10 }})
-          - gki-android13-5.15: [${{ env.COMMIT_HASH_gki_android13_5_15 }}](${{ env.COMMIT_URL_gki_android13_5_15 }})
-          - gki-android14-6.1: [${{ env.COMMIT_HASH_gki_android14_6_1 }}](${{ env.COMMIT_URL_gki_android14_6_1 }})
-          - gki-android15-6.6: [${{ env.COMMIT_HASH_gki_android15_6_6 }}](${{ env.COMMIT_URL_gki_android15_6_6 }})
-          - gki-android16-6.12: [${{ env.COMMIT_HASH_gki_android16_6_12 }}](${{ env.COMMIT_URL_gki_android16_6_12 }})
+          - $KSU_NAME: [\`$KSU_DISPLAY_REF\`]($KSU_URL)
+
+          **SUSFS4KSU**
+
+          $(cat susfs_commits.md)
 
           </details>
 
           ---
 
-          **LTO**: thin
+          推荐模块：https://github.com/sidex15/ksu_module_susfs
 
-          📂 点击下方 **Assets** 展开下载 / Click **Assets** below to download
+          Unicode 零宽绕过修复请使用 Xposed 模块：https://t.me/real5ec1cff/268
           EOF
 
       # ==================== 生成版本标签 ====================
@@ -564,7 +585,7 @@ jobs:
           fi
 
           gh release create "$NEW_TAG" \
-            --title "${{ env.RELEASE_NAME }}" \
+            --title "$RELEASE_NAME" \
             --notes-file release_body.md \
             $PRERELEASE_FLAG
 
