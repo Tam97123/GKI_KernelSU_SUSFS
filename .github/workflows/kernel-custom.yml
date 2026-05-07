@@ -1,4 +1,4 @@
-name: Android 内核构建-自定义
+name: Android Kernel Build - Custom
 
 permissions:
   contents: write
@@ -7,9 +7,9 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      # ==================== 内核版本配置 ====================
+      # ==================== Kernel Version Configuration ====================
       android_version:
-        description: "Android 版本"
+        description: "Android Version"
         required: true
         type: choice
         options:
@@ -20,7 +20,7 @@ on:
           - android16
         default: android12
       kernel_version:
-        description: "内核版本"
+        description: "Kernel Version"
         required: true
         type: choice
         options:
@@ -31,24 +31,24 @@ on:
           - "6.12"
         default: "5.10"
       sub_level:
-        description: "子版本号 (如 66, 198, X)"
+        description: "Sub-level (e.g., 66, 198, X)"
         required: true
         type: string
         default: "66"
       os_patch_level:
-        description: "安全补丁级别 (如 2022-01, lts)"
+        description: "Security patch level (e.g., 2022-01, lts)"
         required: true
         type: string
         default: "2022-01"
       revision:
-        description: "修订版本 (如 r11, 仅 5.10 需要)"
+        description: "Revision (e.g., r11, only needed for 5.10)"
         required: false
         type: string
         default: "r11"
 
-      # ==================== KernelSU 配置 ====================
+      # ==================== KernelSU Configuration ====================
       kernelsu_variant:
-        description: "KernelSU 变体"
+        description: "KernelSU Variant"
         required: true
         type: choice
         options:
@@ -58,38 +58,38 @@ on:
           - ReSukiSU
         default: ReSukiSU
       kernelsu_branch:
-        description: "KSU 分支"
+        description: "KSU Branch"
         required: true
         type: choice
         options:
-          - Stable(标准)
-          - Dev(开发)
-          - Other(其他/指定)
-        default: Stable(标准)
+          - Stable(Standard)
+          - Dev(Development)
+          - Other(Other/Specify)
+        default: Stable(Standard)
 
-      # ==================== 可选配置 ====================
+      # ==================== Optional Configuration ====================
       version:
-        description: "自定义版本名 (可选)"
+        description: "Custom version name (Optional)"
         required: false
         type: string
       build_time:
-        description: "自定义构建时间 (可选，N或留空=当前UTC)"
+        description: "Custom build time (Optional, N or blank = current UTC)"
         required: false
         type: string
         default: "Sun Dec 01 08:10:00 UTC 2024"
 
-      # ==================== 选项配置 ====================
+      # ==================== Option Configuration ====================
       use_kpm:
-        description: "KPM 功能（patched 尚不支持）"
+        description: "KPM Feature (patched not supported yet)"
         required: true
         type: choice
-        default: "disabled (关闭)"
+        default: "disabled (Off)"
         options:
-          - "disabled (关闭)"
-          - "enabled (开启)"
-          - "patched (开启并修补，尚不支持)"
+          - "disabled (Off)"
+          - "enabled (On)"
+          - "patched (Enabled and patched, not supported yet)"
       droidspaces:
-        description: "Droidspaces 容器支持 (5.10~6.6: 槽位补丁, 6.12: 开/关)"
+        description: "Droidspaces container support (5.10~6.6: slot patch, 6.12: on/off)"
         required: false
         type: choice
         options:
@@ -99,29 +99,29 @@ on:
           - "345"
         default: "off"
 
-      # ==================== 功能开关 ====================
+      # ==================== Feature Toggles ====================
       use_zram:
-        description: "启用 ZRAM 增强算法"
+        description: "Enable ZRAM enhancement algorithm"
         required: true
         type: boolean
         default: false
       use_bbg:
-        description: "启用 BBG 防格机"
+        description: "Enable BBG anti-brick"
         required: true
         type: boolean
         default: false
       use_rekernel:
-        description: "启用 Re-Kernel 驱动"
+        description: "Enable Re-Kernel driver"
         required: false
         type: boolean
         default: false
       cancel_susfs:
-        description: "禁用 SUSFS"
+        description: "Disable SUSFS"
         required: true
         type: boolean
         default: false
       supp_op:
-        description: "启用一加 8E 支持"
+        description: "Enable OnePlus 8E support"
         required: false
         type: boolean
         default: false
