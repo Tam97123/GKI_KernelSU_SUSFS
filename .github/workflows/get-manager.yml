@@ -22,9 +22,9 @@ jobs:
   get_ksu_manager:
     runs-on: ubuntu-latest
     outputs:
-      # 输出1: KSU版本号
+      # Output 1: KSU version number
       ksuVer: ${{ steps.get_version.outputs.kversion }}
-      # 输出2: SUSFS版本号
+      # Output 2: SUSFS version number
       susVer: ${{ steps.get_version.outputs.sversion }}
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
@@ -56,12 +56,12 @@ jobs:
           echo " "
           echo "======================================================="
           
-      - name: 安装依赖
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git curl jq
 
-      - name: 获取 KSU & SUSFS 版本
+      - name: Get KSU & SUSFS versions
         id: get_version
         run: |
 
@@ -85,7 +85,7 @@ jobs:
 
           cd KernelSU
 
-          # 计算KSU版本号
+          # Calculate KSU version number
           KSU_GIT_VERSION=$(git rev-list --count HEAD)
 
           if [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
@@ -100,16 +100,16 @@ jobs:
           echo $KSU_VERSION
           echo "KSU_VERSION=$KSU_VERSION" >> $GITHUB_ENV
 
-          # 计算SUSFS版本号
+          # Calculate SUSFS version number
           INFO="https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android14-6.1/ksu_module_susfs/module.prop\?ref_type\=heads"
           SUS_VERSION=$(curl -s $INFO | awk -F '=' '$1 == "version" { print $2 }')
           echo $SUS_VERSION
 
-          # 导出这两个值给release
+          # Export these two values to release
           echo "kversion=$KSU_VERSION" >> $GITHUB_OUTPUT
           echo "sversion=$SUS_VERSION" >> $GITHUB_OUTPUT
 
-      - name: 添加 KernelSU
+      - name: Add KernelSU
         id: add_KSU
         continue-on-error: true
         run: |
@@ -135,23 +135,23 @@ jobs:
           FILENAME=$([[ "${{ inputs.kernelsu_variant }}" == "Next" ]] && echo "build-manager-ci.yml" || echo "build-manager.yml")
           
           
-          # 初始化
+          # Initialize
           NUMBER=0
           DOWNLOAD_LIST=""
 
-          echo "开始查找包含 'manager' 产物的构建..."
+          echo "Searching for builds containing '$KSUM' artifacts..."
           while true; do
             echo "--------------------------------------------------"
-            echo "正在检查第 ${NUMBER} 个历史构建 (0代表最新)..."
+            echo "Checking historical build #${NUMBER} (0 is latest)..."
 
             if [ "$NUMBER" -ge 9 ]; then
-              echo "查找九次仍然失败，跳出循环。"
+              echo "Search failed after 9 attempts, breaking loop."
               break
             fi
 
-            # 1. 获取指定顺序的成功构建的ID
+            # 1. Get the ID of the successful build in the specified order
 
-            # 对于 Next 变体，添加 branch 参数过滤
+            # For Next variant, add branch parameter filtering
             if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
               BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?branch=$BRANCH&status=success&per_page=1" |
@@ -162,12 +162,12 @@ jobs:
                 jq -r '.workflow_runs['"$NUMBER"'].id')
             fi
 
-            echo "找到构建 ID: $BUILD_ID"
+            echo "Found build ID: $BUILD_ID"
 
             ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/$REPO/actions/runs/$BUILD_ID/artifacts")
 
-            # 对于 Next 变体使用精确匹配，其他变体使用模糊匹配
+            # For Next variant use exact match, for others use fuzzy match
             if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
               result=$(echo "$ARTIFACTS" | jq -r ".artifacts[] | select(.name == \"$KSUM\") | .name")
             else
@@ -175,11 +175,11 @@ jobs:
             fi
 
             if [ -z "$result" ]; then
-              echo "没有找到包含 '$KSUM' 的项"
+              echo "No items found containing '$KSUM'"
               NUMBER=$((NUMBER + 1))
             else
               echo "$result"
-              # 对于 Next 变体使用精确匹配，其他变体使用模糊匹配
+              # For Next variant use exact match, for others use fuzzy match
               if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
                 DOWNLOAD_LIST=$(echo "$ARTIFACTS" | jq -r ".artifacts[] | select(.name == \"$KSUM\") | \"\(.name)\t\(.archive_download_url)\"")
               else
@@ -191,22 +191,22 @@ jobs:
           done
          
           if [ -z "$DOWNLOAD_LIST" ]; then
-            echo "未获取到可用的 Manager artifact 下载地址列表。"
+            echo "Failed to retrieve available Manager artifact download URLs."
             exit 1
           fi
           
-          # 下载并解压所有 Manager 产物
+          # Download and extract all Manager artifacts
           echo "$DOWNLOAD_LIST" | while IFS=$'\t' read -r NAME URL; do
             SAFE_NAME=$(echo "$NAME" | tr '/ ' '__')
             ZIP_NAME="${{ inputs.kernelsu_variant }}-${SAFE_NAME}(${{ env.KSU_VERSION }}).zip"
-            echo "下载 $NAME -> $ZIP_NAME"
+            echo "Downloading $NAME -> $ZIP_NAME"
             curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o "$ZIP_NAME" "$URL"
             mkdir -p "manager-artifacts/$SAFE_NAME"
             unzip -o "$ZIP_NAME" -d "manager-artifacts/$SAFE_NAME"
             rm -rf "$ZIP_NAME"
           done
 
-      - name: 添加 SUSFS 模块
+      - name: Add SUSFS Module
         id: add_SUSFS
         continue-on-error: true
         run: |
@@ -225,22 +225,22 @@ jobs:
           
           echo $DOWNLOAD_URL
           echo $NAME
-          # 下载 Manager 文件
+          # Download Manager file
           curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o "$NAME" "$DOWNLOAD_URL"
-          echo "$NAME 文件已下载.zip"
+          echo "$NAME file downloaded.zip"
           
           
-          # 解压 artifact zip 获取里面的模块文件
+          # Unzip artifact zip to get the module files inside
           mkdir -p susfs-module
           unzip "$NAME" -d susfs-temp
 
-          # 检查解压后的内容：如果是散装文件则打包成 zip
+          # Check extracted contents: if they are loose files, pack them into a zip
           cd susfs-temp
           if ls *.zip 1>/dev/null 2>&1; then
-            # 里面已经是 zip 文件，直接移动
+            # Already contains a zip file, just move it
             mv *.zip ../susfs-module/
           else
-            # 是散装文件，打包成 zip
+            # Loose files, pack them into a zip
             zip -r "../susfs-module/ksu_module_susfs.zip" .
           fi
           cd ..
@@ -248,9 +248,9 @@ jobs:
 
       - name: Notify on failure
         if: steps.add_KSU.outcome == 'failure'
-        run: echo "下载CI构建的KSU失败!"
+        run: echo "Failed to download CI-built KSU!"
 
-      - name: 上传APK
+      - name: Upload APK
         if: steps.add_KSU.outcome == 'success'
         uses: actions/upload-artifact@v6
         with:
@@ -258,7 +258,7 @@ jobs:
           path: |
             **/*.apk
 
-      - name: 上传SUSFS模块
+      - name: Upload SUSFS Module
         if: steps.add_SUSFS.outcome == 'success'
         uses: actions/upload-artifact@v6
         with:
