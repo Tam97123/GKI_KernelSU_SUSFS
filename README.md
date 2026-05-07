@@ -3,137 +3,137 @@
 # GKI KernelSU SUSFS
 ### 🏮 2026 🐎 Happy New Year! 🏮
 
-**自动化构建 GKI 内核 | 集成 KernelSU + SUSFS**
+**Automated GKI Kernel Builds | KernelSU + SUSFS Integrated**
 
 [![Release](https://img.shields.io/github/v/release/zzh20188/GKI_KernelSU_SUSFS?label=Release&style=flat-square&logo=github&logoColor=white&color=2ea44f)](https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases)
 [![Coolapk](https://img.shields.io/badge/Follow-Coolapk-3DDC84?style=flat-square&logo=android&logoColor=white)](http://www.coolapk.com/u/11253396)
 [![KernelSU](https://img.shields.io/badge/KernelSU-Supported-5AA300?style=flat-square)](https://kernelsu.org/)
 [![SUSFS](https://img.shields.io/badge/SUSFS-Integrated-E67E22?style=flat-square)](https://gitlab.com/simonpunk/susfs4ksu)
 
-[**English**](README-EN.md) | 简体中文
+**English** | [简体中文](README-CN.md)
 
 ---
 
 </div>
 
-## 🚀 快速导航
+## 🚀 Quick Navigation
 
-- 📖 [文档](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
-- 📥 [下载](https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases)
-- 🔰 [教程](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
-
----
-
-## ⚠️ 兼容性提醒
-
-> **注意：** 目前不支持一加 ColorOS 14、15，刷入后可能需要清除数据开机。
-
-> **rekernel功能（测试）：已支持 rekernel 功能（目前处于测试阶段）**
-
+- 📖 [Documentation](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
+- 📥 [Downloads](https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases)
+- 🔰 [Tutorial](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
 
 ---
 
-## 📚 文档与指南
+## ⚠️ Compatibility Notice
 
-详细说明请查阅 [**GitHub Wiki（中英双语）**](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
+> **Note:** OnePlus ColorOS 14/15 is currently not supported. A data wipe may be required after flashing.
 
-Wiki 涵盖内容：
-- [**🔰 教程**](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
-- 📥 下载/刷入内核
-- 💡 使用技巧 Tips
-- 🆘 救砖指南
-- 📊 内核版本兼容性说明
+> **rekernel feature (beta): rekernel feature is now supported (currently in beta)**
+
 
 ---
 
-## 🧪 Droidspaces 容器支持（实验性）
+## 📚 Documentation & Guides
 
-> **实验性功能：** 不保证所有 GKI 版本均能成功构建或启动，刷入前请务必备份 Boot 镜像。
+For detailed instructions, please refer to the [**GitHub Wiki (bilingual CN/EN)**](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
+
+Wiki covers:
+- [**🔰 Tutorial**](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
+- 📥 Download / Flash kernel
+- 💡 Tips & Tricks
+- 🆘 Brick Recovery Guide
+- 📊 Kernel Version Compatibility
+
+---
+
+## 🧪 Droidspaces Container Support (Experimental)
+
+> **Experimental feature:** Successful build and boot is not guaranteed across all GKI versions. Always back up your boot image before flashing.
 >
-> **TIPS：** 工作流使用的是 [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) 的 [官方补丁](https://github.com/ravindu644/Droidspaces-OSS/tree/main/Documentation/resources/kernel-patches/GKI) ，如有更好的补丁可以提个issues，此外由于存在三个补丁，或许需要反复试验以确保其中一个适配你的机型，请根据他人或实际经验来选择。
+> **TIPS:** The workflow uses the [official Droidspaces patches](https://github.com/ravindu644/Droidspaces-OSS/tree/main/Documentation/resources/kernel-patches/GKI) from [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS). If you have better patches, feel free to open an issue. Since there are three patch variants, you may need to test them repeatedly to find one that fits your device. Choose based on other users' feedback or your own experience.
 
-[Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) 是一个轻量级的 Linux 容器工具，可以在 Android 上运行完整的 Linux 环境（支持 systemd、OpenRC 等），用于搭建开发环境、运行服务器等场景。
+[Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) is a lightweight Linux containerization tool that lets you run full Linux environments (with systemd, OpenRC, etc.) on Android — useful for development, running servers, and more.
 
-**支持范围：** 5.10 / 5.15 / 6.1 / 6.6 / 6.12
+**Supported versions:** 5.10 / 5.15 / 6.1 / 6.6 / 6.12
 
-**使用方式：** 在手动触发构建时，选择 `Droidspaces 容器支持` 选项：
+**Usage:** When triggering a build manually, select the `Droidspaces` option:
 
-| 选项 | 说明 |
+| Option | Description |
 |:---:|:---|
-| `off` | 关闭（默认） |
-| `678` | 使用 6_7_8 槽位补丁（推荐） |
-| `123` | 使用 1_2_3 槽位补丁（备用） |
-| `345` | 使用 3_4_5 槽位补丁（备用） |
+| `off` | Disabled (default) |
+| `678` | Use 6_7_8 slot patch (recommended) |
+| `123` | Use 1_2_3 slot patch (fallback) |
+| `345` | Use 3_4_5 slot patch (fallback) |
 
-> **提示：** 6.12 内核仅有一个补丁，选择任意非关闭选项即可。
+> **Note:** Kernel 6.12 has only one patch — any non-off option will use it.
 
-**如果构建失败或刷入后 bootloop：** 可尝试切换到其他槽位补丁（如 678 → 123 或 345），不同内核子版本可能适用不同的补丁。
+**If the build fails or bootloops after flashing:** Try switching to a different slot patch (e.g. 678 → 123 or 345). Different kernel sub-levels may require different patches.
 
-## 🔧 自定义提交配置
-通过 [`config/config`](config/config) 文件可以指定 SUSFS 和 SukiSU 使用特定的 commit。
+## 🔧 Custom Commit Pinning
+Use the [`config/config`](config/config) file to pin SUSFS and SukiSU to specific commits.
 
-**什么是提交 (commit)？**
+**What is a commit?**
 
-提交是一串哈希字符串，代表仓库在某个时间点的状态。例如将 sukisu 设为 `4b8644515fe6d87a109129e590ccd9d33a855dca`，即使用 1 月 30 日的 SukiSU 版本编译内核。
+A commit is a hash string representing the state of a repository at a specific point in time. For example, setting sukisu to `4b8644515fe6d87a109129e590ccd9d33a855dca` means using the January 30th version of SukiSU to build the kernel.
 
-**为什么要指定提交？**
+**Why pin a commit?**
 
-- 当上游仓库更新引入 bug 或兼容性问题时，可回退到稳定版本
-- 当 SUSFS 与 SukiSU 版本不同步导致编译失败时，可手动指定兼容的版本
+- When upstream updates introduce bugs or compatibility issues, you can roll back to a stable version
+- When SUSFS and SukiSU versions are out of sync causing build failures, you can manually specify compatible versions
 
-**如何获取提交哈希？**
+**How to get a commit hash?**
 
 - SUSFS: [susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu)
 - SukiSU: [SukiSU-Ultra commits/builtin](https://github.com/SukiSU-Ultra/SukiSU-Ultra/commits/builtin/)
 
-以 SUSFS 为例，先选择分支，再复制对应提交的哈希值：
+Taking SUSFS as an example, first select the branch, then copy the commit hash:
 
-![选择分支](assets/susfs_branch.png)
-![复制提交](assets/susfs_commit.png)
+![Select branch](assets/susfs_branch.png)
+![Copy commit](assets/susfs_commit.png)
 
 ```ini
-# 启用自定义提交
+# Enable custom commits
 custom=true
 
-# SUSFS 各分支的 commit hash
+# SUSFS commit hash per branch
 gki-android12-5.10=
 gki-android13-5.15=
 gki-android14-6.1=
 gki-android15-6.6=
 
-# SukiSU 的 commit hash
+# SukiSU commit hash
 sukisu=
 ```
 
-> 留空则使用该分支的最新提交。
+> Empty value = use the latest commit of that branch.
 
 ---
 
-## 🧪 伪装 `/proc/config.gz`（Stock Config）
+## 🧪 Spoof `/proc/config.gz` (Stock Config)
 
-这是一个进阶技巧，不需要在工作流里手动开关。  
-构建时会自动检测 `config/stock_defconfig` 是否存在：存在则应用，不存在则跳过。
+This is an advanced trick and requires no workflow toggle.  
+The build process auto-detects whether `config/stock_defconfig` exists: if present, it is applied; if absent, it is skipped.
 
-使用方法：
-1. 确保设备当前是官方 ROM + 官方内核。
-2. 获取设备上的 `/proc/config.gz`（可在手机端或电脑端操作）。
-3. 解压后重命名为 `stock_defconfig`，上传到仓库 [`config/`](config/) 目录并提交（可直接在手机端完成）。
+How to use:
+1. Make sure your device is running stock ROM + stock kernel.
+2. Obtain `/proc/config.gz` from your device (phone-side or PC-side workflow both work).
+3. Decompress it, rename it to `stock_defconfig`, upload it to the [`config/`](config/) directory in your repo, and commit (can be done directly on phone).
 
-构建流程会自动：
-- 复制到内核源码：`$KERNEL_ROOT/common/arch/arm64/configs/stock_defconfig`
-- 在 `$KERNEL_ROOT/common/kernel/Makefile` 中将 `$(obj)/config_data` 规则从 `$(KCONFIG_CONFIG)` 切换为 `arch/arm64/configs/stock_defconfig`
-- 使编译产物中的 `/proc/config.gz` 更贴近你的官方内核配置
+During the build, the workflow will automatically:
+- Copy it to `$KERNEL_ROOT/common/arch/arm64/configs/stock_defconfig`
+- In `$KERNEL_ROOT/common/kernel/Makefile`, switch the `$(obj)/config_data` rule from `$(KCONFIG_CONFIG)` to `arch/arm64/configs/stock_defconfig`
+- Make `/proc/config.gz` in the built kernel closer to your stock kernel config
 ---
 
-## 🛠️ 安装后推荐
+## 🛠️ Post-Install Recommendations
 
-### 📦 模块推荐
+### 📦 Recommended Modules
 
 <table>
 <tr>
-<th>模块名称</th>
-<th>仓库</th>
-<th>频道</th>
+<th>Module</th>
+<th>Repository</th>
+<th>Channel</th>
 </tr>
 <tr>
 <td><b>LSPosed-Irena</b></td>
@@ -151,23 +151,23 @@ sukisu=
 </tr>
 </table>
 
-### 🔧 Xposed 模块
+### 🔧 Xposed Modules
 
-| 模块 | 说明 |
+| Module | Description |
 |:---:|:---|
-| **FuseFixer** | [Unicode零宽修复模块](https://t.me/real5ec1cff/268) |
+| **FuseFixer** | [Unicode zero-width fix module](https://t.me/real5ec1cff/268) |
 
 ### App
 
-| 名称 | 说明 |
+| Name | Description |
 |:---:|:---|
-| **Scene** | [官网](https://omarea.com/#/) |
+| **Scene** | [Official Site](https://omarea.com/#/) |
 ---
 
 <div align="center">
 
-**更多内容持续更新中...**
+**More content coming soon...**
 
-⭐ 如果这个项目对你有帮助，请点个 Star 支持一下！
+⭐ If this project helps you, please give it a Star!
 
 </div>
