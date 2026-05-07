@@ -1,106 +1,266 @@
-name: Auto Trigger on SukiSU Update
+name: GetManager
+permissions:
+  contents: write  # Allow writing to repository contents (for pushing tags)
+  actions: read   # Allows triggering actions
 
 on:
-  schedule:
-    - cron: '0 0 */3 * *'  # 每两天执行一次
-  workflow_dispatch:     # 允许手动触发
+  workflow_call: # This allows this workflow to be called from another workflow
+    inputs:
+      kernelsu_variant:
+        required: true
+        type: string
+    outputs:
+      susVer:
+        description: "The fetched SUSFS version number"
+        value: ${{ jobs.get_ksu_manager.outputs.susVer }}
+
+      ksuVer:
+        description: "The calculated KSU version number"
+        value: ${{ jobs.get_ksu_manager.outputs.ksuVer }}
 
 jobs:
-  check-and-trigger:
+  get_ksu_manager:
     runs-on: ubuntu-latest
-    # 如果要运行自动编译工作流，请手动添加/修改仓库所有者用户名
-    if: contains(fromJSON('["zzh20188", "elysias123"]'), github.repository_owner)
+    outputs:
+      # Output 1: KSU version number
+      ksuVer: ${{ steps.get_version.outputs.kversion }}
+      # Output 2: SUSFS version number
+      susVer: ${{ steps.get_version.outputs.sversion }}
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-          
-      - name: Get latest commit SHA from SukiSU-Ultra
-        id: get_sha
+      - name: 🧐 Debug Workflow Caller Context
         run: |
-          LATEST_SHA=$(curl -s https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/commits/main | jq -r '.sha')
-          echo "sha=$LATEST_SHA" >> $GITHUB_OUTPUT
-          echo "Latest SHA: $LATEST_SHA"
+          echo "==================== DEBUG CONTEXT ===================="
+          echo " "
+          echo "EVENT NAME: ${{ github.event_name }}"
+          echo " "
+          echo "--- CALLER INFORMATION ---"
+          echo "  - Caller Repository: ${{ github.caller_repository }}"
+          echo "  - Caller Workflow:   ${{ github.caller_workflow }}"
+          echo "  - Caller User:       ${{ github.triggering_actor }}"
+          echo " "
+          echo "--- WORKFLOW & JOB INFORMATION ---"
+          echo "  - Current Workflow:  ${{ github.workflow }}"
+          echo "  - Current Job ID:    ${{ github.job }}"
+          echo "  - Current Run ID:    ${{ github.run_id }}"
+          echo "  - Current Run Number:${{ github.run_number }}"
+          echo " "
+          echo "--- GIT REFERENCE INFORMATION ---"
+          echo "  - Git Ref:           ${{ github.ref }}"
+          echo "  - Ref Type:          ${{ github.ref_type }}"
+          echo " "
+          echo "======================================================="
           
-      - name: Get previous SHA from sha branch
-        id: get_prev_sha
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git curl jq
+
+      - name: Get KSU & SUSFS versions
+        id: get_version
         run: |
 
-          if git ls-remote --heads origin sha | grep -q sha; then
-            echo "SHA branch exists, fetching previous SHA..."
-            git fetch origin sha:sha || true
-            git checkout sha || true
-            if [ -f "latest_sha.txt" ]; then
-              PREV_SHA=$(cat latest_sha.txt)
-              echo "prev_sha=$PREV_SHA" >> $GITHUB_OUTPUT
-              echo "Previous SHA found: $PREV_SHA"
-            else
-              echo "prev_sha=" >> $GITHUB_OUTPUT
-              echo "No previous SHA file found"
+          if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+            echo "This is the Next variant"
+            git clone https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU
+          elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
+            echo "This is the SukiSU variant"
+            git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git KernelSU
+          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+            echo "This is the ReSukiSU variant"
+            git clone https://github.com/ReSukiSU/ReSukiSU.git KernelSU
+          elif [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
+            echo "This is the Official"
+            git clone https://github.com/tiann/KernelSU.git KernelSU
+          else
+            echo "Unknown variant"
+          fi
+
+          VAR=$([[ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]] && echo 700 || echo 200)
+
+          cd KernelSU
+
+          # Calculate KSU version number
+          KSU_GIT_VERSION=$(git rev-list --count HEAD)
+
+          if [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
+            KSU_VERSION=$((40000 + KSU_GIT_VERSION - 2815))
+          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+            KSU_VERSION=$((30700 + KSU_GIT_VERSION))
+          elif [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
+            KSU_VERSION=$((20000 + KSU_GIT_VERSION))
+          elif [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+            KSU_VERSION=$((30000 + KSU_GIT_VERSION))
+          fi
+          echo $KSU_VERSION
+          echo "KSU_VERSION=$KSU_VERSION" >> $GITHUB_ENV
+
+          # Calculate SUSFS version number
+          INFO="https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android14-6.1/ksu_module_susfs/module.prop\?ref_type\=heads"
+          SUS_VERSION=$(curl -s $INFO | awk -F '=' '$1 == "version" { print $2 }')
+          echo $SUS_VERSION
+
+          # Export these two values to release
+          echo "kversion=$KSU_VERSION" >> $GITHUB_OUTPUT
+          echo "sversion=$SUS_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Add KernelSU
+        id: add_KSU
+        continue-on-error: true
+        run: |
+          if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+            echo "KernelSU Next..."
+            REPO="KernelSU-Next/KernelSU-Next"
+            KSUM="manager"
+            BRANCH="dev"
+          elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
+            echo "SukiSU..."
+            REPO="SukiSU-Ultra/SukiSU-Ultra"
+            KSUM="manager"
+          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+            echo "ReSukiSU..."
+            REPO="ReSukiSU/ReSukiSU"
+            KSUM="manager"
+          elif [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
+            echo "KSU..."
+            REPO="tiann/KernelSU"
+            KSUM="manager"
+          fi
+
+          FILENAME=$([[ "${{ inputs.kernelsu_variant }}" == "Next" ]] && echo "build-manager-ci.yml" || echo "build-manager.yml")
+          
+          
+          # Initialize
+          NUMBER=0
+          DOWNLOAD_LIST=""
+
+          echo "Searching for builds containing '$KSUM' artifacts..."
+          while true; do
+            echo "--------------------------------------------------"
+            echo "Checking historical build #${NUMBER} (0 is latest)..."
+
+            if [ "$NUMBER" -ge 9 ]; then
+              echo "Search failed after 9 attempts, breaking loop."
+              break
             fi
-          else
-            echo "prev_sha=" >> $GITHUB_OUTPUT
-            echo "SHA branch does not exist yet"
-          fi
 
-          git checkout ${{ github.ref_name }}
+            # 1. Get the ID of the successful build in the specified order
+
+            # For Next variant, add branch parameter filtering
+            if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+              BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?branch=$BRANCH&status=success&per_page=1" |
+                jq -r '.workflow_runs[0].id')
+            else
+              BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?status=success" |
+                jq -r '.workflow_runs['"$NUMBER"'].id')
+            fi
+
+            echo "Found build ID: $BUILD_ID"
+
+            ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/$REPO/actions/runs/$BUILD_ID/artifacts")
+
+            # For Next variant use exact match, for others use fuzzy match
+            if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+              result=$(echo "$ARTIFACTS" | jq -r ".artifacts[] | select(.name == \"$KSUM\") | .name")
+            else
+              result=$(echo "$ARTIFACTS" | jq -r --arg needle "$KSUM" '.artifacts[] | select((.name | ascii_downcase) | contains($needle)) | .name')
+            fi
+
+            if [ -z "$result" ]; then
+              echo "No items found containing '$KSUM'"
+              NUMBER=$((NUMBER + 1))
+            else
+              echo "$result"
+              # For Next variant use exact match, for others use fuzzy match
+              if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+                DOWNLOAD_LIST=$(echo "$ARTIFACTS" | jq -r ".artifacts[] | select(.name == \"$KSUM\") | \"\(.name)\t\(.archive_download_url)\"")
+              else
+                DOWNLOAD_LIST=$(echo "$ARTIFACTS" | jq -r --arg needle "$KSUM" '.artifacts[] | select((.name | ascii_downcase) | contains($needle)) | "\(.name)\t\(.archive_download_url)"')
+              fi
+              break
+            fi
+
+          done
+         
+          if [ -z "$DOWNLOAD_LIST" ]; then
+            echo "Failed to retrieve available Manager artifact download URLs."
+            exit 1
+          fi
           
-      - name: Compare with previous SHA
-        id: compare
+          # Download and extract all Manager artifacts
+          echo "$DOWNLOAD_LIST" | while IFS=$'\t' read -r NAME URL; do
+            SAFE_NAME=$(echo "$NAME" | tr '/ ' '__')
+            ZIP_NAME="${{ inputs.kernelsu_variant }}-${SAFE_NAME}(${{ env.KSU_VERSION }}).zip"
+            echo "Downloading $NAME -> $ZIP_NAME"
+            curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o "$ZIP_NAME" "$URL"
+            mkdir -p "manager-artifacts/$SAFE_NAME"
+            unzip -o "$ZIP_NAME" -d "manager-artifacts/$SAFE_NAME"
+            rm -rf "$ZIP_NAME"
+          done
+
+      - name: Add SUSFS Module
+        id: add_SUSFS
+        continue-on-error: true
         run: |
-          CURR_SHA="${{ steps.get_sha.outputs.sha }}"
-          PREV_SHA="${{ steps.get_prev_sha.outputs.prev_sha }}"
+          BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/sidex15/susfs4ksu-module/actions/workflows/build.yml/runs?status=success" |
+          jq -r '.workflow_runs[0].id')
+
+          ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/sidex15/susfs4ksu-module/actions/runs/$BUILD_ID/artifacts")
+
+          DOWNLOAD_URL=$(echo "$ARTIFACTS" | jq -r '.artifacts[0].archive_download_url') 
+
+          NAME=$(echo "$ARTIFACTS" | jq -r '.artifacts[0].name')
+          echo "SUSFS_NAME=$NAME" >> $GITHUB_ENV
+          NAME="susfs-$NAME.zip"
           
-          echo "Current SHA: $CURR_SHA"
-          echo "Previous SHA: $PREV_SHA"
+          echo $DOWNLOAD_URL
+          echo $NAME
+          # Download Manager file
+          curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o "$NAME" "$DOWNLOAD_URL"
+          echo "$NAME file downloaded.zip"
           
-          if [ "$CURR_SHA" != "$PREV_SHA" ]; then
-            echo "new_commit=true" >> $GITHUB_OUTPUT
-            echo "New commit detected!"
+          
+          # Unzip artifact zip to get the module files inside
+          mkdir -p susfs-module
+          unzip "$NAME" -d susfs-temp
+
+          # Check extracted contents: if they are loose files, pack them into a zip
+          cd susfs-temp
+          if ls *.zip 1>/dev/null 2>&1; then
+            # Already contains a zip file, just move it
+            mv *.zip ../susfs-module/
           else
-            echo "new_commit=false" >> $GITHUB_OUTPUT
-            echo "No new commits"
+            # Loose files, pack them into a zip
+            zip -r "../susfs-module/ksu_module_susfs.zip" .
           fi
-          
-      - name: Update SHA file in sha branch
-        if: steps.compare.outputs.new_commit == 'true'
-        run: |
+          cd ..
+          rm -rf susfs-temp "$NAME"
 
-          git checkout sha 2>/dev/null || git checkout --orphan sha
-          
+      - name: Notify on failure
+        if: steps.add_KSU.outcome == 'failure'
+        run: echo "Failed to download CI-built KSU!"
 
-          if [ ! -f "latest_sha.txt" ]; then
-            git rm -rf . 2>/dev/null || true
-          fi
+      - name: Upload APK
+        if: steps.add_KSU.outcome == 'success'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ inputs.kernelsu_variant }}-Manager(${{ env.KSU_VERSION }})
+          path: |
+            **/*.apk
 
-          echo "${{ steps.get_sha.outputs.sha }}" > latest_sha.txt
-          
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add latest_sha.txt
-          git commit -m "Update SukiSU latest SHA to ${{ steps.get_sha.outputs.sha }}" || exit 0
-          git push origin sha
-          
-      # - name: Trigger test_release.yml workflow
-      #   if: steps.compare.outputs.new_commit == 'true'
-      #   run: |
-      #      curl -X POST \
-      #       -H "Accept: application/vnd.github+json" \
-      #       -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-      #       -H "X-GitHub-Api-Version: 2022-11-28" \
-      #       https://api.github.com/repos/${{ github.repository }}/actions/workflows/test_release.yml/dispatches \
-      #       -d '{
-      #         "ref": "dev",
-      #         "inputs": {
-      #           "make_release": "true",
-      #           "kernelsu_variant": "SukiSU",
-      #           "kernelsu_branch": "Stable(标准)",
-      #           "version": "",
-      #           "use_zram": "false",
-      #           "use_bbg": "true",
-      #           "use_kpm": "true",
-      #           "get_manager": "true"
-      #         }
-      #       }'
+      - name: Upload SUSFS Module
+        if: steps.add_SUSFS.outcome == 'success'
+        uses: actions/upload-artifact@v6
+        with:
+          name: susfs-${{ env.SUSFS_NAME }}
+          path: ./susfs-module/*
