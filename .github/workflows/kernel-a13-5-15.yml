@@ -1,4 +1,4 @@
-name: 内核构建 - Android 13 (5.15)
+name: Kernel Build - Android 13 (5.15)
 
 permissions:
   contents: write
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       kernelsu_variant:
-        description: "KernelSU 变体"
+        description: "KernelSU Variant"
         required: true
         type: choice
         options:
@@ -18,34 +18,34 @@ on:
           - ReSukiSU
         default: ReSukiSU
       kernelsu_branch:
-        description: "KSU 分支"
+        description: "KSU Branch"
         required: true
         type: choice
         options:
-          - Stable(标准)
-          - Dev(开发)
-          - Other(其他/指定)
-        default: Stable(标准)
+          - Stable(Standard)
+          - Dev(Development)
+          - Other(Other/Specify)
+        default: Stable(Standard)
       version:
-        description: "自定义版本名 (可选)"
+        description: "Custom version name (Optional)"
         required: false
         type: string
       build_time:
-        description: "自定义构建时间 (可选，N或留空=当前UTC)"
+        description: "Custom build time (Optional, N or blank = current UTC)"
         required: false
         type: string
         default: "Sun Dec 01 08:10:00 UTC 2024"
       use_kpm:
-        description: "KPM 功能（patched 尚不支持）"
+        description: "KPM Feature (patched not supported yet)"
         required: true
         type: choice
-        default: "disabled (关闭)"
+        default: "disabled (Off)"
         options:
-          - "disabled (关闭)"
-          - "enabled (开启)"
-          - "patched (开启并修补，尚不支持)"
+          - "disabled (Off)"
+          - "enabled (On)"
+          - "patched (Enabled and patched, not supported yet)"
       droidspaces:
-        description: "Droidspaces 容器支持"
+        description: "Droidspaces container support"
         required: false
         type: choice
         options:
@@ -55,22 +55,22 @@ on:
           - "345"
         default: "off"
       use_zram:
-        description: "启用 ZRAM 增强算法"
+        description: "Enable ZRAM enhancement algorithm"
         required: true
         type: boolean
         default: false
       use_bbg:
-        description: "启用 BBG 防格机"
+        description: "Enable BBG anti-brick"
         required: true
         type: boolean
         default: false
       use_rekernel:
-        description: "启用 Re-Kernel 驱动"
+        description: "Enable Re-Kernel driver"
         required: false
         type: boolean
         default: false
       cancel_susfs:
-        description: "禁用 SUSFS"
+        description: "Disable SUSFS"
         required: true
         type: boolean
         default: false
@@ -110,7 +110,7 @@ on:
         type: string
         default: "off"
       called_from_main:
-        description: "是否从 main.yml 调用（内部使用）"
+        description: "Whether called from main.yml (internal use)"
         required: false
         type: boolean
         default: false
@@ -181,7 +181,7 @@ jobs:
       enable_susfs: ${{ !inputs.cancel_susfs }}
       droidspaces: ${{ inputs.droidspaces || 'off' }}
 
-  # 仅在直接触发时运行，从 main.yml 调用时跳过
+  # Only run when triggered directly, skip when called from main.yml
   get-ksu-manager:
     if: ${{ !inputs.called_from_main }}
     uses: ./.github/workflows/get-manager.yml
