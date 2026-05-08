@@ -37,11 +37,11 @@ on:
         description: "KernelSU Variant"
         type: choice
         options:
-          - SukiSU
-          - ReSukiSU
+          - Suki
+          - ReSuki
           - Official
-          #- Next
-        default: ReSukiSU
+          - Next
+        default: ReSuki
       kernelsu_branch:
         description: "KSU Branch"
         type: choice
@@ -63,13 +63,13 @@ on:
         required: false
       # ==================== Option Configuration ====================
       use_kpm:
-        description: "KPM Feature (patched not supported yet)"
+        description: "KPM Feature (patched supported )"
         type: choice
         default: "disabled (Off)"
         options:
           - "disabled (Off)"
           - "enabled (On)"
-          - "patched (Enabled and patched, not supported yet)"
+          - "patched (Enabled and patched"
       droidspaces:
         description: "Droidspaces container support (5.10~6.6: slot patch, 6.12: on/off)"
         type: choice
@@ -294,8 +294,8 @@ jobs:
           case "${{ inputs.kernelsu_variant }}" in
             "Next")      KSU_NAME="KernelSU-Next" ;;
             "Official")  KSU_NAME="KernelSU" ;;
-            "SukiSU")    KSU_NAME="SukiSU" ;;
-            "ReSukiSU")  KSU_NAME="ReSukiSU" ;;
+            "Suki")      KSU_NAME="Suki" ;;
+            "ReSuki")    KSU_NAME="ReSuki" ;;
           esac
           echo "KSU_NAME=$KSU_NAME" >> $GITHUB_ENV
 
@@ -317,7 +317,7 @@ jobs:
           fi
 
           # Hook type
-          if [ "${{ inputs.kernelsu_variant }}" = "SukiSU" ] || [ "${{ inputs.kernelsu_variant }}" = "ReSukiSU" ]; then
+          if [ "${{ inputs.kernelsu_variant }}" = "Suki" ] || [ "${{ inputs.kernelsu_variant }}" = "ReSuki" ]; then
             echo "HOOK_TYPE=SUSFS Inline Hooks" >> $GITHUB_ENV
           else
             echo "HOOK_TYPE=KPROBE Hooks" >> $GITHUB_ENV
@@ -366,11 +366,11 @@ jobs:
       # ==================== Determine KSU Branch ====================
       # Determine actual Git branch based on user selection
       - name: Determine KSU Branch
-        if: inputs.kernelsu_branch == 'Dev(Development)' || inputs.kernelsu_variant == 'SukiSU' || inputs.kernelsu_variant == 'ReSukiSU'
+        if: inputs.kernelsu_branch == 'Dev(Development)' || inputs.kernelsu_variant == 'Suki' || inputs.kernelsu_variant == 'ReSuki'
         run: |
           case "${{ inputs.kernelsu_variant }}" in
             "Official") BRANCH="main" ;;
-            "SukiSU"|"ReSukiSU") BRANCH="main" ;;
+            "Suki"|"ReSuki") BRANCH="main" ;;
             "Next") BRANCH="dev" ;;
             *) echo "Error: Unknown variant" >&2; exit 1 ;;
           esac
@@ -383,8 +383,8 @@ jobs:
           case "${{ inputs.kernelsu_variant }}" in
             "Official") REPO_URL="https://github.com/tiann/KernelSU.git"; REPO_URL2="tiann/KernelSU" ;;
             "Next") REPO_URL="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_URL2="KernelSU-Next/KernelSU-Next" ;;
-            "SukiSU") REPO_URL="https://github.com/SukiSU-Ultra/SukiSU-Ultra.git"; REPO_URL2="SukiSU-Ultra/SukiSU-Ultra" ;;
-            "ReSukiSU") REPO_URL="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_URL2="ReSukiSU/ReSukiSU" ;;
+            "Suki") REPO_URL="https://github.com/SukiSU-Ultra/SukiSU-Ultra.git"; REPO_URL2="SukiSU-Ultra/SukiSU-Ultra" ;;
+            "ReSuki") REPO_URL="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_URL2="ReSukiSU/ReSukiSU" ;;
           esac
 
           if [[ "${{ inputs.kernelsu_branch }}" == "Stable(Standard)" ]]; then
