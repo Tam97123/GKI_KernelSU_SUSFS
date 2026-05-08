@@ -17,7 +17,7 @@
 
 - 📖 [Documentation](https://github.com/Tam97123/GKI_KernelSU_SUSFS/wiki)
 - 📥 [Downloads](https://github.com/Tam97123/GKI_KernelSU_SUSFS/releases)
-- 🔰 [Tutorial](https://Tam97123.github.io/GKI_KernelSU_SUSFS/guide.html)
+- 🔰 [Tutorial](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
 
 ---
 
@@ -35,7 +35,7 @@
 For detailed instructions, please refer to the [**GitHub Wiki (bilingual CN/EN)**](https://github.com/Tam97123/GKI_KernelSU_SUSFS/wiki)
 
 Wiki covers:
-- [**🔰 Tutorial**](https://Tam97123.github.io/GKI_KernelSU_SUSFS/guide.html)
+- [**🔰 Tutorial**](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
 - 📥 Download / Flash kernel
 - 💡 Tips & Tricks
 - 🆘 Brick Recovery Guide
