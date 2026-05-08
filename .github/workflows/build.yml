@@ -134,7 +134,7 @@ jobs:
           DEFCONFIG=$KERNEL_ROOT/common/arch/arm64/configs/gki_defconfig
           SUSFS4KSU=$GITHUB_WORKSPACE/susfs4ksu
           KERNEL_PATCHES=$GITHUB_WORKSPACE/kernel_patches
-          SUKISU_PATCHES=$GITHUB_WORKSPACE/SukiSU_patch
+          SU_PATCHES=$GITHUB_WORKSPACE/SukiSU_patch
           ZZH_PATCHES=$GITHUB_WORKSPACE
           ANYKERNEL3=$GITHUB_WORKSPACE/AnyKernel3
           ACTION_BUILD=$GITHUB_WORKSPACE/Action-Build
@@ -202,8 +202,8 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config --global user.name "BuildBot"
-          git config --global user.email "BuildGkiKernel@gmail.com"
+          git config --global user.name "Tam97123"
+          git config --global user.email "219667310+Tam97123@users.noreply.github.com"
 
       - name: Clone dependency repositories
         run: |
@@ -215,17 +215,15 @@ jobs:
           rm -rf AnyKernel3/.git
 
           echo "Cloning SUSFS (Branch: $SUSFS_BRANCH)..."
-          if [ "${{ inputs.ksu_variant }}" == "SukiSU" ]; then
+          if [ "${{ inputs.ksu_variant }}" == "Suki" ]; then
             if ! git clone https://github.com/ShirkNeko/susfs4ksu.git -b "$SUSFS_BRANCH" 2>/dev/null; then
               echo "Branch $SUSFS_BRANCH not found in ShirkNeko repository, falling back to original simonpunk..."
               git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
             fi
-          elif [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ]; then
-            git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           else
             git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           fi
-
+          
           CONFIG_FILE="config/config"
           if [ -f "$CONFIG_FILE" ]; then
             CUSTOM_ENABLED=$(grep "^custom=" "$CONFIG_FILE" | cut -d'=' -f2)
@@ -350,7 +348,7 @@ jobs:
         working-directory: ${{ env.KERNEL_ROOT }}/common/drivers
         run: |
           echo "Downloading OnePlus 8E support patch..."
-          curl -LSs "https://github.com/zzh20188/GKI_KernelSU_SUSFS/raw/refs/heads/dev/hmbird_patch.c" -o hmbird_patch.c
+          curl -LSs "https://github.com/Tam97123/GKI_KernelSU_SUSFS/raw/refs/heads/dev/hmbird_patch.c" -o hmbird_patch.c
           echo "obj-y += hmbird_patch.o" >> Makefile
 
       - name: Determine KernelSU branch
@@ -359,14 +357,14 @@ jobs:
           branch_input="${{ inputs.ksu_branch }}"
           variant_input="${{ inputs.ksu_variant }}"
 
-          if [ "$variant_input" = "ReSukiSU" ]; then
+          if [ "$variant_input" = "ReSuki" ]; then
             BRANCH="-s main"
           else
             case "$branch_input" in
               "Stable(Standard)")
                 case "$variant_input" in
                   "Next") ;;
-                  "SukiSU") BRANCH="-s builtin" ;;
+                  "Suki") BRANCH="-s builtin" ;;
                   "Official") BRANCH="-s main" ;;
                   *) BRANCH="-" ;;
                 esac
@@ -375,7 +373,7 @@ jobs:
                 case "$variant_input" in
                   "Official") BRANCH="-s main" ;;
                   "Next") ;;
-                  "SukiSU") BRANCH="-s builtin" ;;
+                  "Suki") BRANCH="-s builtin" ;;
                   *) echo "Unknown variant: $variant_input" >&2; exit 1 ;;
                 esac
                 ;;
@@ -385,21 +383,21 @@ jobs:
                 ;;
             esac
 
-            # Force use of main branch when SukiSU does not enable SUSFS
-            if [ "$variant_input" = "SukiSU" ] && [ "${{ inputs.enable_susfs }}" = "false" ]; then
+            # Force use of main branch when Suki does not enable SUSFS
+            if [ "$variant_input" = "Suki" ] && [ "${{ inputs.enable_susfs }}" = "false" ]; then
               BRANCH="-s main"
             fi
           fi
 
-          # Check custom commit (only effective for SukiSU)
+          # Check custom commit (only effective for Suki)
           CONFIG_FILE="config/config"
           if [ -f "$CONFIG_FILE" ]; then
             CUSTOM_ENABLED=$(grep "^custom=" "$CONFIG_FILE" | cut -d'=' -f2)
-            if [ "$CUSTOM_ENABLED" == "true" ] && [ "$variant_input" == "SukiSU" ]; then
-              SUKISU_COMMIT=$(grep "^sukisu=" "$CONFIG_FILE" | cut -d'=' -f2)
-              if [ -n "$SUKISU_COMMIT" ]; then
-                BRANCH="-s $SUKISU_COMMIT"
-                echo "SukiSU using custom commit: $SUKISU_COMMIT"
+            if [ "$CUSTOM_ENABLED" == "true" ] && [ "$variant_input" == "Suki" ]; then
+              SUKI_COMMIT=$(grep "^sukisu=" "$CONFIG_FILE" | cut -d'=' -f2)
+              if [ -n "$SUKI_COMMIT" ]; then
+                BRANCH="-s $SUKI_COMMIT"
+                echo "Suki using custom commit: $SUKI_COMMIT"
               fi
             fi
           fi
@@ -429,12 +427,12 @@ jobs:
               echo "Adding KernelSU-Next..."
               curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/refs/heads/dev/kernel/setup.sh" | bash -s dev_susfs
               ;;
-            "SukiSU")
+            "Suki")
               echo "Adding SukiSU..."
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
               ;;
-            "ReSukiSU")
-              echo "Adding ReSukiSU..."
+            "ReSuki")
+              echo "Adding ReSuki..."
               curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash $BRANCH
               ;;
           esac
@@ -446,15 +444,15 @@ jobs:
             echo "KSU_LATEST_COMMIT_DATE=Unknown" >> $GITHUB_ENV
           fi
 
-      - name: Configure SukiSU Manager info
-        if: inputs.ksu_variant == 'SukiSU'
+      - name: Configure Suki Manager info
+        if: inputs.ksu_variant == 'Suki'
         working-directory: ${{ env.KERNEL_ROOT }}/KernelSU
         run: |
           KBUILD_FILE="./kernel/Kbuild"
           CUSTOM_TAG="${{ vars.MANAGER_STR }}"
 
           if [ ! -f "$KBUILD_FILE" ]; then
-            echo "$KBUILD_FILE not found, skipping SukiSU version tag customization"
+            echo "$KBUILD_FILE not found, skipping Suki version tag customization"
             exit 0
           fi
 
@@ -532,15 +530,15 @@ jobs:
 
               cd ..
               ;;
-            "Next"|"SukiSU"|"ReSukiSU")
-              echo "Next/SukiSU/ReSukiSU using built-in SUSFS support"
+            "Next"|"Suki"|"ReSuki")
+              echo "Next/Suki/ReSuki using built-in SUSFS support"
               ;;
           esac
 
           cd $KERNEL_ROOT/common
           patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
 
-          if [ "${{ inputs.ksu_variant }}" == "Official" ] || [ "${{ inputs.ksu_variant }}" == "Next" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ]; then
+          if [ "${{ inputs.ksu_variant }}" == "Official" ] || [ "${{ inputs.ksu_variant }}" == "Next" ] || [ "${{ inputs.ksu_variant }}" == "Suki" ] || [ "${{ inputs.ksu_variant }}" == "ReSuki" ]; then
             CURRENT_SUB="${{ inputs.sub_level }}"
             if [[ ! "$CURRENT_SUB" =~ ^[0-9]+$ ]]; then
               CURRENT_SUB=99999
@@ -788,17 +786,17 @@ jobs:
             echo "f2fs-\$(CONFIG_F2FS_IOSTAT) += iostat.o" >> "fs/f2fs/Makefile"
           fi
 
-          cp -r $SUKISU_PATCHES/other/zram/lz4k/include/linux/* ./include/linux/
-          cp -r $SUKISU_PATCHES/other/zram/lz4k/lib/* ./lib/
-          cp -r $SUKISU_PATCHES/other/zram/lz4k/crypto/* ./crypto/
-          cp -r $SUKISU_PATCHES/other/zram/lz4k_oplus ./lib/
+          cp -r $SUKI_PATCHES/other/zram/lz4k/include/linux/* ./include/linux/
+          cp -r $SUKI_PATCHES/other/zram/lz4k/lib/* ./lib/
+          cp -r $SUKI_PATCHES/other/zram/lz4k/crypto/* ./crypto/
+          cp -r $SUKI_PATCHES/other/zram/lz4k_oplus ./lib/
 
-          cp $SUKISU_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
+          cp $SUKI_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
           if ! patch -p1 -F 3 < lz4kd.patch; then
             echo "::warning::lz4kd.patch application failed, maybe already applied or context mismatch"
           fi
 
-          cp $SUKISU_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
+          cp $SUKI_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
           if ! patch -p1 -F 3 < lz4k_oplus.patch; then
             echo "::warning::lz4k_oplus.patch application failed, maybe already applied or context mismatch"
           fi
@@ -963,7 +961,7 @@ jobs:
           CONFIG_TMPFS_POSIX_ACL=y
           EOF
 
-          if [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ]; then
+          if [ "${{ inputs.ksu_variant }}" == "Suki" ] || [ "${{ inputs.ksu_variant }}" == "ReSuki" ] || [ "${{ inputs.ksu_variant }}" == "Next" ]; then
             if [[ "${{ inputs.use_kpm }}" == enabled* ]] || [[ "${{ inputs.use_kpm }}" == patched* ]]; then
               if ! grep -RqsE '^[[:space:]]*config[[:space:]]+KPM([[:space:]]|$)' common KernelSU 2>/dev/null; then
                 echo "Error: KPM enabled, but current KernelSU code did not declare CONFIG_KPM" >&2
@@ -1103,8 +1101,8 @@ jobs:
             echo "Current SUSFS latest commit date: ${SUSFS_LATEST_COMMIT_DATE}"
             echo "If the dates are different or too far apart, the patch will fail and compilation will fail"
 
-      # - name: Apply KPM patch (SukiSU/ReSukiSU/Next)
-      #   if: startsWith(inputs.use_kpm, 'patched') && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'ReSukiSU' || inputs.ksu_variant == 'Next')
+      # - name: Apply KPM patch (Suki/ReSuki/Next)
+      #   if: startsWith(inputs.use_kpm, 'patched') && (inputs.ksu_variant == 'Suki' || inputs.ksu_variant == 'ReSuki' || inputs.ksu_variant == 'Next')
       #   run: |
       #     case "${{ inputs.android_version }}" in
       #       "android12"|"android13")
