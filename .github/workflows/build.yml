@@ -428,7 +428,7 @@ jobs:
               curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/refs/heads/dev/kernel/setup.sh" | bash -s dev_susfs
               ;;
             "Suki")
-              echo "Adding SukiSU..."
+              echo "Adding Suki..."
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
               ;;
             "ReSuki")
@@ -1115,7 +1115,7 @@ jobs:
       #         ;;
       #     esac
 
-      #     cp -r $SUKISU_PATCHES/kpm/patch_linux "$TARGET_PATH/patch"
+      #     cp -r $SUKI_PATCHES/kpm/patch_linux "$TARGET_PATH/patch"
       #     cd "$TARGET_PATH"
       #     chmod 777 patch
       #     ./patch
