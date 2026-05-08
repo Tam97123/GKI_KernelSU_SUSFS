@@ -15,9 +15,7 @@
 
 ## 🚀 Quick Navigation
 
-- 📖 [Documentation](https://github.com/Tam97123/GKI_KernelSU_SUSFS/wiki)
 - 📥 [Downloads](https://github.com/Tam97123/GKI_KernelSU_SUSFS/releases)
-- 🔰 [Tutorial](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
 
 ---
 
@@ -26,22 +24,6 @@
 > **Note:** OnePlus ColorOS 14/15 is currently not supported. A data wipe may be required after flashing.
 
 > **rekernel feature (beta): rekernel feature is now supported (currently in beta)**
-
-
----
-
-## 📚 Documentation & Guides
-
-For detailed instructions, please refer to the [**GitHub Wiki (bilingual CN/EN)**](https://github.com/Tam97123/GKI_KernelSU_SUSFS/wiki)
-
-Wiki covers:
-- [**🔰 Tutorial**](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
-- 📥 Download / Flash kernel
-- 💡 Tips & Tricks
-- 🆘 Brick Recovery Guide
-- 📊 Kernel Version Compatibility
-
----
 
 ## 🧪 Droidspaces Container Support (Experimental)
 
