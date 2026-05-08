@@ -68,11 +68,11 @@ jobs:
           if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
             echo "This is the Next variant"
             git clone https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU
-          elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
-            echo "This is the SukiSU variant"
+          elif [ "${{ inputs.kernelsu_variant }}" == "Suki" ]; then
+            echo "This is the Suki variant"
             git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git KernelSU
-          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
-            echo "This is the ReSukiSU variant"
+          elif [ "${{ inputs.kernelsu_variant }}" == "ReSuki" ]; then
+            echo "This is the ReSuki variant"
             git clone https://github.com/ReSukiSU/ReSukiSU.git KernelSU
           elif [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
             echo "This is the Official"
@@ -81,16 +81,16 @@ jobs:
             echo "Unknown variant"
           fi
 
-          VAR=$([[ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]] && echo 700 || echo 200)
+          VAR=$([[ "${{ inputs.kernelsu_variant }}" == "Suki" ]] && echo 700 || echo 200)
 
           cd KernelSU
 
           # Calculate KSU version number
           KSU_GIT_VERSION=$(git rev-list --count HEAD)
 
-          if [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
+          if [ "${{ inputs.kernelsu_variant }}" == "Suki" ]; then
             KSU_VERSION=$((40000 + KSU_GIT_VERSION - 2815))
-          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+          elif [ "${{ inputs.kernelsu_variant }}" == "ReSuki" ]; then
             KSU_VERSION=$((30700 + KSU_GIT_VERSION))
           elif [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
             KSU_VERSION=$((20000 + KSU_GIT_VERSION))
@@ -118,12 +118,12 @@ jobs:
             REPO="KernelSU-Next/KernelSU-Next"
             KSUM="manager"
             BRANCH="dev"
-          elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
-            echo "SukiSU..."
+          elif [ "${{ inputs.kernelsu_variant }}" == "Suki" ]; then
+            echo "Suki..."
             REPO="SukiSU-Ultra/SukiSU-Ultra"
             KSUM="manager"
-          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
-            echo "ReSukiSU..."
+          elif [ "${{ inputs.kernelsu_variant }}" == "ReSuki" ]; then
+            echo "ReSuki..."
             REPO="ReSukiSU/ReSukiSU"
             KSUM="manager"
           elif [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
