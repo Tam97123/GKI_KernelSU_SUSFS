@@ -1,16 +1,13 @@
 <div align="center">
 
 # GKI KernelSU SUSFS
-### 🏮 2026 🐎 Happy New Year! 🏮
 
 **Automated GKI Kernel Builds | KernelSU + SUSFS Integrated**
 
-[![Release](https://img.shields.io/github/v/release/zzh20188/GKI_KernelSU_SUSFS?label=Release&style=flat-square&logo=github&logoColor=white&color=2ea44f)](https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases)
-[![Coolapk](https://img.shields.io/badge/Follow-Coolapk-3DDC84?style=flat-square&logo=android&logoColor=white)](http://www.coolapk.com/u/11253396)
+[![Release](https://img.shields.io/github/v/release/Tam97123/GKI_KernelSU_SUSFS?label=Release&style=flat-square&logo=github&logoColor=white&color=2ea44f)](https://github.com/Tam97123/GKI_KernelSU_SUSFS/releases)
+[![Telegram](https://img.shields.io/badge/Telegram-𝑻𝒂𝒎-blue?logo=telegram)](https://t.me/Id5523842976)
 [![KernelSU](https://img.shields.io/badge/KernelSU-Supported-5AA300?style=flat-square)](https://kernelsu.org/)
 [![SUSFS](https://img.shields.io/badge/SUSFS-Integrated-E67E22?style=flat-square)](https://gitlab.com/simonpunk/susfs4ksu)
-
-**English** | [简体中文](README-CN.md)
 
 ---
 
@@ -18,9 +15,9 @@
 
 ## 🚀 Quick Navigation
 
-- 📖 [Documentation](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
-- 📥 [Downloads](https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases)
-- 🔰 [Tutorial](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
+- 📖 [Documentation](https://github.com/Tam97123/GKI_KernelSU_SUSFS/wiki)
+- 📥 [Downloads](https://github.com/Tam97123/GKI_KernelSU_SUSFS/releases)
+- 🔰 [Tutorial](https://Tam97123.github.io/GKI_KernelSU_SUSFS/guide.html)
 
 ---
 
@@ -35,10 +32,10 @@
 
 ## 📚 Documentation & Guides
 
-For detailed instructions, please refer to the [**GitHub Wiki (bilingual CN/EN)**](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
+For detailed instructions, please refer to the [**GitHub Wiki (bilingual CN/EN)**](https://github.com/Tam97123/GKI_KernelSU_SUSFS/wiki)
 
 Wiki covers:
-- [**🔰 Tutorial**](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
+- [**🔰 Tutorial**](https://Tam97123.github.io/GKI_KernelSU_SUSFS/guide.html)
 - 📥 Download / Flash kernel
 - 💡 Tips & Tricks
 - 🆘 Brick Recovery Guide
@@ -97,12 +94,14 @@ custom=true
 
 # SUSFS commit hash per branch
 gki-android12-5.10=
+gki-android13-5.10=
 gki-android13-5.15=
+gki-android14-5.15=
 gki-android14-6.1=
 gki-android15-6.6=
 
 # SukiSU commit hash
-sukisu=
+suki=
 ```
 
 > Empty value = use the latest commit of that branch.
@@ -124,49 +123,6 @@ During the build, the workflow will automatically:
 - In `$KERNEL_ROOT/common/kernel/Makefile`, switch the `$(obj)/config_data` rule from `$(KCONFIG_CONFIG)` to `arch/arm64/configs/stock_defconfig`
 - Make `/proc/config.gz` in the built kernel closer to your stock kernel config
 ---
-
-## 🛠️ Post-Install Recommendations
-
-### 📦 Recommended Modules
-
-<table>
-<tr>
-<th>Module</th>
-<th>Repository</th>
-<th>Channel</th>
-</tr>
-<tr>
-<td><b>LSPosed-Irena</b></td>
-<td><a href="https://github.com/re-zero001/LSPosed-Irena">GitHub</a></td>
-<td><a href="https://t.me/lsposed_irena">Telegram</a></td>
-</tr>
-<tr>
-<td><b>Zygisk Next</b></td>
-<td><a href="https://github.com/Dr-TSNG/ZygiskNext">GitHub</a></td>
-<td rowspan="2"><a href="https://t.me/real5ec1cff">Telegram</a></td>
-</tr>
-<tr>
-<td><b>TrickyStore</b></td>
-<td><a href="https://github.com/5ec1cff/TrickyStore">GitHub</a></td>
-</tr>
-</table>
-
-### 🔧 Xposed Modules
-
-| Module | Description |
-|:---:|:---|
-| **FuseFixer** | [Unicode zero-width fix module](https://t.me/real5ec1cff/268) |
-
-### App
-
-| Name | Description |
-|:---:|:---|
-| **Scene** | [Official Site](https://omarea.com/#/) |
----
-
-<div align="center">
-
-**More content coming soon...**
 
 ⭐ If this project helps you, please give it a Star!
 
