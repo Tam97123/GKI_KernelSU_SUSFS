@@ -363,7 +363,7 @@ jobs:
             case "$branch_input" in
               "Stable(Standard)")
                 case "$variant_input" in
-                  "Next") ;;
+                  "Next") BRANCH="-s main";;
                   "Suki") BRANCH="-s builtin" ;;
                   "Official") BRANCH="-s main" ;;
                   *) BRANCH="-" ;;
@@ -372,7 +372,7 @@ jobs:
               "Dev(Development)")
                 case "$variant_input" in
                   "Official") BRANCH="-s main" ;;
-                  "Next") ;;
+                  "Next") BRANCH="-s dev" ;;
                   "Suki") BRANCH="-s builtin" ;;
                   *) echo "Unknown variant: $variant_input" >&2; exit 1 ;;
                 esac
@@ -1101,26 +1101,24 @@ jobs:
             echo "Current SUSFS latest commit date: ${SUSFS_LATEST_COMMIT_DATE}"
             echo "If the dates are different or too far apart, the patch will fail and compilation will fail"
 
-      # - name: Apply KPM patch (Suki/ReSuki/Next)
-      #   if: startsWith(inputs.use_kpm, 'patched') && (inputs.ksu_variant == 'Suki' || inputs.ksu_variant == 'ReSuki' || inputs.ksu_variant == 'Next')
-      #   run: |
-      #     case "${{ inputs.android_version }}" in
-      #       "android12"|"android13")
-      #         if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
-      #           TARGET_PATH="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-      #         fi
-      #         ;;
-      #       "android14"|"android15"|"android16")
-      #         TARGET_PATH="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/"
-      #         ;;
-      #     esac
+      - name: Apply KPM patch (Suki/ReSuki)
+        if: startsWith(inputs.use_kpm, 'patched') && (inputs.ksu_variant == 'Suki' || inputs.ksu_variant == 'ReSuki')
+        run: |
+          case "${{ inputs.android_version }}" in
+            "android12"|"android13")
+              TARGET_PATH="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
+              ;;
+            "android14"|"android15"|"android16")
+              TARGET_PATH="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/"
+              ;;
+          esac
 
-      #     cp -r $SUKI_PATCHES/kpm/patch_linux "$TARGET_PATH/patch"
-      #     cd "$TARGET_PATH"
-      #     chmod 777 patch
-      #     ./patch
-      #     rm -rf Image
-      #     mv oImage Image
+          cp -r $SUKI_PATCHES/kpm/patch_linux "$TARGET_PATH/patch"
+          cd "$TARGET_PATH"
+          chmod 777 patch
+          ./patch
+          rm -rf Image
+          mv oImage Image
 
       - name: Prepare Boot image
         run: |
