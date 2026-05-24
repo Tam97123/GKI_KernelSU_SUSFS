@@ -876,6 +876,64 @@ jobs:
 
           echo "Droidspaces 集成完成"
 
+          echo "GKI6.6 普通用户联网专用配置 (Droidspaces)"
+          # 专门处理 =n 类型的配置（安卓网络权限必须关闭）
+          disable_config() {
+            local cfg="$1"
+            if grep -q "^${cfg}=n" "$DEFCONFIG"; then
+              echo "  已禁用: $cfg"
+            elif grep -q "^${cfg}=y" "$DEFCONFIG"; then
+              sed -i "s/^${cfg}=y$/${cfg}=n/" "$DEFCONFIG"
+              echo "  已关闭: $cfg"
+            else
+              echo "# ${cfg} is not set" >> "$DEFCONFIG"
+              echo "  已添加并禁用: $cfg"
+            fi
+          }
+
+          if [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" ]]; then
+            # 1. 开启用户命名空间（必须）
+            # enable_config_if_defined CONFIG_USER_NS
+            # 2. 关闭安卓严格网络控制（必须）
+            disable_config CONFIG_ANDROID_PARANOID_NETWORK
+          fi
+
+      - name: 安卓15&GKI6.6注入NTsync内核配置
+        run: |
+          set -e
+          echo "=== 开始注入 NTSync 内核补丁 ==="
+          echo "Android 版本: ${{ inputs.android_version }}"
+          echo "Kernel 版本: ${{ inputs.kernel_version }}"
+
+          if [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" ]]; then
+            cd "$KERNEL_ROOT"
+            cd ./common
+            wget "https://raw.githubusercontent.com/Goldzxcbug/Droidspaces_Kernel_patch/refs/heads/main/NTsync/ntsync_base.patch"
+            wget "https://raw.githubusercontent.com/Goldzxcbug/Droidspaces_Kernel_patch/refs/heads/main/NTsync/ntsync_compat_android15-6.6.patch"
+            patch -p1 < 'ntsync_base.patch'
+            patch -p1 < 'ntsync_compat_android15-6.6.patch'
+
+            cd ../
+
+            # 配置路径
+            CONFIG_PATH="./common/arch/arm64/configs/gki_defconfig"
+            echo "正在检查并启用 CONFIG_NTSYNC..."
+
+            # 1. 移除 # CONFIG_NTSYNC is not set（关键！）
+            sed -i '/CONFIG_NTSYNC is not set/d' "$CONFIG_PATH"
+            # 2. 如果没有启用，则追加
+            if ! grep -q "^CONFIG_NTSYNC=y" "$CONFIG_PATH"; then
+              echo "CONFIG_NTSYNC=y" >> "$CONFIG_PATH"
+              echo "✅ 已成功启用 CONFIG_NTSYNC"
+            else
+              echo "✅ CONFIG_NTSYNC 已处于启用状态"
+            fi
+
+            echo "=== NTSync 补丁与配置注入完成 ==="
+          else
+            echo "当前版本不满足 Android15 + Kernel6.6，跳过 NTSync 注入"
+          fi
+
       - name: 应用 Unicode 绕过修复
         if: inputs.enable_susfs
         working-directory: ${{ env.KERNEL_ROOT }}/common
