@@ -42,13 +42,6 @@ on:
           - Official
           #- Next
         default: ReSukiSU
-      kernelsu_branch:
-        description: "KSU 分支"
-        type: choice
-        options:
-          - Stable(标准)
-          - Dev(开发)
-        default: Stable(标准)
 
       # ==================== 可选配置 ====================
       version:
@@ -144,7 +137,6 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -163,7 +155,6 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -182,7 +173,6 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -201,7 +191,6 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -220,7 +209,6 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -339,13 +327,6 @@ jobs:
             echo "MOUNT_TYPE=Magic Mount" >> $GITHUB_ENV
           fi
 
-          # 分支显示
-          if [ "${{ inputs.kernelsu_branch }}" = "Dev(开发)" ]; then
-            echo "BRANCH_INFO=Dev" >> $GITHUB_ENV
-          else
-            echo "BRANCH_INFO=Stable" >> $GITHUB_ENV
-          fi
-
           # 发布标题
           echo "RELEASE_NAME=GKI Kernel: ${KSU_NAME} ${KSU_VER} + SUSFS ${SUS_VER}" >> $GITHUB_ENV
 
@@ -372,18 +353,25 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v6
 
-      # ==================== 确定 KSU 分支 ====================
-      # 根据用户选择确定实际的 Git 分支
-      - name: 确定 KSU 分支
-        if: inputs.kernelsu_branch == 'Dev(开发)' || inputs.kernelsu_variant == 'SukiSU' || inputs.kernelsu_variant == 'ReSukiSU'
+      # ==================== 确定 KSU 引用 ====================
+      # 根据实际构建逻辑确定 KernelSU 上游引用
+      - name: 确定 KSU 引用
         run: |
           case "${{ inputs.kernelsu_variant }}" in
             "Official") BRANCH="main" ;;
-            "SukiSU"|"ReSukiSU") BRANCH="main" ;;
+            "SukiSU")
+              if [ "${{ inputs.cancel_susfs }}" = "true" ]; then
+                BRANCH="main"
+              else
+                BRANCH="builtin"
+              fi
+              ;;
+            "ReSukiSU") BRANCH="main" ;;
             "Next") BRANCH="dev" ;;
             *) echo "错误: 未知变体" >&2; exit 1 ;;
           esac
           echo "KSU_BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "BRANCH_INFO=$BRANCH" >> $GITHUB_ENV
 
       # ==================== 获取 KernelSU 提交信息 ====================
       # 获取当前使用的 KernelSU 版本的 Git 提交信息
@@ -396,11 +384,17 @@ jobs:
             "ReSukiSU") REPO_URL="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_URL2="ReSukiSU/ReSukiSU" ;;
           esac
 
-          if [[ "${{ inputs.kernelsu_branch }}" == "Stable(标准)" ]]; then
-            TAG=$(git ls-remote --tags --sort=-v:refname $REPO_URL | grep -o 'refs/tags/.*' | cut -d'/' -f3 | head -n1)
-            KSU_REF=$TAG
-            KSU_URL="https://github.com/$REPO_URL2/releases/tag/$TAG"
-          else
+          if [ "${{ inputs.kernelsu_variant }}" = "SukiSU" ] && [ -f "config/config" ]; then
+            CUSTOM_ENABLED=$(grep "^custom=" config/config | cut -d'=' -f2)
+            CUSTOM_COMMIT=$(grep "^sukisu=" config/config | cut -d'=' -f2)
+            if [ "$CUSTOM_ENABLED" = "true" ] && [ -n "$CUSTOM_COMMIT" ]; then
+              KSU_REF="$CUSTOM_COMMIT"
+              KSU_URL="https://github.com/$REPO_URL2/commit/$CUSTOM_COMMIT"
+              echo "BRANCH_INFO=custom" >> $GITHUB_ENV
+            fi
+          fi
+
+          if [ -z "${KSU_REF:-}" ]; then
             COMMIT_HASH=$(git ls-remote $REPO_URL refs/heads/${KSU_BRANCH:-main} | awk '{ print $1 }')
             KSU_REF=$COMMIT_HASH
             KSU_URL="https://github.com/$REPO_URL2/commit/$COMMIT_HASH"

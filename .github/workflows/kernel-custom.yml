@@ -57,15 +57,6 @@ on:
           - SukiSU
           - ReSukiSU
         default: ReSukiSU
-      kernelsu_branch:
-        description: "KSU 分支"
-        required: true
-        type: choice
-        options:
-          - Stable(标准)
-          - Dev(开发)
-          - Other(其他/指定)
-        default: Stable(标准)
 
       # ==================== 可选配置 ====================
       version:
@@ -143,7 +134,6 @@ jobs:
       os_patch_level: ${{ inputs.os_patch_level }}
       revision: ${{ inputs.revision || '' }}
       ksu_variant: ${{ inputs.kernelsu_variant }}
-      ksu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version || '' }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}

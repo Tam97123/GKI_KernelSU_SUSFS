@@ -25,9 +25,6 @@ on:
       ksu_variant:
         required: true
         type: string
-      ksu_branch:
-        required: true
-        type: string
 
       # ==================== 可选配置 ====================
       version:
@@ -97,7 +94,6 @@ jobs:
           echo "子版本号      : ${{ inputs.sub_level }}"
           echo "补丁级别      : ${{ inputs.os_patch_level }}"
           echo "KSU 变体      : ${{ inputs.ksu_variant }}"
-          echo "KSU 分支      : ${{ inputs.ksu_branch }}"
           echo "构建时间      : ${{ inputs.build_time }}"
           echo "SUSFS 状态    : ${{ inputs.enable_susfs }}"
           echo "ZRAM 增强     : ${{ inputs.use_zram }}"
@@ -361,40 +357,27 @@ jobs:
       - name: 确定 KernelSU 分支
         id: ksu-branch
         run: |
-          branch_input="${{ inputs.ksu_branch }}"
           variant_input="${{ inputs.ksu_variant }}"
 
-          if [ "$variant_input" = "ReSukiSU" ]; then
-            BRANCH="-s main"
-          else
-            case "$branch_input" in
-              "Stable(标准)")
-                case "$variant_input" in
-                  "Next") ;;
-                  "SukiSU") BRANCH="-s builtin" ;;
-                  "Official") BRANCH="-s main" ;;
-                  *) BRANCH="-" ;;
-                esac
-                ;;
-              "Dev(开发)")
-                case "$variant_input" in
-                  "Official") BRANCH="-s main" ;;
-                  "Next") ;;
-                  "SukiSU") BRANCH="-s builtin" ;;
-                  *) echo "未知变体: $variant_input" >&2; exit 1 ;;
-                esac
-                ;;
-              *)
-                echo "未知分支: $branch_input" >&2
-                exit 1
-                ;;
-            esac
-
-            # SukiSU 不启用 SUSFS 时强制使用 main 分支
-            if [ "$variant_input" = "SukiSU" ] && [ "${{ inputs.enable_susfs }}" = "false" ]; then
+          case "$variant_input" in
+            "Official"|"ReSukiSU")
               BRANCH="-s main"
-            fi
-          fi
+              ;;
+            "SukiSU")
+              if [ "${{ inputs.enable_susfs }}" = "false" ]; then
+                BRANCH="-s main"
+              else
+                BRANCH="-s builtin"
+              fi
+              ;;
+            "Next")
+              BRANCH=""
+              ;;
+            *)
+              echo "未知变体: $variant_input" >&2
+              exit 1
+              ;;
+          esac
 
           # 检查自定义提交 (仅对 SukiSU 生效)
           CONFIG_FILE="config/config"
