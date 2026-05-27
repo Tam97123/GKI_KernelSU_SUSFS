@@ -472,6 +472,25 @@ jobs:
             echo "KSU_LATEST_COMMIT_DATE=未知" >> $GITHUB_ENV
           fi
 
+      - name: 修复 SukiSU SUSFS sulog 参数类型
+        if: inputs.ksu_variant == 'SukiSU' && inputs.enable_susfs
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          SULOG_EVENT="common/drivers/kernelsu/sulog/event.c"
+
+          if [ ! -f "$SULOG_EVENT" ]; then
+            echo "未找到 $SULOG_EVENT，跳过 sulog 参数类型修复"
+            exit 0
+          fi
+
+          # SukiSU builtin 513dd54 修改了共用调用点，但 SUSFS 分支仍接收 struct user_arg_ptr *。
+          if grep -q 'struct user_arg_ptr \*argv_user' "$SULOG_EVENT" && grep -q ', USER_ARG_NULL, gfp)' "$SULOG_EVENT"; then
+            sed -i 's|, USER_ARG_NULL, gfp)|, \&USER_ARG_NULL, gfp)|g' "$SULOG_EVENT"
+            echo "已修复 SukiSU SUSFS sulog USER_ARG_NULL 参数类型"
+          else
+            echo "SukiSU SUSFS sulog 参数类型无需修复"
+          fi
+
       - name: 配置 SukiSU 管理器信息
         if: inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'SukiSU(40726)' || inputs.ksu_variant == 'SukiSU(40548)'
         working-directory: ${{ env.KERNEL_ROOT }}/KernelSU
