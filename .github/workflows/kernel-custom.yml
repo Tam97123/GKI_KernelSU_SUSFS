@@ -99,18 +99,10 @@ on:
           - "345"
         default: "off"
       droidspaces_ntsync:
-        description: "Droidspaces 容器 NTSync 支持 Patch"
+        description: "启用 Droidspaces 容器 NTSync 支持（需启用 Droidspaces）"
         required: false
-        type: choice
-        options:
-          - "off"
-          - "ntsync_compat_android12-5.10"
-          - "ntsync_compat_android12-5.10_OOS14"
-          - "ntsync_compat_android13-5.15"
-          - "ntsync_compat_android14-6.1"
-          - "ntsync_compat_android15-6.6"
-          - "ntsync_compat_android16-6.12"
-        default: "off"
+        type: boolean
+        default: false
 
       # ==================== 功能开关 ====================
       use_zram:
@@ -161,7 +153,7 @@ jobs:
       supp_op: ${{ inputs.supp_op || false }}
       enable_susfs: ${{ !inputs.cancel_susfs }}
       droidspaces: ${{ inputs.droidspaces || 'off' }}
-      droidspaces_ntsync: ${{ inputs.droidspaces_ntsync }}
+      droidspaces_ntsync: ${{ inputs.droidspaces_ntsync || false }}
 
   get-ksu-manager:
     uses: ./.github/workflows/get-manager.yml

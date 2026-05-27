@@ -52,6 +52,11 @@ on:
           - "off"
           - "on"
         default: "off"
+      droidspaces_ntsync:
+        description: "启用 Droidspaces 容器 NTSync 支持（需启用 Droidspaces）"
+        required: false
+        type: boolean
+        default: false
       use_zram:
         description: "启用 ZRAM 增强算法"
         required: true
@@ -115,6 +120,10 @@ on:
         required: false
         type: string
         default: "off"
+      droidspaces_ntsync:
+        required: false
+        type: boolean
+        default: false
       called_from_main:
         description: "是否从 main.yml 调用（内部使用）"
         required: false
@@ -156,6 +165,7 @@ jobs:
       supp_op: ${{ inputs.supp_op || false }}
       enable_susfs: ${{ !inputs.cancel_susfs }}
       droidspaces: ${{ inputs.droidspaces || 'off' }}
+      droidspaces_ntsync: ${{ inputs.droidspaces_ntsync || false }}
 
   # 仅在直接触发时运行，从 main.yml 调用时跳过
   get-ksu-manager:
