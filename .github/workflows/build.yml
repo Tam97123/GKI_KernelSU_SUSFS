@@ -800,14 +800,16 @@ jobs:
                 fi
               fi
 
-              # 修复 6.6 SELinux hide 调用旧 with_policy 接口导致的链接错误
-              for SELINUX_FILE in ./security/selinux/hooks.c ./security/selinux/selinuxfs.c; do
-                if grep -q 'security_.*_with_policy' "$SELINUX_FILE"; then
-                  sed -i -E 's/security_context_to_sid_with_policy\([^,]+, ([^,]+), ([^,]+), ([^,]+), SECSID_NULL, ([^)]+)\)/security_context_to_sid(\1, \2, \3, \4)/g' "$SELINUX_FILE"
-                  sed -i -E 's/security_sid_to_context_with_policy\([^,]+, ([^,]+), ([^,]+), ([^)]+)\)/security_sid_to_context(\1, \2, \3)/g' "$SELINUX_FILE"
-                  sed -i -E 's/security_compute_av_user_with_policy\([^,]+, ([^,]+), ([^,]+), ([^,]+), ([^)]+)\)/security_compute_av_user(\1, \2, \3, \4)/g' "$SELINUX_FILE"
-                fi
-              done
+              # 修复 SukiSU 6.6 SELinux hide 调用旧 with_policy 接口导致的链接错误
+              if [[ "${{ inputs.ksu_variant }}" == "SukiSU" ]]; then
+                for SELINUX_FILE in ./security/selinux/hooks.c ./security/selinux/selinuxfs.c; do
+                  if grep -q 'security_.*_with_policy' "$SELINUX_FILE"; then
+                    sed -i -E 's/security_context_to_sid_with_policy\([^,]+, ([^,]+), ([^,]+), ([^,]+), SECSID_NULL, ([^)]+)\)/security_context_to_sid(\1, \2, \3, \4)/g' "$SELINUX_FILE"
+                    sed -i -E 's/security_sid_to_context_with_policy\([^,]+, ([^,]+), ([^,]+), ([^)]+)\)/security_sid_to_context(\1, \2, \3)/g' "$SELINUX_FILE"
+                    sed -i -E 's/security_compute_av_user_with_policy\([^,]+, ([^,]+), ([^,]+), ([^,]+), ([^)]+)\)/security_compute_av_user(\1, \2, \3, \4)/g' "$SELINUX_FILE"
+                  fi
+                done
+              fi
             fi
 
             # Android 16 - 6.12 修复
