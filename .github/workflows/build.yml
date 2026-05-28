@@ -802,6 +802,22 @@ jobs:
                   sed -i '/#include <linux\/sched\/sysctl.h>/a #ifdef CONFIG_KSU_SUSFS_SUS_MAP\n#include <linux\/susfs_def.h>\n#endif' ./mm/memory.c
                 fi
               fi
+              # 修复老版 SukiSU 6.6.50~6.6.58: task_mmu.c 打入 SUSFS 后使用 vma，但旧源码没有对应声明
+              if [[ -n "$LEGACY_SUKISU_CONFIG" && "$CURRENT_SUB" -ge 50 && "$CURRENT_SUB" -le 58 ]] \
+                && grep -qF 'vma = find_vma(mm, start_vaddr);' ./fs/proc/task_mmu.c; then
+                TASK_MMU_PATCH="$KERNEL_PATCHES/wild/archived/susfs_fix_patches/v2.1.0/a15-6.6/task_mmu.c.patch"
+                if [ ! -f "$TASK_MMU_PATCH" ]; then
+                  echo "::error::补丁不存在: $TASK_MMU_PATCH"
+                  exit 1
+                fi
+                cp "$TASK_MMU_PATCH" ./
+                if patch -p1 --dry-run < task_mmu.c.patch >/dev/null 2>&1; then
+                  patch -p1 --no-backup-if-mismatch < task_mmu.c.patch
+                  echo "已应用 Android 15 6.6.50~6.6.58 task_mmu.c 归档修复补丁"
+                else
+                  echo "Android 15 6.6.50~6.6.58 task_mmu.c 归档修复补丁已应用或当前上下文不匹配，跳过"
+                fi
+              fi
 
               # 修复 SukiSU 6.6 SELinux hide 调用旧 with_policy 接口导致的链接错误
               if [[ "${{ inputs.ksu_variant }}" == "SukiSU" ]]; then
