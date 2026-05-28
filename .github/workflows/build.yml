@@ -129,9 +129,20 @@ jobs:
           KERNEL_ROOT="$GITHUB_WORKSPACE/$CONFIG"
           mkdir -p "$KERNEL_ROOT"
 
+          LEGACY_SUKISU_CONFIG=""
+          case "${{ inputs.ksu_variant }}" in
+            SukiSU\(*\)) LEGACY_SUKISU_CONFIG="$GITHUB_WORKSPACE/config/${{ inputs.ksu_variant }}.config" ;;
+          esac
+
+          if [ -n "$LEGACY_SUKISU_CONFIG" ] && [ ! -f "$LEGACY_SUKISU_CONFIG" ]; then
+            echo "未找到 ${{ inputs.ksu_variant }} 固定提交配置: $LEGACY_SUKISU_CONFIG" >&2
+            exit 1
+          fi
+
           cat >> $GITHUB_ENV << EOF
           CONFIG=$CONFIG
           KERNEL_ROOT=$KERNEL_ROOT
+          LEGACY_SUKISU_CONFIG=$LEGACY_SUKISU_CONFIG
           DEFCONFIG=$KERNEL_ROOT/common/arch/arm64/configs/gki_defconfig
           SUSFS4KSU=$GITHUB_WORKSPACE/susfs4ksu
           KERNEL_PATCHES=$GITHUB_WORKSPACE/kernel_patches
@@ -157,6 +168,10 @@ jobs:
           if [ -f "$CONFIG_FILE" ]; then
             echo "加载配置文件: $CONFIG_FILE"
             cat "$CONFIG_FILE"
+          fi
+          if [ -n "$LEGACY_SUKISU_CONFIG" ]; then
+            echo "加载老版 SukiSU 固定提交配置: $LEGACY_SUKISU_CONFIG"
+            cat "$LEGACY_SUKISU_CONFIG"
           fi
 
       - name: 安装编译依赖
@@ -216,35 +231,21 @@ jobs:
           rm -rf AnyKernel3/.git
 
           echo "克隆 SUSFS (分支: $SUSFS_BRANCH)..."
-          if [ "${{ inputs.ksu_variant }}" == "SukiSU(40726)" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU(40548)" ]; then
+          if [ -n "$LEGACY_SUKISU_CONFIG" ]; then
             git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           elif [ "${{ inputs.ksu_variant }}" == "SukiSU" ]; then
             if ! git clone https://github.com/ShirkNeko/susfs4ksu.git -b "$SUSFS_BRANCH" 2>/dev/null; then
               echo "ShirkNeko 仓库未找到分支 $SUSFS_BRANCH，回退到 simonpunk 原版..."
               git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
             fi
-          elif [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ]; then
-            git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           else
             git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           fi
 
-          if [ "${{ inputs.ksu_variant }}" == "SukiSU(40726)" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU(40548)" ]; then
-            case "${{ inputs.ksu_variant }}:$SUSFS_BRANCH" in
-              "SukiSU(40726):gki-android12-5.10") SUSFS_FIXED_COMMIT="fde9d426ba0a70adc8f34c7bfedd6a55db683444" ;;
-              "SukiSU(40726):gki-android13-5.15") SUSFS_FIXED_COMMIT="2a03052df4cba5244652623dde06f9709d24e9f7" ;;
-              "SukiSU(40726):gki-android14-6.1")  SUSFS_FIXED_COMMIT="0c6766bf8036f6592fcf59f7f462981f8998b32b" ;;
-              "SukiSU(40726):gki-android15-6.6")  SUSFS_FIXED_COMMIT="709129bc30aadb6a2a16b813cd49f675c30127dd" ;;
-              "SukiSU(40726):gki-android16-6.12") SUSFS_FIXED_COMMIT="eecf474e3faeab89c530138dbac317110fc656c6" ;;
-              "SukiSU(40548):gki-android12-5.10") SUSFS_FIXED_COMMIT="a196ebb516eb8140fdae0adc8f30899651d3987f" ;;
-              "SukiSU(40548):gki-android13-5.15") SUSFS_FIXED_COMMIT="a0f981a444ebeb99dea4cfc20d898f162ba27c09" ;;
-              "SukiSU(40548):gki-android14-6.1")  SUSFS_FIXED_COMMIT="10cf342182b00a3fd5690ca69ab0ccc9f8b664c2" ;;
-              "SukiSU(40548):gki-android15-6.6")  SUSFS_FIXED_COMMIT="6e349b0d6e5328010c9d2f25958c715a98bf985e" ;;
-              "SukiSU(40548):gki-android16-6.12") SUSFS_FIXED_COMMIT="6bcae404ce3dea2017740dd9e49da4953651651b" ;;
-              *) SUSFS_FIXED_COMMIT="" ;;
-            esac
+          if [ -n "$LEGACY_SUKISU_CONFIG" ]; then
+            SUSFS_FIXED_COMMIT=$(grep "^${SUSFS_BRANCH}=" "$LEGACY_SUKISU_CONFIG" | cut -d'=' -f2-)
             if [ -z "$SUSFS_FIXED_COMMIT" ]; then
-              echo "未配置 $SUSFS_BRANCH 的 ${{ inputs.ksu_variant }} 固定 SUSFS 提交" >&2
+              echo "未在 $LEGACY_SUKISU_CONFIG 配置 $SUSFS_BRANCH 的固定 SUSFS 提交" >&2
               exit 1
             fi
             echo "${{ inputs.ksu_variant }} 固定 SUSFS 提交: $SUSFS_FIXED_COMMIT"
@@ -252,7 +253,7 @@ jobs:
           fi
 
           CONFIG_FILE="config/config"
-          if [ "${{ inputs.ksu_variant }}" != "SukiSU(40726)" ] && [ "${{ inputs.ksu_variant }}" != "SukiSU(40548)" ] && [ -f "$CONFIG_FILE" ]; then
+          if [ -z "$LEGACY_SUKISU_CONFIG" ] && [ -f "$CONFIG_FILE" ]; then
             CUSTOM_ENABLED=$(grep "^custom=" "$CONFIG_FILE" | cut -d'=' -f2)
             if [ "$CUSTOM_ENABLED" == "true" ]; then
               CUSTOM_COMMIT=$(grep "^${SUSFS_BRANCH}=" "$CONFIG_FILE" | cut -d'=' -f2)
@@ -394,18 +395,20 @@ jobs:
                 BRANCH="-s builtin"
               fi
               ;;
-            "SukiSU(40726)")
-              BRANCH="-s 5da529942987b834c2b02a4819eaa298a8383bf4"
-              ;;
-            "SukiSU(40548)")
-              BRANCH="-s 3170a48c508f6330ea636c51835a84573fe56ef5"
-              ;;
             "Next")
               BRANCH=""
               ;;
             *)
-              echo "未知变体: $variant_input" >&2
-              exit 1
+              if [ -z "$LEGACY_SUKISU_CONFIG" ] || [ ! -f "$LEGACY_SUKISU_CONFIG" ]; then
+                echo "未知变体: $variant_input" >&2
+                exit 1
+              fi
+              SUKISU_FIXED_COMMIT=$(grep "^sukisu=" "$LEGACY_SUKISU_CONFIG" | cut -d'=' -f2-)
+              if [ -z "$SUKISU_FIXED_COMMIT" ]; then
+                echo "未在 $LEGACY_SUKISU_CONFIG 配置 SukiSU 固定提交" >&2
+                exit 1
+              fi
+              BRANCH="-s $SUKISU_FIXED_COMMIT"
               ;;
           esac
 
@@ -448,20 +451,20 @@ jobs:
               curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/refs/heads/dev/kernel/setup.sh" | bash -s dev_susfs
               ;;
             "SukiSU")
-              echo "添加 SukiSU..."
-              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
-              ;;
-            "SukiSU(40726)")
-              echo "添加 SukiSU(40726)..."
-              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
-              ;;
-            "SukiSU(40548)")
-              echo "添加 SukiSU(40548)..."
+              echo "添加 ${{ inputs.ksu_variant }}..."
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
               ;;
             "ReSukiSU")
               echo "添加 ReSukiSU..."
               curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash $BRANCH
+              ;;
+            *)
+              if [ -z "$LEGACY_SUKISU_CONFIG" ]; then
+                echo "未知变体: ${{ inputs.ksu_variant }}" >&2
+                exit 1
+              fi
+              echo "添加 ${{ inputs.ksu_variant }}..."
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
               ;;
           esac
 
