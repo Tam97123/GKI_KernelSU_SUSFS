@@ -27,10 +27,10 @@
 ## ⚠️ 兼容性提醒
 
 > **注意：** 目前不支持一加 ColorOS 14、15，刷入后可能需要清除数据开机。
-
-> **rekernel功能（测试）：已支持 rekernel 功能（目前处于测试阶段）**
 >
-> 由于 SukiSU 最新构建长期未修复构建错误，因此提供了老版本SukiSU的构建，若使用老版本内核最好搭配同样版本的管理器
+> **SUKISU最新版:** 已经恢复构建，但不兼容6.12
+>
+> 增加了了老版本SukiSU的构建，若使用老版本内核最好搭配同样版本的管理器，老版本完全使用以前的SUKISU和SUSFS代码，因此不包含最近的特性或bug
 > 
 > <img width="296" height="152" alt="image" src="https://github.com/user-attachments/assets/e60316c3-c760-4178-a4c8-b94d0ef0b5b2" />
 
