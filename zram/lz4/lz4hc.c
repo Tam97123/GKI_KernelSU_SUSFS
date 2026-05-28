@@ -2028,6 +2028,7 @@ void LZ4_resetStreamHC(LZ4_streamHC_t *LZ4_streamHCPtr, int compressionLevel)
 	LZ4_initStreamHC(LZ4_streamHCPtr, sizeof(*LZ4_streamHCPtr));
 	LZ4_setCompressionLevel(LZ4_streamHCPtr, compressionLevel);
 }
+EXPORT_SYMBOL(LZ4_resetStreamHC);
 
 void LZ4_resetStreamHC_fast(LZ4_streamHC_t *LZ4_streamHCPtr,
 			    int compressionLevel)
