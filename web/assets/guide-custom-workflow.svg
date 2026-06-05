@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="651" height="629" viewBox="0 0 651 629" role="img" aria-label="选择 Android 内核构建自定义工作流并填写版本参数">
+  <rect width="651" height="629" fill="#ffffff"/>
+  <rect x="0" y="0" width="335" height="629" fill="#ffffff"/>
+  <rect x="335" y="0" width="316" height="629" fill="#ffffff"/>
+  <line x1="335" y1="0" x2="335" y2="629" stroke="#8ab4f8" stroke-width="2"/>
+
+  <text x="16" y="43" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#24292f">Actions</text>
+  <rect x="223" y="21" width="96" height="29" rx="6" fill="#1a7f37"/>
+  <text x="231" y="40" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">New workflow</text>
+  <text x="24" y="80" font-family="Arial, sans-serif" font-size="14" fill="#57606a">All workflows</text>
+  <line x1="0" y1="99" x2="327" y2="99" stroke="#d8dee4"/>
+
+  <rect x="8" y="107" width="311" height="33" rx="6" fill="#eaeef2"/>
+  <rect x="8" y="112" width="3" height="23" fill="#0969da"/>
+  <text x="24" y="129" font-family="Arial, sans-serif" font-size="15" font-weight="600" fill="#24292f">Android 内核构建-自定义</text>
+  <text x="24" y="162" font-family="Arial, sans-serif" font-size="14" fill="#57606a">Auto Trigger on SukiSU Update</text>
+  <text x="24" y="195" font-family="Arial, sans-serif" font-size="14" fill="#57606a">Copilot coding agent</text>
+  <text x="24" y="228" font-family="Arial, sans-serif" font-size="14" fill="#57606a">Emergency Release Cleanup</text>
+  <text x="24" y="261" font-family="Arial, sans-serif" font-size="14" fill="#57606a">GetManager</text>
+  <text x="24" y="294" font-family="Arial, sans-serif" font-size="14" fill="#57606a">Update Data &amp; Deploy Pages</text>
+  <text x="24" y="327" font-family="Arial, sans-serif" font-size="14" fill="#57606a">内核构建 - Android 12 (5.10)</text>
+  <text x="24" y="360" font-family="Arial, sans-serif" font-size="14" fill="#57606a">内核构建 - Android 13 (5.15)</text>
+  <text x="24" y="393" font-family="Arial, sans-serif" font-size="14" fill="#57606a">内核构建 - Android 14 (6.1)</text>
+  <text x="24" y="426" font-family="Arial, sans-serif" font-size="14" fill="#57606a">内核构建 - Android 15 (6.6)</text>
+  <text x="24" y="459" font-family="Arial, sans-serif" font-size="14" fill="#0969da">Show more workflows...</text>
+  <line x1="0" y1="477" x2="327" y2="477" stroke="#d8dee4"/>
+  <text x="24" y="506" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#6e7781">Management</text>
+  <text x="24" y="540" font-family="Arial, sans-serif" font-size="15" fill="#57606a">◷  Caches</text>
+  <text x="24" y="573" font-family="Arial, sans-serif" font-size="15" fill="#57606a">↗  Deployments</text>
+  <text x="24" y="606" font-family="Arial, sans-serif" font-size="15" fill="#57606a">◇  Attestations</text>
+
+  <text x="353" y="33" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#24292f">Use workflow from</text>
+  <rect x="353" y="46" width="100" height="27" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="366" y="64" font-family="Arial, sans-serif" font-size="12" fill="#24292f">Branch: dev ▾</text>
+
+  <text x="352" y="134" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#24292f">Android 版本</text>
+  <text x="445" y="134" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#cf222e">*</text>
+  <rect x="353" y="145" width="271" height="28" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="366" y="164" font-family="Arial, sans-serif" font-size="12" fill="#57606a">android12</text>
+  <text x="607" y="164" font-family="Arial, sans-serif" font-size="12" fill="#57606a">◆</text>
+
+  <text x="352" y="197" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#24292f">内核版本</text>
+  <text x="414" y="197" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#cf222e">*</text>
+  <rect x="353" y="208" width="271" height="28" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="366" y="227" font-family="Arial, sans-serif" font-size="12" fill="#57606a">5.10</text>
+  <text x="607" y="227" font-family="Arial, sans-serif" font-size="12" fill="#57606a">◆</text>
+
+  <text x="352" y="260" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#24292f">子版本号（如 66，198，X）</text>
+  <text x="515" y="260" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#cf222e">*</text>
+  <rect x="353" y="271" width="271" height="28" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="366" y="290" font-family="Arial, sans-serif" font-size="12" fill="#57606a">66</text>
+
+  <text x="352" y="323" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#24292f">安全补丁级别（如 2022-01，lts）</text>
+  <text x="553" y="323" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#cf222e">*</text>
+  <rect x="353" y="334" width="271" height="28" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="366" y="353" font-family="Arial, sans-serif" font-size="12" fill="#57606a">2022-01</text>
+
+  <text x="352" y="386" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#24292f">修订版本（如 r11，仅 5.10 需要）</text>
+  <rect x="353" y="397" width="271" height="28" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="366" y="416" font-family="Arial, sans-serif" font-size="12" fill="#57606a">r11</text>
+
+  <text x="352" y="449" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#24292f">Kernelsu 变体</text>
+  <text x="443" y="449" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#cf222e">*</text>
+  <rect x="353" y="460" width="271" height="28" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="366" y="479" font-family="Arial, sans-serif" font-size="12" fill="#57606a">ReSukiSU</text>
+  <text x="607" y="479" font-family="Arial, sans-serif" font-size="12" fill="#57606a">◆</text>
+
+  <text x="352" y="512" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#24292f">自定义版本名（可选）</text>
+  <rect x="353" y="523" width="271" height="28" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+
+  <rect x="353" y="587" width="93" height="28" rx="6" fill="#1a7f37"/>
+  <text x="365" y="606" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#ffffff">Run workflow</text>
+
+  <rect x="642" y="103" width="8" height="245" rx="4" fill="#8c959f"/>
+  <rect x="8.5" y="109.5" width="216" height="28" fill="none" stroke="#ff0000" stroke-width="2"/>
+  <rect x="351.5" y="118.5" width="283" height="246" fill="none" stroke="#ff0000" stroke-width="2"/>
+</svg>
