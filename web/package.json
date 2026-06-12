@@ -1,18 +1,28 @@
 {
   "name": "gki-kernel-web",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "GKI Kernel Versions Dashboard",
+  "type": "module",
+  "description": "GKI Kernel Versions Dashboard - Modern frontend",
   "scripts": {
-    "build": "webpack --mode production",
-    "dev": "webpack --mode development --watch"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,scss}\""
+  },
+  "dependencies": {
+    "clsx": "^2.1.1"
   },
   "devDependencies": {
-    "css-loader": "^7.1.4",
-    "mini-css-extract-plugin": "^2.10.0",
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
+    "eslint": "^9.17.0",
+    "globals": "^15.15.0",
+    "prettier": "^3.4.2",
     "sass": "^1.97.3",
-    "sass-loader": "^16.0.7",
-    "webpack": "^5",
-    "webpack-cli": "^6"
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
   }
 }
