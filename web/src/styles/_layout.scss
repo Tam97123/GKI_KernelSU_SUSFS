@@ -1,0 +1,84 @@
+// Main layout and containers
+.main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  min-height: calc(100vh - 200px);
+}
+
+.tab-panel {
+  display: none;
+
+  &.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tools-section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 0;
+}
+
+.tools-inner {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+
+  &[open] .tools-summary::after {
+    transform: rotate(180deg);
+  }
+}
+
+.tools-summary {
+  padding: 0.875rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  transition: all var(--transition-fast);
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &::after {
+    content: '▼';
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+  }
+
+  &:hover {
+    background: var(--bg-card-hover);
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 1.5rem 1rem;
+  }
+
+  .tools-section {
+    padding: 0.75rem 1rem 0;
+  }
+}
