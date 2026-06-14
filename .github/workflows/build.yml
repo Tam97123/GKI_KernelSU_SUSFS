@@ -71,6 +71,10 @@ on:
         required: false
         type: boolean
         default: false
+      artifact_upload_mode:
+        required: false
+        type: string
+        default: "上传全部"
 
 jobs:
   build-kernel:
@@ -102,6 +106,7 @@ jobs:
           echo "Re-Kernel     : ${{ inputs.use_rekernel }}"
           echo "Droidspaces   : ${{ inputs.droidspaces }}"
           echo "NTSync        : ${{ inputs.droidspaces_ntsync }}"
+          echo "产物上传模式  : ${{ inputs.artifact_upload_mode }}"
           echo "Stock Config  : 自动检测 config/stock_defconfig"
           echo "========================================"
 
@@ -1423,11 +1428,17 @@ jobs:
           gzip -n -k -f -9 ./Image > ./Image.gz
 
       - name: 创建 AnyKernel3 压缩包
+        if: inputs.artifact_upload_mode == '上传全部'
         run: |
-          cd $ANYKERNEL3
+          cd "$ANYKERNEL3"
           ZIP_NAME="${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3.zip"
           mv ../Image ./Image
           zip -r "../$ZIP_NAME" ./*
+
+      - name: 准备 AnyKernel3 目录
+        if: inputs.artifact_upload_mode != '上传全部'
+        run: |
+          mv ./Image "$ANYKERNEL3/Image"
 
       - name: 构建 Boot 镜像 (Android 12)
         if: inputs.android_version == 'android12'
@@ -1504,7 +1515,16 @@ jobs:
             done
           fi
 
-      - name: 上传构建产物
+      - name: 上传 AnyKernel3 刷入包
+        if: inputs.artifact_upload_mode != '上传全部'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ inputs.ksu_variant }}_kernel-${{ env.CONFIG }}-AnyKernel3
+          path: AnyKernel3/*
+          compression-level: 9
+
+      - name: 上传全部构建产物
+        if: inputs.artifact_upload_mode == '上传全部'
         uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.ksu_variant }}_kernel-${{ env.CONFIG }}
