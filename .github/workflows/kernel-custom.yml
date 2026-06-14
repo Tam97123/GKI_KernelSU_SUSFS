@@ -96,6 +96,14 @@ on:
         required: false
         type: boolean
         default: false
+      artifact_upload_mode:
+        description: "构建产物上传模式"
+        required: true
+        type: choice
+        options:
+          - "仅上传 AnyKernel3.zip"
+          - "上传全部"
+        default: "仅上传 AnyKernel3.zip"
 
       # ==================== 功能开关 ====================
       use_zram:
@@ -146,6 +154,7 @@ jobs:
       enable_susfs: ${{ !inputs.cancel_susfs }}
       droidspaces: ${{ inputs.droidspaces || 'off' }}
       droidspaces_ntsync: ${{ inputs.droidspaces_ntsync || false }}
+      artifact_upload_mode: ${{ inputs.artifact_upload_mode }}
 
   get-ksu-manager:
     uses: ./.github/workflows/get-manager.yml
