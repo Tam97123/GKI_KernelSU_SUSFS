@@ -30,21 +30,11 @@ on:
           - "6.6"
           - "6.12"
         default: "5.10"
-      sub_level:
-        description: "子版本号 (如 66, 198, X)"
-        required: true
-        type: string
-        default: "66"
       os_patch_level:
         description: "安全补丁级别 (如 2022-01, lts)"
         required: true
         type: string
         default: "2022-01"
-      revision:
-        description: "修订版本 (如 r11, 仅 5.10 需要)"
-        required: false
-        type: string
-        default: "r11"
 
       # ==================== KernelSU 配置 ====================
       kernelsu_variant:
@@ -91,11 +81,6 @@ on:
           - "123"
           - "345"
         default: "off"
-      droidspaces_ntsync:
-        description: "启用 Droidspaces 容器 NTSync 支持（需启用 Droidspaces）"
-        required: false
-        type: boolean
-        default: false
       artifact_upload_mode:
         description: "构建产物上传模式"
         required: true
@@ -104,6 +89,11 @@ on:
           - "仅上传 AnyKernel3.zip"
           - "上传全部"
         default: "仅上传 AnyKernel3.zip"
+      droidspaces_ntsync:
+        description: "启用 Droidspaces 容器 NTSync 支持（需启用 Droidspaces）"
+        required: false
+        type: boolean
+        default: false
 
       # ==================== 功能开关 ====================
       use_zram:
@@ -133,16 +123,80 @@ on:
         default: false
 
 jobs:
+  resolve-version:
+    name: 解析内核子版本
+    runs-on: ubuntu-latest
+    outputs:
+      sub_level: ${{ steps.resolve.outputs.sub_level }}
+      kernel_full: ${{ steps.resolve.outputs.kernel_full }}
+    steps:
+      - name: 检出版本数据
+        uses: actions/checkout@v4
+
+      - name: 解析安全补丁级别
+        id: resolve
+        env:
+          ANDROID_VERSION: ${{ inputs.android_version }}
+          KERNEL_VERSION: ${{ inputs.kernel_version }}
+          OS_PATCH_LEVEL: ${{ inputs.os_patch_level }}
+        run: |
+          python3 <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          android_version = os.environ["ANDROID_VERSION"]
+          kernel_version = os.environ["KERNEL_VERSION"]
+          os_patch_level = os.environ["OS_PATCH_LEVEL"].strip()
+          data_path = Path("data") / android_version / f"{kernel_version}.json"
+
+          if not data_path.exists():
+              print(f"::error::未找到版本数据: {data_path}")
+              sys.exit(1)
+
+          with data_path.open("r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          if os_patch_level == "lts":
+              kernel_full = data.get("lts")
+              if not kernel_full:
+                  print(f"::error::{android_version} / {kernel_version} 缺少 LTS 版本数据")
+                  sys.exit(1)
+              sub_level = "X"
+          else:
+              matched = next(
+                  (entry for entry in data.get("entries", []) if entry.get("date") == os_patch_level),
+                  None,
+              )
+              if matched is None:
+                  print(f"::error::未找到 {android_version} / {kernel_version} / {os_patch_level} 对应的版本数据")
+                  sys.exit(1)
+              kernel_full = matched.get("kernel", "")
+              prefix = f"{kernel_version}."
+              if not kernel_full.startswith(prefix):
+                  print(f"::error::版本数据异常: {kernel_full} 不属于 {kernel_version}")
+                  sys.exit(1)
+              sub_level = kernel_full.rsplit(".", 1)[-1]
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"sub_level={sub_level}\n")
+              output.write(f"kernel_full={kernel_full}\n")
+
+          print(f"解析结果: {kernel_full}，子版本号: {sub_level}")
+          PY
+
   build-custom-kernel:
-    name: "${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
+    name: "${{ needs.resolve-version.outputs.kernel_full }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
+    needs: resolve-version
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
       android_version: ${{ inputs.android_version }}
       kernel_version: ${{ inputs.kernel_version }}
-      sub_level: ${{ inputs.sub_level }}
+      sub_level: ${{ needs.resolve-version.outputs.sub_level }}
       os_patch_level: ${{ inputs.os_patch_level }}
-      revision: ${{ inputs.revision || '' }}
+      revision: "r1"
       ksu_variant: ${{ inputs.kernelsu_variant }}
       version: ${{ inputs.version || '' }}
       build_time: ${{ inputs.build_time || '' }}
