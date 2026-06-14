@@ -33,6 +33,7 @@ on:
       revision:
         required: false
         type: string
+        default: "r1"
       build_time:
         required: false
         type: string
@@ -67,14 +68,14 @@ on:
         required: false
         type: string
         default: "off"
-      droidspaces_ntsync:
-        required: false
-        type: boolean
-        default: false
       artifact_upload_mode:
         required: false
         type: string
         default: "上传全部"
+      droidspaces_ntsync:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-kernel:
