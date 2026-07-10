@@ -171,65 +171,108 @@ jobs:
           FILENAME=$([[ "${{ inputs.kernelsu_variant }}" == "Next" ]] && echo "build-manager-ci.yml" || echo "build-manager.yml")
 
 
-          # 初始化
-          NUMBER=0
+          # 按内核 KSU 版本选择 Manager，避免 APK 版本领先于内核版本
+          TARGET_KSU_VERSION="${KSU_VERSION:-}"
+          if ! [[ "$TARGET_KSU_VERSION" =~ ^[0-9]+$ ]]; then
+            echo "无效的目标 KSU 版本: $TARGET_KSU_VERSION"
+            exit 1
+          fi
+
+          calculate_run_ksu_version() {
+            local head_sha="$1"
+            if ! git -C KernelSU cat-file -e "$head_sha^{commit}" 2>/dev/null; then
+              git -C KernelSU fetch --no-tags origin "$head_sha" >/dev/null 2>&1 || true
+            fi
+            if ! git -C KernelSU cat-file -e "$head_sha^{commit}" 2>/dev/null; then
+              return 1
+            fi
+
+            local git_version
+            git_version=$(git -C KernelSU rev-list --count "$head_sha")
+            case "${{ inputs.kernelsu_variant }}" in
+              "SukiSU") echo $((40000 + git_version - 2815)) ;;
+              "ReSukiSU") echo $((30700 + git_version)) ;;
+              "Official") echo $((20000 + git_version)) ;;
+              "Next") echo $((30000 + git_version)) ;;
+              *) return 1 ;;
+            esac
+          }
+
+          get_manager_artifacts() {
+            local artifacts="$1"
+            if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+              printf '%s' "$artifacts" | jq -r --arg name "$KSUM" \
+                '.artifacts[] | select(.name == $name) | "\(.name)\t\(.archive_download_url)"'
+            elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+              printf '%s' "$artifacts" | jq -r \
+                '.artifacts[] | select(.name == "Manager-release" or .name == "Spoofed-Manager-release") | "\(.name)\t\(.archive_download_url)"'
+            else
+              printf '%s' "$artifacts" | jq -r --arg needle "$KSUM" \
+                '.artifacts[] | select((.name | ascii_downcase) | contains($needle)) | "\(.name)\t\(.archive_download_url)"'
+            fi
+          }
+
           DOWNLOAD_LIST=""
+          BEST_VERSION=0
+          BEST_BUILD_ID=""
+          BEST_BRANCH=""
+          RUNS_URL="https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?status=success&per_page=30"
+          if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+            RUNS_URL="https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?branch=$BRANCH&status=success&per_page=30"
+          fi
 
-          echo "开始查找包含 'manager' 产物的构建..."
-          while true; do
+          echo "开始查找不高于 KSU $TARGET_KSU_VERSION 的 Manager 产物..."
+          for PAGE in $(seq 1 10); do
             echo "--------------------------------------------------"
-            echo "正在检查第 ${NUMBER} 个历史构建 (0代表最新)..."
-
-            if [ "$NUMBER" -ge 9 ]; then
-              echo "查找九次仍然失败，跳出循环。"
+            echo "正在检查第 ${PAGE} 页历史构建..."
+            RUNS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$RUNS_URL&page=$PAGE")
+            RUN_COUNT=$(printf '%s' "$RUNS" | jq '.workflow_runs | length')
+            if [ "$RUN_COUNT" -eq 0 ]; then
               break
             fi
 
-            # 1. 获取指定顺序的成功构建的ID
+            for INDEX in $(seq 0 $((RUN_COUNT - 1))); do
+              BUILD_ID=$(printf '%s' "$RUNS" | jq -r ".workflow_runs[$INDEX].id")
+              HEAD_SHA=$(printf '%s' "$RUNS" | jq -r ".workflow_runs[$INDEX].head_sha")
+              HEAD_BRANCH=$(printf '%s' "$RUNS" | jq -r ".workflow_runs[$INDEX].head_branch")
 
-            # 对于 Next 变体，添加 branch 参数过滤
-            if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
-              BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?branch=$BRANCH&status=success&per_page=1" |
-                jq -r '.workflow_runs[0].id')
-            else
-              BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?status=success" |
-                jq -r '.workflow_runs['"$NUMBER"'].id')
-            fi
-
-            echo "找到构建 ID: $BUILD_ID"
-
-            ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/$REPO/actions/runs/$BUILD_ID/artifacts")
-
-            # 对于 Next 变体使用精确匹配，其他变体使用模糊匹配
-            if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
-              result=$(echo "$ARTIFACTS" | jq -r ".artifacts[] | select(.name == \"$KSUM\") | .name")
-            else
-              result=$(echo "$ARTIFACTS" | jq -r --arg needle "$KSUM" '.artifacts[] | select((.name | ascii_downcase) | contains($needle)) | .name')
-            fi
-
-            if [ -z "$result" ]; then
-              echo "没有找到包含 '$KSUM' 的项"
-              NUMBER=$((NUMBER + 1))
-            else
-              echo "$result"
-              # 对于 Next 变体使用精确匹配，其他变体使用模糊匹配
-              if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
-                DOWNLOAD_LIST=$(echo "$ARTIFACTS" | jq -r ".artifacts[] | select(.name == \"$KSUM\") | \"\(.name)\t\(.archive_download_url)\"")
-              else
-                DOWNLOAD_LIST=$(echo "$ARTIFACTS" | jq -r --arg needle "$KSUM" '.artifacts[] | select((.name | ascii_downcase) | contains($needle)) | "\(.name)\t\(.archive_download_url)"')
+              RUN_KSU_VERSION=$(calculate_run_ksu_version "$HEAD_SHA" || true)
+              if ! [[ "$RUN_KSU_VERSION" =~ ^[0-9]+$ ]]; then
+                echo "跳过构建 $BUILD_ID: 无法根据提交 $HEAD_SHA 计算 KSU 版本"
+                continue
               fi
-              break
-            fi
+              if [ "$RUN_KSU_VERSION" -gt "$TARGET_KSU_VERSION" ]; then
+                echo "跳过构建 $BUILD_ID ($HEAD_BRANCH): Manager KSU $RUN_KSU_VERSION 高于内核 KSU $TARGET_KSU_VERSION"
+                continue
+              fi
 
+              ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/repos/$REPO/actions/runs/$BUILD_ID/artifacts")
+              CANDIDATE_LIST=$(get_manager_artifacts "$ARTIFACTS")
+              if [ -z "$CANDIDATE_LIST" ]; then
+                echo "跳过构建 $BUILD_ID ($HEAD_BRANCH): 未找到包含 '$KSUM' 的产物"
+                continue
+              fi
+
+              if [ -z "$DOWNLOAD_LIST" ] || [ "$RUN_KSU_VERSION" -gt "$BEST_VERSION" ]; then
+                DOWNLOAD_LIST="$CANDIDATE_LIST"
+                BEST_VERSION="$RUN_KSU_VERSION"
+                BEST_BUILD_ID="$BUILD_ID"
+                BEST_BRANCH="$HEAD_BRANCH"
+                echo "候选 Manager: 构建 $BUILD_ID ($HEAD_BRANCH), KSU $RUN_KSU_VERSION"
+              fi
+
+              if [ "$RUN_KSU_VERSION" -eq "$TARGET_KSU_VERSION" ]; then
+                break 2
+              fi
+            done
           done
 
           if [ -z "$DOWNLOAD_LIST" ]; then
-            echo "未获取到可用的 Manager artifact 下载地址列表。"
+            echo "未获取到 KSU 版本小于等于 $TARGET_KSU_VERSION 的 Manager artifact 下载地址列表。"
             exit 1
           fi
+          echo "选择 Manager 构建 $BEST_BUILD_ID ($BEST_BRANCH), KSU $BEST_VERSION"
 
           # 下载并解压所有 Manager 产物
           echo "$DOWNLOAD_LIST" | while IFS=$'\t' read -r NAME URL; do
@@ -241,6 +284,17 @@ jobs:
             unzip -o "$ZIP_NAME" -d "manager-artifacts/$SAFE_NAME"
             rm -rf "$ZIP_NAME"
           done
+
+          if [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+            echo "仅保留 ReSukiSU arm64-v8a release 管理器..."
+            find manager-artifacts -type f -name "*.apk" ! -name "*-arm64-v8a-release.apk" -delete
+            find manager-artifacts -type f -name "*debug*.apk" -delete
+            if ! find manager-artifacts -type f -name "*-arm64-v8a-release.apk" | grep -q .; then
+              echo "未找到 ReSukiSU arm64-v8a release 管理器。"
+              exit 1
+            fi
+            find manager-artifacts -type f -name "*.apk" -print
+          fi
 
       - name: 添加 SUSFS 模块
         id: add_SUSFS
@@ -306,7 +360,7 @@ jobs:
         with:
           name: ${{ inputs.kernelsu_variant }}-Manager(${{ env.KSU_VERSION }})
           path: |
-            **/*.apk
+            manager-artifacts/**/*.apk
 
       - name: 上传SUSFS模块
         if: steps.add_SUSFS.outcome == 'success'
