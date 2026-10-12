@@ -33,7 +33,12 @@ runs:
           return 1
         }
 
-        SUSFS_BRANCH="gki-${{ inputs.version }}"
+        if [ "${{ inputs.version }}" = android15-6.6 || "${{ inputs.version }}" = android16-6.12 ]; then
+         SUSFS_BRANCH="gki-${{ inputs.version }}-dev"
+        else
+         SUSFS_BRANCH="gki-${{ inputs.version }}"
+        fi
+        
         SUSFS_REPO="https://gitlab.com/simonpunk/susfs4ksu.git"
 
         echo "Preparing SUSFS for branch: $SUSFS_BRANCH"
