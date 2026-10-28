@@ -64,6 +64,18 @@ runs:
           sed -i '/^#include <linux\/shmem_fs.h>$/a #include <linux/mnt_idmapping.h>' fs/namespace.c
           echo "Applying open.c Android 13 5.15 Fake Patch"
           sed -i '/^#include <linux\/compat.h>$/a #include <linux/mnt_idmapping.h>' fs/open.c
+          # These sublevels have the idmapped-mount helpers in include/linux/fs.h
+          # but never shipped include/linux/mnt_idmapping.h (it appears only on
+          # later branches). The include is needed as patch hunk context, so stub
+          # the header when it is absent - an empty header is enough because
+          # i_uid_into_mnt() comes from fs.h. Without this, the leg patches and
+          # then dies with "fatal error: 'linux/mnt_idmapping.h' file not found"
+          # (job 122615422468, 5.15.41-android13-2022-10).
+          if [ ! -f include/linux/mnt_idmapping.h ]; then
+            printf '/* Stub: mnt idmap helpers live in linux/fs.h on this sublevel. */\n' \
+              > include/linux/mnt_idmapping.h
+            echo "  stubbed include/linux/mnt_idmapping.h"
+          fi
           echo "Applying fdinfo.c Android 13 5.15 Fake Patch"
           python3 "${{ github.workspace }}/.github/scripts/susfs_fake_fdinfo.py" fs/notify/fdinfo.c
         fi
@@ -91,8 +103,10 @@ runs:
       run: |
         echo "Applying 6.6 SUSFS fixes"
         if [ "${{ inputs.sublevel }}" -le "30" ]; then
-          echo "Applying taskmmu.c Android 15 6.6 Fake Patch"
-          python3 -c 'import re;c=open("fs/proc/task_mmu.c").read();c=re.sub(r"(\t+\t\tif\s*\(\s*vma->vm_end\s*>\s*last_vma_end\s*\))\n(\t+\t\t\tsmap_gather_stats\(vma,\s*&mss,\s*last_vma_end\);\n(\t+)\}",lambda m:m.group(1)+" {\n"+m.group(2)+"\n"+m.group(3)+"\t\tlast_vma_end = vma->vm_end;\n"+m.group(3)+"\t}\n"+m.group(3)+"}",c,count=1);open("fs/proc/task_mmu.c","w").write(c)'
+          # Brace the show_smaps_rollup "Case 4" block so the patch's hunk #6
+          # matches. The previous inline python one-liner had an unbalanced
+          # regex and raised on every run, so this reshape never happened.
+          python3 "${{ github.workspace }}/.github/scripts/susfs_fake_66_smaps.py" fs/proc/task_mmu.c apply
         fi
         if [ "${{ inputs.sublevel }}" -le "30" ] && [ "${{ inputs.os_patch_level }}" = "2024-07" ]; then
           echo "Adding __fold_filemap_fixup_entry stub for 2024-07 kernels"
@@ -134,11 +148,33 @@ runs:
     #       python3 "${{ github.workspace }}/.github/scripts/susfs_fake_612.py" fs/proc/task_mmu.c apply
     #     fi
 
+    - name: Restore patch include context
+      # Google keeps dropping `#include <trace/hooks/*.h>` lines from the GKI
+      # sources while the SUSFS patch still lists them as hunk #1 context, so
+      # patch fails on those sublevels (namespace.c, task_mmu.c, super.c...).
+      # Re-insert the missing include lines in the order the patch expects and
+      # stub any header that no longer exists. Idempotent, no version gates.
+      shell: bash
+      working-directory: ${{ github.workspace }}/kernel/common
+      run: |
+        python3 "${{ github.workspace }}/.github/scripts/susfs_restore_context.py" \
+          "50_add_susfs_in_gki-${{ inputs.version }}.patch" "$PWD"
+
     - name: Apply Kernel SUSFS Patches
       shell: bash
       working-directory: ${{ github.workspace }}/kernel/common
       run: |
-        patch -p1 < 50_add_susfs_in_gki-${{ inputs.version }}.patch
+        if [ "${{ inputs.version }}" = "android16-6.12" ]; then
+          # Sublevels below 6.12.92 predate the show_smaps_rollup refactor and
+          # never had the fs/exec.c dma-buf include, so plain `patch` rejects
+          # hunk #1 of exec.c and hunks #4-6 of task_mmu.c. Adapt the patch for
+          # the source shape first (ported from PR #342).
+          python3 "${{ github.workspace }}/.github/scripts/apply_susfs_compat.py" \
+            "$PWD" "50_add_susfs_in_gki-${{ inputs.version }}.patch"
+        else
+          # no --forward here: a reversed/already-applied hunk must fail loudly
+          patch -p1 < 50_add_susfs_in_gki-${{ inputs.version }}.patch
+        fi
 
         # SUSFS's OPEN_REDIRECT code unconditionally calls VMA_PAD_START(), which
         # only exists on GKI branches that carry Google's page-size-migration

@@ -90,7 +90,7 @@ on:
 jobs:
   build-gki:
     name: "${{ inputs.kernel_version }}.${{ inputs.sublevel }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }} (${{ inputs.variant }})"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - name: Checkout Repository
@@ -287,101 +287,22 @@ jobs:
             CONFIG_KSU_SUSFS_OPEN_REDIRECT=n
             CONFIG_KSU_SUSFS_SUS_MAP=n
 
-      - name: Resolve SUSFS commit
-        id: susfs-cm
-        shell: bash
-        run: |
-          set -euo pipefail
-          # KernelSU-Next (next) always uses the latest susfs4ksu gki branch tip so
-          # SUSFS stays API-matched to the always-latest KernelSU-Next tree. All
-          # other roots (kernelsu, bakasu, finasu, sukisu-ultra) use the pinned
-          # verified SUSFS commit.
-          if [ "${{ inputs.root_flavor }}" = "next" ]; then
-            BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-            SUSFS_COMMIT="$(git ls-remote https://gitlab.com/simonpunk/susfs4ksu.git "refs/heads/${BRANCH}" | cut -f1)"
-            echo "KernelSU-Next: resolving SUSFS at latest on ${BRANCH} -> ${SUSFS_COMMIT}"
-          else
-            SUSFS_COMMIT="${{ inputs.susfs_commit }}"
-            echo "Using pinned SUSFS commit: ${SUSFS_COMMIT}"
-          fi
-          echo "commit=${SUSFS_COMMIT}" >> "$GITHUB_OUTPUT"
-
       - name: SUSFS
-        if: contains(inputs.feature_set, 'SUSFS') || inputs.feature_set == 'All'
+        # One step, one action: resolve the SUSFS commit, apply it for the
+        # selected root, then run the post-patch fixes (ksu_close_fd restore,
+        # selinux_hide 6.6+ shim). All of that lives in
+        # .github/actions/susfs/action.yml - the workflow no longer carries
+        # SUSFS shell code.
         uses: ./.github/actions/susfs
         with:
-          susfs_commit: ${{ steps.susfs-cm.outputs.commit }}
+          enabled: ${{ contains(inputs.feature_set, 'SUSFS') || inputs.feature_set == 'All' }}
+          susfs_commit: ${{ inputs.susfs_commit }}
           version: ${{ inputs.version }}
           android_version: ${{ inputs.android_version }}
           kernel_version: ${{ inputs.kernel_version }}
           os_patch_level: ${{ inputs.os_patch_level }}
           sublevel: ${{ steps.extract.outputs.sublevel }}
           root_flavor: ${{ inputs.root_flavor }}
-
-      - name: Restore ksu_close_fd for kernels < 5.15 (kernelsu preinit)
-        if: inputs.root_flavor == 'kernelsu' && (contains(inputs.feature_set, 'SUSFS') || inputs.feature_set == 'All')
-        shell: bash
-        working-directory: ${{ github.workspace }}/kernel
-        run: |
-          # SUSFS 10_enable patch rewrites ksu_close_fd(fd) -> close_fd(fd)
-          # in preinit.c. close_fd() is undeclared on kernels < 5.15.
-          # Restore ksu_close_fd(fd) which KernelSU defines via ksyscall(close, fd).
-          set -euo pipefail
-          for d in common/drivers/kernelsu drivers/kernelsu; do
-            F="${{ github.workspace }}/kernel/$d/preinit/preinit.c"
-            if [ -f "$F" ] && grep -qE '^[[:space:]]*close_fd\(fd\);' "$F"; then
-              sed -i 's/^\([[:space:]]*\)close_fd(fd);/\1ksu_close_fd(fd);/' "$F"
-              echo "Restored ksu_close_fd(fd) in $F"
-            else
-              echo "No bare close_fd(fd) in $F; skipping"
-            fi
-          done
-
-      - name: Fix selinux_hide pointer-bool-conversion on 6.6+ (ALL branches)
-        shell: bash
-        run: |
-          set -euo pipefail
-          KVER="${{ inputs.kernel_version }}"
-          if [ "$(printf '%s\n' "6.6" "$KVER" | sort -V | head -n1)" = "6.6" ]; then
-            echo "[*] KVER $KVER >= 6.6, patching selinux_hide.c (all flavors/branches)"
-            while IFS= read -r f; do
-              # After SUSFS 10_enable (kernelsu only) the declaration becomes
-              #   extern void security_dump_masked_av_fn(...)   (a function)
-              #   if (func) / if (func != NULL) both trigger -Werror:
-              #     -Wpointer-bool-conversion  vs  -Wtautological-pointer-compare
-              # For the function form,  &func != NULL  silences both (clang note).
-              # For the pointer form (bakasu/next/sukisu-ultra/finasu, no 10_enable) we want ptr != NULL.
-              if grep -q "extern void security_dump_masked_av_fn" "$f"; then
-                echo "[*] $f is extern-function form (10_enable applied), patching with &"
-                sed -i 's/if (security_dump_masked_av_fn)/if (\&security_dump_masked_av_fn)/g' "$f"
-                sed -i 's/if (security_dump_masked_av_fn != NULL)/if (\&security_dump_masked_av_fn != NULL)/g' "$f"
-                sed -i 's/if (context_struct_compute_av_fn)/if (\&context_struct_compute_av_fn)/g' "$f"
-                sed -i 's/if (context_struct_compute_av_fn != NULL)/if (\&context_struct_compute_av_fn != NULL)/g' "$f"
-                echo "[+] Patched $f (function form)"
-              elif grep -q "if (security_dump_masked_av_fn" "$f"; then
-                echo "[*] $f is pointer form, patching with != NULL"
-                sed -i 's/if (security_dump_masked_av_fn)/if (security_dump_masked_av_fn != NULL)/g' "$f"
-                sed -i 's/if (context_struct_compute_av_fn)/if (context_struct_compute_av_fn != NULL)/g' "$f"
-                echo "[+] Patched $f (pointer form)"
-              else
-                echo "[*] $f already patched"
-              fi
-              # Next (and tiann without 10_enable fallback) declares the 3 helpers as
-              # static on 6.6, but kernel hooks.c/selinuxfs.c reference them as extern
-              # after SUSFS (BakaSU uses __maybe_static -> global). Strip static so
-              # the linker can resolve security_context_to_sid_with_policy etc.
-              if grep -q "^static int security_context_to_sid_with_policy" "$f"; then
-                echo "[*] Stripping static from $f helpers (Next 6.6)"
-                sed -i 's/^static int security_context_to_sid_with_policy/int security_context_to_sid_with_policy/g' "$f"
-                sed -i 's/^static int security_sid_to_context_with_policy/int security_sid_to_context_with_policy/g' "$f"
-                sed -i 's/^static void security_compute_av_user_with_policy/void security_compute_av_user_with_policy/g' "$f"
-                # also forward decls (same prefix, same sed covers them)
-                echo "[+] Stripped static from $f"
-              fi
-            done
-          else
-            echo "[-] KVER $KVER < 6.6"
-          fi
 
       - name: Baseband Guard
         if: (contains(inputs.feature_set, 'BBG') || inputs.feature_set == 'All')
@@ -391,6 +312,7 @@ jobs:
         if: contains(inputs.feature_set, 'NET') || inputs.feature_set == 'All'
         uses: ./.github/actions/networking
         with:
+          os_patch_level: ${{ inputs.os_patch_level }}
           version: ${{ inputs.version }}
           kernel_version: ${{ inputs.kernel_version }}
           android_version: ${{ inputs.android_version }}
@@ -600,96 +522,21 @@ jobs:
           github_token: ${{ github.token }}
 
       - name: Consolidated Build Summary
+        id: build-summary
         if: always()
-        shell: bash
-        run: |
-          SUMMARY_BASE="${{ steps.extract.outputs.file_name }}"
-          if [ -z "${SUMMARY_BASE}" ]; then
-            SUMMARY_BASE="${{ inputs.kernel_version }}.${{ inputs.sublevel }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}"
-            VARIANT="${{ inputs.variant }}"
-            if [ -n "${VARIANT}" ] && [ "${VARIANT}" != "Normal" ]; then
-              SUMMARY_BASE="${SUMMARY_BASE}-${VARIANT}"
-            fi
-            if [ "${{ inputs.page_size }}" = "16k" ]; then
-              SUMMARY_BASE="${SUMMARY_BASE}-16k"
-            fi
-          fi
-          SUMMARY_FILE="/tmp/build-summary-${SUMMARY_BASE}.md"
-          echo "SUMMARY_BASE=${SUMMARY_BASE}" >> "$GITHUB_ENV"
-
-          # NoMount is optional (nomount_commit input is always populated, so
-          # feature_set is the only reliable signal for whether it was built).
-          NOMOUNT_ENABLED="false"
-          if [ "${{ contains(inputs.feature_set, 'NoMount') || inputs.feature_set == 'All' }}" = "true" ]; then
-            NOMOUNT_ENABLED="true"
-          fi
-
-          # Determine build status
-          if [ "${{ job.status }}" = "success" ]; then
-            STATUS="[+] Success"
-          else
-            STATUS="[-] Failed"
-          fi
-
-          # Get kernel version from Image if available
-          KERNEL_VER_STR=""
-          if [ -f "/home/runner/out/dist/Image" ]; then
-            KERNEL_VER_STR=$(strings "/home/runner/out/dist/Image" | grep -m1 "^Linux version " | sed 's/Linux version //' || echo "")
-          elif [ -f "/home/runner/out/Image" ]; then
-            KERNEL_VER_STR=$(strings "/home/runner/out/Image" | grep -m1 "^Linux version " | sed 's/Linux version //' || echo "")
-          fi
-
-          # Get KSU version from env (set by kernelsu action)
-          KSU_VER="${KSU_VERSION:-N/A}"
-          KSU_TAG="${KSU_GIT_TAG:-N/A}"
-          ROOT_IMPL="${ROOT_IMPLEMENTATION:-KernelSU-Next (legacy path)}"
-          ROOT_MANAGER="${ROOT_MANAGER:-KernelSU-Next Manager}"
-          ROOT_VERSION="${ROOT_VERSION:-${KSU_TAG}}"
-          ROOT_SHA="${ROOT_COMMIT:-${KSU_COMMIT:-N/A}}"
-          if [ "$NOMOUNT_ENABLED" = "true" ]; then
-            NOMOUNT_SHA="${NOMOUNT_COMMIT:-${{ inputs.nomount_commit }}}"
-          else
-            NOMOUNT_SHA="N/A"
-          fi
-          SUSFS_SHA="${SUSFS_COMMIT:-${{ inputs.susfs_commit }}}"
-
-          # Get SUSFS version from susfs.h if available
-          SUSFS_VER="N/A"
-          if [ -f "${{ github.workspace }}/kernel/common/include/linux/susfs.h" ]; then
-            SUSFS_VER=$(grep '#define SUSFS_VERSION' "${{ github.workspace }}/kernel/common/include/linux/susfs.h" | awk -F'"' '{print $2}' || echo "N/A")
-          fi
-
-          {
-            echo "## ${{ inputs.android_version }} ${{ inputs.kernel_version }}.${{ inputs.sublevel }} (${{ inputs.variant }}) - ${STATUS}"
-            echo
-            echo "| Metric | Value |"
-            echo "|--------|-------|"
-            echo "| **Status** | ${STATUS} |"
-            echo "| **Kernel** | ${{ inputs.kernel_version }}.${{ inputs.sublevel }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }} |"
-            if [ -n "$KERNEL_VER_STR" ]; then
-              echo "| **Version String** | \`${KERNEL_VER_STR}\` |"
-            fi
-            echo "| **KSU Version** | ${KSU_VER} |"
-            echo "| **KSU Tag** | ${KSU_TAG} |"
-            echo "| **Root Implementation** | ${ROOT_IMPL} |"
-            echo "| **Root Manager** | ${ROOT_MANAGER} |"
-            echo "| **Root Version** | ${ROOT_VERSION} |"
-            echo "| **Root Commit** | ${ROOT_SHA} |"
-            echo "| **SUSFS Version** | ${SUSFS_VER} |"
-            echo "| **SUSFS Commit** | ${SUSFS_SHA} |"
-            echo "| **NoMount Commit** | ${NOMOUNT_SHA} |"
-            echo "| **Feature Set** | ${{ inputs.feature_set }} |"
-            echo "| **Variant** | ${{ inputs.variant }} |"
-            echo "| **Page Size** | ${{ inputs.page_size }} |"
-            echo
-            
-            # Kernel Fixes
-            if [ -f /tmp/kernel-fixes-summary.md ]; then
-              echo "### Kernel Fixes"
-              cat /tmp/kernel-fixes-summary.md
-              echo
-            fi
-          } > "$SUMMARY_FILE"
+        uses: ./.github/actions/build-summary
+        with:
+          job_status: ${{ job.status }}
+          file_name: ${{ steps.extract.outputs.file_name }}
+          kernel_version: ${{ inputs.kernel_version }}
+          sublevel: ${{ inputs.sublevel }}
+          android_version: ${{ inputs.android_version }}
+          os_patch_level: ${{ inputs.os_patch_level }}
+          variant: ${{ inputs.variant }}
+          page_size: ${{ inputs.page_size }}
+          feature_set: ${{ inputs.feature_set }}
+          nomount_commit: ${{ inputs.nomount_commit }}
+          susfs_commit: ${{ inputs.susfs_commit }}
 
       - name: Upload Artifacts
         id: kernel-artifact
@@ -702,197 +549,21 @@ jobs:
 
       - name: Write Build-verified only artifact metadata
         if: success() && inputs.root_flavor != '' && inputs.root_flavor != 'none'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          # NoMount is optional: only resolve its artifact when requested.
-          # (nomount_commit input is always populated, so feature_set is the
-          # only reliable signal for whether NoMount was integrated.)
-          NOMOUNT_ENABLED="false"
-          if [ "${{ contains(inputs.feature_set, 'NoMount') || inputs.feature_set == 'All' }}" = "true" ]; then
-            NOMOUNT_ENABLED="true"
-          fi
-
-          if [ "$NOMOUNT_ENABLED" = "true" ]; then
-            METHOD="GKI source build with SHA-pinned root implementation, SUSFS, and NoMount"
-            NOMOUNT_MODULE_COMMIT="${{ inputs.nomount_commit }}"
-          else
-            METHOD="GKI source build with SHA-pinned root implementation and SUSFS"
-            NOMOUNT_MODULE_COMMIT="N/A"
-          fi
-
-          metadata_file="/tmp/${SUMMARY_BASE}-metadata.json"
-          summary_file="/tmp/build-summary-${SUMMARY_BASE}.md"
-          artifacts_api="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100"
-
-          resolve_artifact() {
-            local artifact_name="$1"
-            local page=1
-            local match=""
-            local page_file
-            local attempt
-            page_file="$(mktemp)"
-
-            # GitHub indexes an artifact asynchronously: the upload step can
-            # report "successfully finalized" and still not have the artifact in
-            # the run's list for a second or two. Retry the whole lookup before
-            # calling it missing, otherwise a just-uploaded artifact reads as
-            # absent and fails the step.
-            for attempt in 1 2 3 4 5 6; do
-              page=1
-              match=""
-
-              # Page through the artifacts API, checking each page for the exact
-              # artifact name. Uses a temp file for jq input (not argv) so large
-              # artifact lists can't exceed the OS argument-length limit.
-              while :; do
-                curl --fail --silent --show-error --location \
-                  --retry 5 --retry-delay 3 --retry-all-errors --connect-timeout 30 \
-                  --header "Authorization: Bearer ${GH_TOKEN}" \
-                  --header "X-GitHub-Api-Version: 2022-11-28" \
-                  "${artifacts_api}&page=${page}" -o "$page_file"
-
-                match="$(jq -r --arg name "$artifact_name" \
-                  '[.artifacts[] | select(.name == $name and .expired == false)] | .[0]
-                   | if . == null then "" else (.archive_download_url + "\t" + .digest) end' \
-                  "$page_file")"
-
-                items="$(jq '(.artifacts | length) // 0' "$page_file")"
-                if [ "$items" -lt 100 ] || [ -n "$match" ]; then
-                  break
-                fi
-                page=$((page + 1))
-              done
-
-              if [ -n "$match" ]; then
-                break
-              fi
-              echo "  artifact '$artifact_name' not listed yet (attempt ${attempt}/6); re-querying in 10s" >&2
-              sleep 10
-            done
-
-            rm -f "$page_file"
-            if [ -z "$match" ]; then
-              echo "Expected exactly one available artifact named ${artifact_name}." >&2
-              exit 1
-            fi
-            printf '%s\n' "$match"
-          }
-
-          read -r kernel_artifact_url kernel_artifact_sha256 < <(
-            resolve_artifact "${{ steps.extract.outputs.file_name }}-AnyKernel3"
-          )
-          if [ "$NOMOUNT_ENABLED" = "true" ]; then
-            read -r nomount_module_url nomount_module_sha256 < <(
-              resolve_artifact "NoMount-Metamodule"
-            )
-          else
-            nomount_module_url="N/A"
-            nomount_module_sha256="N/A"
-          fi
-
-          jq -n \
-            --arg method "$METHOD" \
-            --arg root_implementation "${ROOT_IMPLEMENTATION:-KernelSU-Next (legacy path)}" \
-            --arg root_manager "${ROOT_MANAGER:-KernelSU-Next Manager}" \
-            --arg root_version "${ROOT_VERSION:-${KSU_GIT_TAG:-N/A}}" \
-            --arg root_commit "${ROOT_COMMIT:-${KSU_COMMIT:-N/A}}" \
-            --arg susfs_commit "${SUSFS_COMMIT:-N/A}" \
-            --arg nomount_commit "${NOMOUNT_COMMIT:-N/A}" \
-            --arg android_branch "${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}" \
-            --arg kmi "${{ inputs.android_version }}-${{ inputs.kernel_version }}" \
-            --arg page_size "${{ inputs.page_size }}" \
-            --arg kernel_source_commit "${KERNEL_SOURCE_COMMIT:-N/A}" \
-            --arg provenance_url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            --arg artifact_url "$kernel_artifact_url" \
-            --arg sha256 "$kernel_artifact_sha256" \
-            --arg nomount_module_commit "$NOMOUNT_MODULE_COMMIT" \
-            --arg nomount_module_url "$nomount_module_url" \
-            --arg nomount_module_sha256 "$nomount_module_sha256" \
-            --arg status "Build-verified only" \
-            --arg catalog_availability "eligible-with-provenance-and-checksums" \
-            --arg device_compatibility "not-validated" \
-            --arg flashability "not-guaranteed" \
-            --arg boot "not-guaranteed" \
-            '{
-              method: $method,
-              root: {
-                implementation: $root_implementation,
-                manager: $root_manager,
-                version: $root_version,
-                commit: $root_commit
-              },
-              susfs_revision: $susfs_commit,
-              nomount_commit: $nomount_commit,
-              android_branch: $android_branch,
-              kmi: $kmi,
-              page_size: $page_size,
-              kernel_source_commit: $kernel_source_commit,
-              provenance_url: $provenance_url,
-              artifact_url: $artifact_url,
-              sha256: $sha256,
-              nomount_metamodule: {
-                commit: $nomount_module_commit,
-                artifact_url: $nomount_module_url,
-                sha256: $nomount_module_sha256
-              },
-              catalog: {
-                availability: $catalog_availability,
-                device_compatibility: $device_compatibility,
-                flashability: $flashability,
-                boot: $boot
-              },
-              status: $status
-            }' > "$metadata_file"
-
-          jq -e '
-            .status == "Build-verified only" and
-            (.root.manager | length > 0) and
-            (.root.version | length > 0) and
-            (.susfs_revision | test("^[0-9a-f]{40}$")) and
-            (.kernel_source_commit | test("^[0-9a-f]{40}$")) and
-            (.artifact_url | startswith("https://")) and
-            (.sha256 | test("^sha256:[0-9a-f]{64}$")) and
-            .catalog.availability == "eligible-with-provenance-and-checksums" and
-            .catalog.device_compatibility == "not-validated" and
-            .catalog.flashability == "not-guaranteed" and
-            .catalog.boot == "not-guaranteed"
-          ' "$metadata_file" > /dev/null
-          if [ "$NOMOUNT_ENABLED" = "true" ]; then
-            jq -e '
-              (.nomount_commit | test("^[0-9a-f]{40}$")) and
-              (.nomount_metamodule.commit == .nomount_commit) and
-              (.nomount_metamodule.artifact_url | startswith("https://")) and
-              (.nomount_metamodule.sha256 | test("^sha256:[0-9a-f]{64}$"))
-            ' "$metadata_file" > /dev/null
-          else
-            jq -e '
-              (.nomount_commit == "N/A") and
-              (.nomount_metamodule.commit == "N/A") and
-              (.nomount_metamodule.artifact_url == "N/A") and
-              (.nomount_metamodule.sha256 == "N/A")
-            ' "$metadata_file" > /dev/null
-          fi
-
-          # Merge the verified metadata into the combined summary markdown so both
-          # live in a single artifact: human-readable table + machine JSON block.
-          {
-            echo
-            echo "## Verified Metadata"
-            echo
-            echo '```json'
-            cat "$metadata_file"
-            echo '```'
-            echo
-          } >> "$summary_file"
+        uses: ./.github/actions/build-metadata
+        with:
+          summary_base: ${{ steps.build-summary.outputs.summary_base }}
+          file_name: ${{ steps.extract.outputs.file_name }}
+          feature_set: ${{ inputs.feature_set }}
+          nomount_commit: ${{ inputs.nomount_commit }}
+          android_version: ${{ inputs.android_version }}
+          kernel_version: ${{ inputs.kernel_version }}
+          os_patch_level: ${{ inputs.os_patch_level }}
+          page_size: ${{ inputs.page_size }}
 
       - name: Upload Build Summary + Metadata
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.extract.outputs.file_name }}-BuildInfo
-          path: /tmp/build-summary-${{ env.SUMMARY_BASE }}.md
+          path: /tmp/build-summary-${{ steps.build-summary.outputs.summary_base }}.md
           if-no-files-found: warn
           compression-level: 9
