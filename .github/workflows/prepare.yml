@@ -3,6 +3,11 @@ name: Prepare and Build
 on:
   workflow_call:
     inputs:
+      runner:
+        description: 'Runner image label for the build jobs (ubuntu-24.04 or ubuntu-latest)'
+        required: false
+        type: string
+        default: 'ubuntu-24.04'
       config_file:
         description: "Path to the JSON config file"
         required: true
@@ -75,7 +80,7 @@ on:
         description: "Enable ccache/bazel cache"
         required: false
         type: boolean
-        default: true
+        default: false
       os_patch_level:
         description: "Optional filter: patch date (YYYY-MM), kernel sublevel, lts (LTS branch), or all"
         required: false
@@ -322,6 +327,7 @@ jobs:
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     uses: ./.github/workflows/build.yml
     with:
+      runner: ${{ inputs.runner }}
       version: ${{ matrix.version }}
       android_version: ${{ matrix.android_version }}
       kernel_version: ${{ matrix.kernel_version }}
